@@ -279,6 +279,11 @@ async def startup_db_migration():
                 ("business_locations", "health_cert_expiry", "DATE"),
                 ("business_locations", "category_id", "INTEGER"),
                 ("business_locations", "display_order", "INTEGER DEFAULT 0"),
+                ("site_categories", "meal_types", "TEXT"),
+                ("site_categories", "meal_items", "TEXT"),
+                ("site_categories", "address", "TEXT"),
+                ("site_categories", "region", "TEXT"),
+                ("site_categories", "abbreviation", "VARCHAR(50)"),
             ]:
                 try:
                     cursor.execute(f"""
