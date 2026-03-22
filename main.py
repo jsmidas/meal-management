@@ -268,8 +268,43 @@ async def startup_db_migration():
                     updated_at TIMESTAMP DEFAULT NOW()
                 );
             """)
+            # ★ 체험판 관리: tenants 테이블 (핵심 테이블과 함께 생성)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS tenants (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(200) NOT NULL,
+                    contact_name VARCHAR(100),
+                    contact_email VARCHAR(200),
+                    contact_phone VARCHAR(50),
+                    plan VARCHAR(20) DEFAULT 'trial',
+                    status VARCHAR(20) DEFAULT 'active',
+                    trial_start TIMESTAMP DEFAULT NOW(),
+                    trial_end TIMESTAMP DEFAULT (NOW() + INTERVAL '14 days'),
+                    max_users INTEGER DEFAULT 3,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+
             conn.commit()
-            print("[DB] 핵심 테이블 생성/확인 완료")
+            print("[DB] 핵심 테이블 + tenants 생성/확인 완료")
+
+            # users.tenant_id 추가
+            try:
+                cursor.execute("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns
+                            WHERE table_name = 'users' AND column_name = 'tenant_id'
+                        ) THEN
+                            ALTER TABLE users ADD COLUMN tenant_id INTEGER REFERENCES tenants(id);
+                        END IF;
+                    END $$;
+                """)
+                conn.commit()
+            except Exception:
+                conn.rollback()
 
             # meal_counts 테이블에 menu_order 컬럼 추가 (없으면)
             cursor.execute("""
@@ -772,7 +807,7 @@ async def startup_db_migration():
 
             conn.commit()
             cursor.close()
-            print("[DB] 마이그레이션 완료: 컬럼 추가 + 성능 인덱스 + 체험판 테이블")
+            print("[DB] 마이그레이션 완료: 컬럼 추가 + 성능 인덱스")
     except Exception as e:
         print(f"[DB] 마이그레이션 오류 (무시): {e}")
 
