@@ -37,7 +37,7 @@ async def login(request: Request):
                     SELECT u.id, u.username, u.password_hash, u.role, u.managed_site, sg.id as group_id
                     FROM users u
                     LEFT JOIN site_groups sg ON u.managed_site = sg.group_name
-                    WHERE u.username = %s AND u.is_active = true
+                    WHERE u.username = %s AND (u.is_active = TRUE OR u.is_active IS NULL)
                 """, (username,))
                 user = cursor.fetchone()
 
