@@ -183,3 +183,47 @@ async def extend_trial(request: Request):
     except Exception as e:
         print(f"[체험판] 연장 오류: {e}")
         return {"success": False, "error": str(e)}
+
+
+@router.post("/api/tenant/import-recipes")
+async def import_recipes(request: Request):
+    """레시피 일괄 import (관리자 전용)"""
+    try:
+        data = await request.json()
+        recipes = data.get('recipes', [])
+
+        if not recipes:
+            return {"success": False, "error": "레시피 데이터가 없습니다"}
+
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            imported = 0
+            ing_count = 0
+
+            for recipe in recipes:
+                cursor.execute("""
+                    INSERT INTO menu_recipes (recipe_name, base_name, category, cooking_note, cooking_yield_rate, suffix, prefix)
+                    VALUES (%s, %s, %s, %s, %s, '', '')
+                    RETURNING id
+                """, (recipe['recipe_name'], recipe['recipe_name'], recipe.get('category', ''),
+                      recipe.get('cooking_note', ''), recipe.get('cooking_yield_rate', 100)))
+                new_id = cursor.fetchone()[0]
+
+                for ing in recipe.get('ingredients', []):
+                    cursor.execute("""
+                        INSERT INTO menu_recipe_ingredients (recipe_id, ingredient_code, ingredient_name, specification, unit, quantity, selling_price, supplier_name, required_grams)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (new_id, ing.get('ingredient_code', ''), ing.get('ingredient_name', ''),
+                          ing.get('specification', ''), ing.get('unit', ''),
+                          ing.get('quantity', 0), ing.get('selling_price', 0),
+                          ing.get('supplier_name', ''), ing.get('required_grams', 0)))
+                    ing_count += 1
+
+                imported += 1
+
+            conn.commit()
+            cursor.close()
+            return {"success": True, "imported": imported, "ingredients": ing_count}
+    except Exception as e:
+        print(f"[Import] 레시피 import 오류: {e}")
+        return {"success": False, "error": str(e)}
