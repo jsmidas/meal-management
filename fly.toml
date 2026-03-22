@@ -1,24 +1,23 @@
-app = "daham-meal-management"
-primary_region = "nrt"  # 도쿄 리전
+# fly.toml app configuration file generated for meal-management-z6nrrq on 2026-03-22T16:29:39Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'meal-management-z6nrrq'
+primary_region = 'nrt'
 
 [build]
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 1
-
-[mounts]
-  source = "uploads_data"
-  destination = "/app/static/uploads"
+  min_machines_running = 0
+  processes = ['app']
 
 [[vm]]
-  memory = "1024mb"
-  cpu_kind = "shared"
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
-
-[env]
-  PORT = "8080"
-  PYTHONIOENCODING = "utf-8"
+  memory_mb = 512
