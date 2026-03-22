@@ -109,10 +109,165 @@ async def shutdown_cleanup():
 # 서버 시작 시 DB 마이그레이션 실행
 @app.on_event("startup")
 async def startup_db_migration():
-    """서버 시작 시 필요한 DB 컬럼 추가"""
+    """서버 시작 시 필요한 DB 테이블/컬럼 추가"""
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
+
+            # ★ 핵심 테이블 생성 (새 DB에서 필수)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(100) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    role VARCHAR(50) DEFAULT 'user',
+                    full_name VARCHAR(100),
+                    email VARCHAR(200),
+                    token TEXT,
+                    tenant_id INTEGER,
+                    created_at TIMESTAMP DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS site_groups (
+                    id SERIAL PRIMARY KEY,
+                    group_name VARCHAR(200) NOT NULL,
+                    display_order INTEGER DEFAULT 0,
+                    address TEXT,
+                    region TEXT,
+                    abbreviation VARCHAR(50),
+                    is_active BOOLEAN DEFAULT TRUE
+                );
+                CREATE TABLE IF NOT EXISTS site_categories (
+                    id SERIAL PRIMARY KEY,
+                    group_id INTEGER REFERENCES site_groups(id),
+                    category_code VARCHAR(50),
+                    category_name VARCHAR(200) NOT NULL,
+                    display_order INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT TRUE
+                );
+                CREATE TABLE IF NOT EXISTS recipe_categories (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    abbreviation VARCHAR(10),
+                    display_order INTEGER DEFAULT 0
+                );
+                CREATE TABLE IF NOT EXISTS menu_recipes (
+                    id SERIAL PRIMARY KEY,
+                    recipe_code VARCHAR(50),
+                    recipe_name VARCHAR(200) NOT NULL,
+                    base_name VARCHAR(200),
+                    prefix VARCHAR(50) DEFAULT '',
+                    suffix VARCHAR(50) DEFAULT '',
+                    category VARCHAR(100),
+                    category_id INTEGER,
+                    site_id INTEGER,
+                    cooking_note TEXT,
+                    cooking_yield_rate FLOAT DEFAULT 100,
+                    total_cost FLOAT DEFAULT 0,
+                    serving_size INTEGER DEFAULT 1,
+                    photo_path TEXT,
+                    scope VARCHAR(20) DEFAULT 'global',
+                    owner_site_id INTEGER,
+                    owner_group_id INTEGER,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS menu_recipe_ingredients (
+                    id SERIAL PRIMARY KEY,
+                    recipe_id INTEGER REFERENCES menu_recipes(id) ON DELETE CASCADE,
+                    ingredient_code VARCHAR(50),
+                    ingredient_name VARCHAR(200),
+                    specification VARCHAR(200),
+                    unit VARCHAR(50),
+                    quantity FLOAT DEFAULT 0,
+                    amount FLOAT DEFAULT 0,
+                    selling_price FLOAT DEFAULT 0,
+                    supplier_name VARCHAR(200),
+                    delivery_days INTEGER DEFAULT 0,
+                    required_grams FLOAT DEFAULT 0
+                );
+                CREATE TABLE IF NOT EXISTS ingredients (
+                    id SERIAL PRIMARY KEY,
+                    ingredient_code VARCHAR(50) UNIQUE,
+                    name VARCHAR(200),
+                    specification VARCHAR(200),
+                    unit VARCHAR(50),
+                    price FLOAT DEFAULT 0,
+                    price_per_unit FLOAT DEFAULT 0,
+                    supplier_name VARCHAR(200),
+                    category VARCHAR(100),
+                    base_weight_grams FLOAT DEFAULT 1000,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS suppliers (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(200) NOT NULL,
+                    contact_name VARCHAR(100),
+                    phone VARCHAR(50),
+                    email VARCHAR(200),
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS meal_plans (
+                    id SERIAL PRIMARY KEY,
+                    site_id INTEGER,
+                    plan_date DATE NOT NULL,
+                    slot_name VARCHAR(100),
+                    category VARCHAR(100),
+                    menus JSONB,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS orders (
+                    id SERIAL PRIMARY KEY,
+                    order_number VARCHAR(50),
+                    site_id INTEGER,
+                    order_date DATE,
+                    usage_date DATE,
+                    status VARCHAR(20) DEFAULT 'pending',
+                    order_type VARCHAR(20) DEFAULT 'regular',
+                    total_amount FLOAT DEFAULT 0,
+                    notes TEXT,
+                    template_id INTEGER,
+                    template_name VARCHAR(200),
+                    attendees INTEGER,
+                    merged_into VARCHAR(50),
+                    merged_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS order_items (
+                    id SERIAL PRIMARY KEY,
+                    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+                    ingredient_code VARCHAR(50),
+                    ingredient_name VARCHAR(200),
+                    specification VARCHAR(200),
+                    unit VARCHAR(50),
+                    unit_price FLOAT DEFAULT 0,
+                    required_qty FLOAT DEFAULT 0,
+                    order_qty FLOAT DEFAULT 0,
+                    total_price FLOAT DEFAULT 0,
+                    supplier_name VARCHAR(200),
+                    menu_name VARCHAR(200),
+                    recipe_id INTEGER
+                );
+                CREATE TABLE IF NOT EXISTS meal_counts (
+                    id SERIAL PRIMARY KEY,
+                    site_id INTEGER,
+                    count_date DATE,
+                    slot_name VARCHAR(200),
+                    category VARCHAR(100),
+                    client_name VARCHAR(200),
+                    meal_type VARCHAR(50),
+                    count INTEGER DEFAULT 0,
+                    menu_order INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                );
+            """)
+            conn.commit()
+            print("[DB] 핵심 테이블 생성/확인 완료")
 
             # meal_counts 테이블에 menu_order 컬럼 추가 (없으면)
             cursor.execute("""
