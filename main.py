@@ -987,6 +987,20 @@ async def serve_side_dish_position_guide():
 async def serve_backup_management():
     return FileResponse("backup_management.html")
 
+@app.get("/api/app-config")
+async def get_app_config():
+    """앱 설정 (모드, 타이틀 등) - 프론트엔드에서 사용"""
+    from core.config import APP_MODE, APP_TITLE
+    return {
+        "mode": APP_MODE,
+        "title": APP_TITLE,
+        "features": {
+            "categories": APP_MODE == "advanced",
+            "suffix": APP_MODE == "advanced",
+            "sibling_sync": APP_MODE == "advanced"
+        }
+    }
+
 @app.get("/config.js")
 async def serve_config():
     return FileResponse("config.js")

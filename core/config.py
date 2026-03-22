@@ -3,8 +3,12 @@ Configuration settings for the application
 """
 import os
 
+# App Mode: "simple" (카테고리 숨김, suffix 없음) / "advanced" (다함푸드 전체 기능)
+APP_MODE = os.getenv("APP_MODE", "simple")
+APP_TITLE = os.getenv("APP_TITLE", "급식관리 시스템")
+
 # JWT Settings
-SECRET_KEY = os.environ.get("SECRET_KEY") or "daham_meal_secret_key_2025_dev_only"
+SECRET_KEY = os.environ.get("SECRET_KEY") or "meal_mgmt_secret_key_2025_dev_only"
 if not os.environ.get("SECRET_KEY"):
     print("[WARNING] SECRET_KEY not set - using dev default. Set SECRET_KEY env var in production.")
 ALGORITHM = "HS256"
