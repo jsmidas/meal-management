@@ -12,6 +12,8 @@
     const PUBLIC_PAGES = [
         '/login.html',
         '/login',
+        '/register.html',
+        '/register',
         '/supplier_login.html',
         '/supplier_login'
     ];

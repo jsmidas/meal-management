@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>체험판 가입 - 급식관리 시스템</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 100%; max-width: 480px; padding: 40px; }
+        .header { text-align: center; margin-bottom: 32px; }
+        .header h1 { font-size: 24px; color: #333; margin-bottom: 8px; }
+        .header p { color: #666; font-size: 14px; }
+        .trial-badge { display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
+        .required { color: #ef4444; }
+        .form-group input { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .form-group input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .link { text-align: center; margin-top: 20px; font-size: 13px; color: #666; }
+        .link a { color: #667eea; text-decoration: none; font-weight: 600; }
+        .features { background: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+        .features h3 { font-size: 13px; color: #333; margin-bottom: 8px; }
+        .features ul { list-style: none; font-size: 12px; color: #666; }
+        .features ul li { padding: 3px 0; }
+        .features ul li::before { content: "¸5 "; }
+        .error-msg { color: #ef4444; font-size: 13px; margin-top: 10px; text-align: center; display: none; }
+        .success-msg { text-align: center; display: none; }
+        .success-msg h2 { color: #22c55e; margin-bottom: 12px; }
+        .success-msg p { color: #666; font-size: 14px; margin-bottom: 20px; line-height: 1.8; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="registerForm">
+        <div class="header">
+            <div class="trial-badge">14일 무료 체험</div>
+            <h1>급식관리 시스템</h1>
+            <p>체험판 가입으로 모든 기능을 경험하세요</p>
+        </div>
+        <div class="features">
+            <h3>체험판에 포함된 기능</h3>
+            <ul>
+                <li>식단표 작성 및 관리</li>
+                <li>레시피 등록 및 원가 분석</li>
+                <li>자동 발주량 계산</li>
+                <li>조리/소분/전처리 지시서</li>
+                <li>식재료비 분석</li>
+            </ul>
+        </div>
+        <div class="form-group"><label>업체명 <span class="required">*</span></label><input type="text" id="companyName" placeholder="예: OO급식"></div>
+        <div class="form-row">
+            <div class="form-group"><label>담당자명</label><input type="text" id="contactName" placeholder="홍길동"></div>
+            <div class="form-group"><label>연락처</label><input type="tel" id="contactPhone" placeholder="010-0000-0000"></div>
+        </div>
+        <div class="form-group"><label>이메일</label><input type="email" id="contactEmail" placeholder="example@email.com"></div>
+        <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+        <div class="form-group"><label>아이디 <span class="required">*</span></label><input type="text" id="username" placeholder="영문/숫자 조합"></div>
+        <div class="form-group"><label>비밀번호 <span class="required">*</span></label><input type="password" id="password" placeholder="4자 이상"></div>
+        <div class="form-group"><label>비밀번호 확인 <span class="required">*</span></label><input type="password" id="passwordConfirm" placeholder="비밀번호 재입력"></div>
+        <div class="error-msg" id="errorMsg"></div>
+        <button class="btn" id="registerBtn" onclick="submitRegister()">무료 체험 시작하기</button>
+        <div class="link">이미 계정이 있으신가요? <a href="/login.html">로그인</a></div>
+    </div>
+    <div class="success-msg" id="successMsg">
+        <h2>가입 완료!</h2>
+        <p id="successDetail"></p>
+        <button class="btn" onclick="location.href='/login.html'">로그인하러 가기</button>
+    </div>
+</div>
+<script>
+async function submitRegister() {
+    var btn = document.getElementById("registerBtn");
+    var errorEl = document.getElementById("errorMsg");
+    errorEl.style.display = "none";
+    var companyName = document.getElementById("companyName").value.trim();
+    var username = document.getElementById("username").value.trim();
+    var password = document.getElementById("password").value;
+    var passwordConfirm = document.getElementById("passwordConfirm").value;
+    if (!companyName) return showError("업체명을 입력하세요");
+    if (!username) return showError("아이디를 입력하세요");
+    if (!password) return showError("비밀번호를 입력하세요");
+    if (password !== passwordConfirm) return showError("비밀번호가 일치하지 않습니다");
+    if (password.length < 4) return showError("비밀번호는 4자 이상이어야 합니다");
+    btn.disabled = true;
+    btn.textContent = "가입 처리 중...";
+    try {
+        var response = await fetch("/api/tenant/register", {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                company_name: companyName,
+                contact_name: document.getElementById("contactName").value.trim(),
+                contact_email: document.getElementById("contactEmail").value.trim(),
+                contact_phone: document.getElementById("contactPhone").value.trim(),
+                username: username, password: password
+            })
+        });
+        var data = await response.json();
+        if (data.success) {
+            document.getElementById("registerForm").style.display = "none";
+            document.getElementById("successMsg").style.display = "block";
+            document.getElementById("successDetail").innerHTML =
+                "<strong>" + companyName + "</strong> 체험판이 활성화되었습니다.<br>" +
+                "아이디: <strong>" + data.username + "</strong><br>" +
+                "체험 기간: ~" + data.trial_end;
+        } else {
+            showError(data.error);
+            btn.disabled = false; btn.textContent = "무료 체험 시작하기";
+        }
+    } catch(e) {
+        showError("서버 연결에 실패했습니다");
+        btn.disabled = false; btn.textContent = "무료 체험 시작하기";
+    }
+}
+function showError(msg) { var el = document.getElementById("errorMsg"); el.textContent = msg; el.style.display = "block"; }
+</script>
+</body>
+</html>

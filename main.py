@@ -63,7 +63,7 @@ from utils.batch_calculation import run_batch_calculation, batch_calculation_sta
 
 from datetime import datetime, timedelta
 # 라우터 임포트
-from routers import ingredients, auth, users, suppliers, recipes, admin, site_structure, user_context, orders, order_instructions, order_calculation, supplier_portal, uploads, notices, system_requests, sales, instructions, ingredient_bulk_change, health_certificates, event_templates, events, event_orders, backup, hierarchy, meal_counts, meal_templates, meal_slot_settings
+from routers import ingredients, auth, users, suppliers, recipes, admin, site_structure, user_context, orders, order_instructions, order_calculation, supplier_portal, uploads, notices, system_requests, sales, instructions, ingredient_bulk_change, health_certificates, event_templates, events, event_orders, backup, hierarchy, meal_counts, meal_templates, meal_slot_settings, tenants
 # 설정값
 from core.config import APP_MODE, APP_TITLE as _CONFIG_TITLE
 APP_TITLE = _CONFIG_TITLE
@@ -390,9 +390,41 @@ async def startup_db_migration():
                 except Exception as idx_err:
                     print(f"[DB] 인덱스 {idx_name} 생성 스킵: {idx_err}")
 
+            # ★ 체험판 관리: tenants 테이블
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS tenants (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(200) NOT NULL,
+                    contact_name VARCHAR(100),
+                    contact_email VARCHAR(200),
+                    contact_phone VARCHAR(50),
+                    plan VARCHAR(20) DEFAULT 'trial',
+                    status VARCHAR(20) DEFAULT 'active',
+                    trial_start TIMESTAMP DEFAULT NOW(),
+                    trial_end TIMESTAMP DEFAULT (NOW() + INTERVAL '14 days'),
+                    max_users INTEGER DEFAULT 3,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+            print("[DB] tenants 테이블 확인/생성 완료")
+
+            # users 테이블에 tenant_id 컬럼 추가
+            cursor.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'users' AND column_name = 'tenant_id'
+                    ) THEN
+                        ALTER TABLE users ADD COLUMN tenant_id INTEGER REFERENCES tenants(id);
+                    END IF;
+                END $$;
+            """)
+
             conn.commit()
             cursor.close()
-            print("[DB] 마이그레이션 완료: 컬럼 추가 + 성능 인덱스 확인/생성")
+            print("[DB] 마이그레이션 완료: 컬럼 추가 + 성능 인덱스 + 체험판 테이블")
     except Exception as e:
         print(f"[DB] 마이그레이션 오류 (무시): {e}")
 
@@ -782,6 +814,7 @@ app.include_router(hierarchy.router, tags=["계층구조"])
 app.include_router(meal_counts.router, tags=["식수관리"])
 app.include_router(meal_templates.router, tags=["식단템플릿"])
 app.include_router(meal_slot_settings.router, tags=["슬롯설정"])
+app.include_router(tenants.router, tags=["체험판"])
 
 # 백업 시스템 초기화
 try:
