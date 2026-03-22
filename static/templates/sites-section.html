@@ -1,0 +1,338 @@
+<!-- 급식사업장 관리 컨텐츠 -->
+<div class="content-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>급식사업장 관리</h2>
+        <button class="btn btn-primary" onclick="showAddSiteModal()" style="padding: 10px 20px; background: #4a90d9; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+            <i class="fas fa-plus"></i> 급식사업장 추가
+        </button>
+    </div>
+
+    <!-- 사업장 통계 카드 -->
+    <div style="display: flex !important; gap: 20px !important; margin-bottom: 20px !important;">
+        <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; display: flex; align-items: center; gap: 15px; flex: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="font-size: 32px; opacity: 0.8;">🏢</div>
+            <div style="flex: 1;">
+                <div style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 4px;" id="totalSites">0</div>
+                <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">전체 급식사업장</div>
+            </div>
+        </div>
+        <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; display: flex; align-items: center; gap: 15px; flex: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="font-size: 32px; opacity: 0.8;">✅</div>
+            <div style="flex: 1;">
+                <div style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 4px;" id="activeSites">0</div>
+                <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">활성 급식사업장</div>
+            </div>
+        </div>
+        <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; display: flex; align-items: center; gap: 15px; flex: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="font-size: 32px; opacity: 0.8;">📍</div>
+            <div style="flex: 1;">
+                <div style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 4px;" id="regionCount">0</div>
+                <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">운영 지역</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사업장 리스트 테이블 -->
+    <div class="table-container" style="margin-top: 30px;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>코드</th>
+                    <th>사업장명</th>
+                    <th>약어</th>
+                    <th>유형</th>
+                    <th>지역</th>
+                    <th>담당자</th>
+                    <th>연락처</th>
+                    <th>카테고리</th>
+                    <th>발주 협력업체</th>
+                    <th>상태</th>
+                    <th>작업</th>
+                </tr>
+            </thead>
+            <tbody id="sitesTableBody">
+                <tr>
+                    <td colspan="11" class="loading">데이터 로딩 중...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 사업장 수정 모달 -->
+    <style>
+        /* 모달 스타일 - 가독성 개선 */
+        #siteEditModal .modal-content,
+        #siteAddModal .modal-content {
+            max-height: 90vh !important;
+            margin: 2% auto !important;
+            width: 560px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        #siteEditModal .modal-header,
+        #siteAddModal .modal-header {
+            padding: 14px 18px !important;
+            background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%) !important;
+            border-radius: 12px 12px 0 0 !important;
+            flex-shrink: 0 !important;
+        }
+        #siteEditModal .modal-header h2,
+        #siteAddModal .modal-header h2 {
+            font-size: 17px !important;
+            color: #fff !important;
+            font-weight: 600 !important;
+        }
+        #siteEditModal .modal-body,
+        #siteAddModal .modal-body {
+            padding: 16px 20px !important;
+            max-height: calc(90vh - 130px) !important;
+            overflow-y: auto !important;
+            flex: 1 !important;
+        }
+        #siteEditModal .modal-footer,
+        #siteAddModal .modal-footer {
+            padding: 12px 18px !important;
+            border-top: 1px solid #e9ecef !important;
+            background: #f8f9fa !important;
+            border-radius: 0 0 12px 12px !important;
+            flex-shrink: 0 !important;
+        }
+        #siteEditModal .form-group,
+        #siteAddModal .form-group {
+            margin-bottom: 12px !important;
+        }
+        #siteEditModal .form-group label,
+        #siteAddModal .form-group label {
+            margin-bottom: 4px !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            color: #495057 !important;
+        }
+        #siteEditModal .form-control,
+        #siteAddModal .form-control {
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+            height: 36px !important;
+            border-radius: 6px !important;
+            border: 1px solid #ced4da !important;
+        }
+        #siteEditModal .form-control:focus,
+        #siteAddModal .form-control:focus {
+            border-color: #4a90d9 !important;
+            box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15) !important;
+        }
+        #siteEditModal .btn,
+        #siteAddModal .btn {
+            padding: 8px 20px !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            border-radius: 6px !important;
+        }
+        #siteEditModal .close,
+        #siteAddModal .close {
+            font-size: 22px !important;
+            line-height: 16px !important;
+            color: #fff !important;
+            opacity: 0.8 !important;
+        }
+        #siteEditModal .close:hover,
+        #siteAddModal .close:hover {
+            opacity: 1 !important;
+        }
+
+        /* 협력업체 체크박스 그리드 스타일 */
+        .supplier-checkbox-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 8px !important;
+            padding: 12px !important;
+            background: #f8f9fa !important;
+            border: 1px solid #e0e0e0 !important;
+            border-radius: 8px !important;
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+        .supplier-checkbox-item {
+            display: flex !important;
+            align-items: center !important;
+            padding: 8px 10px !important;
+            background: #fff !important;
+            border: 1px solid #e0e0e0 !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+        }
+        .supplier-checkbox-item:hover {
+            border-color: #4a90d9 !important;
+            background: #f0f7ff !important;
+        }
+        .supplier-checkbox-item.checked {
+            border-color: #4a90d9 !important;
+            background: #e8f2fc !important;
+        }
+        .supplier-checkbox-item input[type="checkbox"] {
+            width: 16px !important;
+            height: 16px !important;
+            margin-right: 8px !important;
+            accent-color: #4a90d9 !important;
+            cursor: pointer !important;
+        }
+        .supplier-checkbox-item .supplier-info {
+            flex: 1 !important;
+            min-width: 0 !important;
+        }
+        .supplier-checkbox-item .supplier-name {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+            color: #333 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+        .supplier-checkbox-item .supplier-count {
+            font-size: 10px !important;
+            color: #888 !important;
+            margin-top: 2px !important;
+        }
+    </style>
+    <div id="siteEditModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="siteModalTitle">급식사업장 수정</h2>
+                <span class="close" onclick="closeSiteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="siteEditForm">
+                    <input type="hidden" id="editSiteId">
+
+                    <div class="form-group">
+                        <label for="editSiteCode">사업장 코드:</label>
+                        <input type="text" id="editSiteCode" class="form-control" readonly style="background-color: #e9ecef;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editSiteName">사업장명:</label>
+                        <input type="text" id="editSiteName" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editSiteAbbreviation">약어 (레시피명 접두사):</label>
+                        <input type="text" id="editSiteAbbreviation" class="form-control" maxlength="10" placeholder="예: 영남, 산단">
+                        <small style="color: #666; font-size: 11px;">레시피 저장 시 자동 접두사로 사용됩니다 (예: 영남-된장찌개)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editSiteHasCategories" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="editSiteHasCategories" style="width: 18px; height: 18px; cursor: pointer;">
+                            <span>카테고리별 레시피 사용</span>
+                        </label>
+                        <small style="color: #666; font-size: 11px;">체크 시 도시락, 운반 등 카테고리별로 별도 레시피를 관리합니다</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editSiteType">사업장 유형:</label>
+                        <select id="editSiteType" class="form-control">
+                            <option value="급식업체">급식업체</option>
+                            <option value="도시락업체">도시락업체</option>
+                            <option value="운송업체">운송업체</option>
+                            <option value="의료업체">의료업체</option>
+                            <option value="교육기관">교육기관</option>
+                            <option value="요양시설">요양시설</option>
+                            <option value="산업체">산업체</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editSiteRegion">주소 (배송시 사용) *</label>
+                        <input type="text" id="editSiteRegion" class="form-control" required placeholder="예: 대구시 달서구 성서공단로 123">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editSiteManager">담당자:</label>
+                        <input type="text" id="editSiteManager" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editSitePhone">연락처:</label>
+                        <input type="text" id="editSitePhone" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editSiteStatus">상태:</label>
+                        <select id="editSiteStatus" class="form-control">
+                            <option value="true">활성</option>
+                            <option value="false">비활성</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editContractEndDate">거래 종료일:</label>
+                        <input type="date" id="editContractEndDate" class="form-control">
+                        <small style="color: #666; font-size: 11px;">거래 종료일을 설정하면 해당 날짜 이후 발주/식단 등에서 자동으로 숨겨집니다</small>
+                    </div>
+
+                    <!-- 협력업체 선택 섹션 -->
+                    <div class="form-group" style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed #ddd;">
+                        <label style="font-weight: 600; color: #333; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <span style="color: #4a90d9;">&#9733;</span> 발주 가능 협력업체
+                        </label>
+                        <div id="supplierCheckboxList" class="supplier-checkbox-grid" style="max-height: none !important; overflow: visible !important; min-height: 200px;">
+                            <div style="grid-column: 1/-1; color: #999; text-align: center; padding: 20px;">협력업체 목록 로딩 중...</div>
+                        </div>
+                        <div style="margin-top: 8px; padding: 8px 12px; background: #fff8e1; border-radius: 6px; border-left: 3px solid #ffc107;">
+                            <small style="color: #856404; font-size: 11px;">선택한 협력업체의 식자재만 발주할 수 있습니다.</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeSiteModal()">취소</button>
+                <button type="button" class="btn btn-primary" onclick="saveSiteChanges()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사업장 추가 모달 -->
+    <div id="siteAddModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>새 급식사업장 추가</h2>
+                <span class="close" onclick="closeAddSiteModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="siteAddForm">
+                    <!-- 급식관리 사업장(위탁급식)만 추가 -->
+                    <input type="hidden" id="newSiteCategory" value="management">
+                    <input type="hidden" id="newSiteType" value="위탁급식">
+
+                    <div class="form-group">
+                        <label for="newSiteName">사업장명 *</label>
+                        <input type="text" id="newSiteName" class="form-control" required placeholder="예: 새로운 위탁급식 사업장">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newSiteRegion">주소 (배송시 사용)</label>
+                        <input type="text" id="newSiteRegion" class="form-control" placeholder="예: 대구시 달서구 성서공단로 123">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newSiteManager">담당자:</label>
+                        <input type="text" id="newSiteManager" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newSitePhone">연락처:</label>
+                        <input type="text" id="newSitePhone" class="form-control">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAddSiteModal()">취소</button>
+                <button type="button" class="btn btn-primary" onclick="addNewSite()">추가</button>
+            </div>
+        </div>
+    </div>
+

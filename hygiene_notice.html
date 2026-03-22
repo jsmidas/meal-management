@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title>위생안전 알림 - 급식관리 시스템</title>
+    <link rel="icon" type="image/x-icon" href="static/favicon.ico">
+
+    <!-- 외부 라이브러리 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- 공통 CSS -->
+    <link rel="stylesheet" href="static/css/common-sidebar.css">
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <link rel="stylesheet" href="static/css/site-selector.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f8f9fa;
+            overflow-x: hidden;
+        }
+
+        .main-content {
+            margin-left: 180px;
+            padding: 20px;
+            min-height: 100vh;
+            transition: margin-left 0.3s;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #e74c3c;
+        }
+
+        .btn-primary:hover {
+            background: #ffeaea;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .btn-danger {
+            background: #c0392b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #a93226;
+        }
+
+        /* 공지 목록 */
+        .notice-list {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .notice-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .notice-item:hover {
+            background: #f8f9fa;
+        }
+
+        .notice-item:last-child {
+            border-bottom: none;
+        }
+
+        .notice-item.unread {
+            background: #fff5f5;
+        }
+
+        .notice-item.urgent {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .notice-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e74c3c;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .notice-icon.urgent {
+            background: #c0392b;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .notice-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notice-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notice-title .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #e74c3c;
+            color: white;
+        }
+
+        .notice-preview {
+            font-size: 13px;
+            color: #7f8c8d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .notice-meta {
+            text-align: right;
+            font-size: 12px;
+            color: #95a5a6;
+            flex-shrink: 0;
+        }
+
+        .notice-meta .date {
+            margin-bottom: 3px;
+        }
+
+        .notice-meta .author {
+            color: #e74c3c;
+        }
+
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 폼 스타일 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* 첨부파일 */
+        .file-upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-upload-area:hover {
+            border-color: #e74c3c;
+            background: #fff5f5;
+        }
+
+        .file-upload-area i {
+            font-size: 40px;
+            color: #bdc3c7;
+            margin-bottom: 10px;
+        }
+
+        .uploaded-files {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .uploaded-file {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .uploaded-file .remove {
+            cursor: pointer;
+            color: #e74c3c;
+        }
+
+        /* 상세보기 */
+        .notice-detail-header {
+            margin-bottom: 20px;
+        }
+
+        .notice-detail-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .notice-detail-meta {
+            font-size: 13px;
+            color: #7f8c8d;
+            display: flex;
+            gap: 20px;
+        }
+
+        .notice-detail-content {
+            line-height: 1.8;
+            color: #2c3e50;
+        }
+
+        .notice-detail-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .notice-attachments {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .notice-attachments h4 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .attachment-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .attachment-item img {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 4px;
+        }
+
+        /* 경고 배너 */
+        .warning-banner {
+            background: #fef3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .warning-banner i {
+            font-size: 24px;
+            color: #856404;
+        }
+
+        .warning-banner p {
+            color: #856404;
+            font-size: 14px;
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: #bdc3c7;
+        }
+
+        /* 페이지네이션 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pagination button.active {
+            background: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 사이드바 -->
+    <nav class="sidebar" id="sidebar">
+        <div class="logo">
+            <img src="static/images/logo.png" alt="다함푸드 로고">
+        </div>
+        <div class="nav-menu" id="nav-menu"></div>
+    </nav>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-shield-alt"></i> 위생안전 알림</h1>
+                <p style="margin-top: 5px; opacity: 0.9;">위생 및 안전 관련 공지사항</p>
+            </div>
+        </div>
+
+        <!-- 경고 배너 (긴급 공지 있을 때) -->
+        <div class="warning-banner" id="urgentBanner" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p id="urgentMessage">긴급 위생안전 공지가 있습니다. 확인해주세요.</p>
+        </div>
+
+        <!-- 공지 목록 -->
+        <div class="notice-list" id="noticeList">
+            <div class="empty-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>알림을 불러오는 중...</p>
+            </div>
+        </div>
+
+        <!-- 페이지네이션 -->
+        <div class="pagination" id="pagination"></div>
+    </main>
+
+    <!-- 공지 상세 모달 -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>위생안전 알림 상세</h2>
+                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="detailBody">
+                <!-- 동적으로 채워짐 -->
+            </div>
+            <div class="modal-footer" id="detailFooter">
+                <button class="btn btn-secondary" onclick="closeDetailModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 공통 사이드바 -->
+    <script src="static/js/common-sidebar.js"></script>
+
+    <script>
+        // 상태 변수
+        let currentUser = null;
+        let notices = [];
+        let currentPage = 1;
+        let totalPages = 1;
+        const ITEMS_PER_PAGE = 15;
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadUserInfo();
+            await loadNotices();
+        });
+
+        // 사용자 정보 로드
+        async function loadUserInfo() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    currentUser = JSON.parse(userStr);
+                }
+            } catch (error) {
+                console.error('사용자 정보 로드 실패:', error);
+            }
+        }
+
+        // 공지사항 목록 로드
+        async function loadNotices() {
+            try {
+                const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+                const userId = currentUser?.id || 0;
+
+                const response = await fetch(`/api/notices?notice_type=hygiene&limit=${ITEMS_PER_PAGE}&offset=${offset}&user_id=${userId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    notices = result.data.notices;
+                    totalPages = Math.ceil(result.data.total / ITEMS_PER_PAGE);
+                    renderNotices();
+                    renderPagination();
+                    checkUrgentNotices();
+                } else {
+                    showError('알림을 불러오지 못했습니다.');
+                }
+            } catch (error) {
+                console.error('알림 로드 실패:', error);
+                showError('서버 연결에 실패했습니다.');
+            }
+        }
+
+        // 긴급 공지 확인
+        function checkUrgentNotices() {
+            const urgentNotices = notices.filter(n => n.is_urgent && !n.is_read);
+            const banner = document.getElementById('urgentBanner');
+
+            if (urgentNotices.length > 0) {
+                banner.style.display = 'flex';
+                document.getElementById('urgentMessage').textContent =
+                    `${urgentNotices.length}개의 긴급 위생안전 알림이 있습니다. 확인해주세요.`;
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
+        // 공지 목록 렌더링
+        function renderNotices() {
+            const container = document.getElementById('noticeList');
+
+            if (notices.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-shield-alt"></i>
+                        <p>등록된 위생안전 알림이 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = notices.map(notice => `
+                <div class="notice-item ${notice.is_read ? '' : 'unread'} ${notice.is_urgent ? 'urgent' : ''}"
+                     onclick="openDetailModal(${notice.id})">
+                    <div class="notice-icon ${notice.is_urgent ? 'urgent' : ''}">
+                        <i class="fas ${notice.is_urgent ? 'fa-exclamation-triangle' : 'fa-shield-alt'}"></i>
+                    </div>
+                    <div class="notice-info">
+                        <div class="notice-title">
+                            ${notice.is_urgent ? '<span class="badge">긴급</span>' : ''}
+                            ${notice.title}
+                        </div>
+                        <div class="notice-preview">${stripHtmlTags(notice.content) || '(내용 없음)'}</div>
+                    </div>
+                    <div class="notice-meta">
+                        <div class="date">${formatDate(notice.created_at)}</div>
+                        <div class="author">${notice.author_name || '본사'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 페이지네이션 렌더링
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>이전</button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += `<button disabled>...</button>`;
+                }
+            }
+
+            html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>다음</button>`;
+
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            loadNotices();
+        }
+
+        // 상세 모달 열기
+        async function openDetailModal(noticeId) {
+            try {
+                const userId = currentUser?.id || 0;
+                const response = await fetch(`/api/notices/${noticeId}?user_id=${userId}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert('알림을 불러오지 못했습니다.');
+                    return;
+                }
+
+                const notice = result.data;
+
+                let attachmentsHtml = '';
+                if (notice.attachments && notice.attachments.length > 0) {
+                    attachmentsHtml = `
+                        <div class="notice-attachments">
+                            <h4><i class="fas fa-paperclip"></i> 첨부파일</h4>
+                            ${notice.attachments.map(att => `
+                                <div class="attachment-item">
+                                    <img src="${att.file_path}" alt="${att.file_name}">
+                                    <span>${att.file_name}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                document.getElementById('detailBody').innerHTML = `
+                    <div class="notice-detail-header">
+                        <div class="notice-detail-title">
+                            ${notice.is_urgent ? '<span class="badge" style="font-size:12px;">긴급</span> ' : ''}
+                            ${notice.title}
+                        </div>
+                        <div class="notice-detail-meta">
+                            <span><i class="fas fa-user"></i> ${notice.author_name || '본사'}</span>
+                            <span><i class="fas fa-clock"></i> ${formatDateTime(notice.created_at)}</span>
+                            <span><i class="fas fa-eye"></i> ${getTargetText(notice)}</span>
+                        </div>
+                    </div>
+                    <div class="notice-detail-content">${notice.content || '(내용 없음)'}</div>
+                    ${attachmentsHtml}
+                `;
+
+                document.getElementById('detailModal').classList.add('active');
+
+                loadNotices();
+
+            } catch (error) {
+                console.error('상세 조회 실패:', error);
+                alert('알림을 불러오지 못했습니다.');
+            }
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        // 유틸리티 함수
+        function stripHtmlTags(html) {
+            if (!html) return '';
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) {
+                return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            } else if (diffDays < 7) {
+                return `${diffDays}일 전`;
+            } else {
+                return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+            }
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '';
+            return new Date(dateStr).toLocaleString('ko-KR', {
+                year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function getTargetText(notice) {
+            if (notice.target_type === 'all') return '전체';
+            if (notice.target_type === 'group') return '그룹 지정';
+            if (notice.target_type === 'site') return '사업장 지정';
+            return '';
+        }
+
+        function showError(message) {
+            document.getElementById('noticeList').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>

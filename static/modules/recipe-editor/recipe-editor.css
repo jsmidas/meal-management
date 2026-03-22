@@ -1,0 +1,605 @@
+/* 레시피 편집기 모달 스타일 */
+
+.recipe-editor-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.recipe-editor-modal {
+    background: white;
+    width: 90%;
+    max-width: 1000px;
+    height: 85vh;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* 모달 헤더 */
+.recipe-editor-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.recipe-editor-title {
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recipe-editor-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    line-height: 1;
+}
+
+.recipe-editor-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* 모달 바디 */
+.recipe-editor-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* 레시피 정보 패널 */
+.recipe-info-panel {
+    flex: 0.65;
+    padding: 20px;
+    border-right: 1px solid #e2e8f0;
+    overflow-y: auto;
+}
+
+.recipe-basic-info {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.recipe-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.recipe-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #718096;
+}
+
+.recipe-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 재료 목록 섹션 */
+.ingredients-section {
+    margin-bottom: 24px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-add-ingredient {
+    margin-left: auto;
+    padding: 6px 12px;
+    background: #38a169;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-add-ingredient:hover {
+    background: #2f855a;
+}
+
+.btn-add-first {
+    margin-top: 12px;
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.btn-add-first:hover {
+    background: #5a67d8;
+}
+
+/* 재료 아이템 */
+.ingredient-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: all 0.2s;
+    gap: 12px;
+}
+
+.ingredient-item:hover {
+    border-color: #3182ce;
+    box-shadow: 0 2px 8px rgba(49, 130, 206, 0.1);
+}
+
+.ingredient-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ingredient-name {
+    font-weight: 500;
+    color: #2d3748;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ingredient-spec {
+    font-size: 11px;
+    color: #718096;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ingredient-price-info {
+    font-size: 11px;
+    color: #38a169;
+    margin-top: 2px;
+}
+
+/* 재료 편집 영역 */
+.ingredient-edit {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.quantity-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.quantity-input {
+    width: 80px;
+    padding: 6px 8px;
+    border: 1px solid #d2d6dc;
+    border-radius: 4px;
+    font-size: 13px;
+    text-align: right;
+}
+
+.quantity-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.unit-label {
+    font-size: 12px;
+    color: #718096;
+    min-width: 30px;
+}
+
+.cost-display {
+    min-width: 80px;
+    text-align: right;
+}
+
+.amount-value {
+    font-weight: 500;
+    color: #2d3748;
+    font-size: 13px;
+}
+
+/* 재료 액션 버튼 */
+.ingredient-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.btn-replace {
+    padding: 4px 8px;
+    background: #edf2f7;
+    color: #4a5568;
+    border: 1px solid #d2d6dc;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-replace:hover {
+    background: #e2e8f0;
+    border-color: #a0aec0;
+}
+
+.btn-remove {
+    padding: 4px 8px;
+    background: #fed7d7;
+    color: #c53030;
+    border: 1px solid #fc8181;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.btn-remove:hover {
+    background: #feb2b2;
+}
+
+/* 최적화/원가 패널 */
+.optimization-panel {
+    flex: 0.35;
+    padding: 20px;
+    background: #f7fafc;
+    overflow-y: auto;
+}
+
+.optimization-summary {
+    background: linear-gradient(135deg, #e6fffa, #b2f5ea);
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #38a169;
+}
+
+.optimization-title {
+    font-weight: 600;
+    color: #22543d;
+    margin-bottom: 8px;
+}
+
+.total-cost {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2d3748;
+}
+
+.cost-detail {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.cost-increase {
+    color: #c53030;
+}
+
+.cost-decrease {
+    color: #38a169;
+}
+
+/* 변경 내역 섹션 */
+.changes-section {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.changes-title {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.change-item {
+    padding: 8px 12px;
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #92400e;
+    border-radius: 0 4px 4px 0;
+}
+
+/* 푸터 */
+.recipe-editor-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-info {
+    font-size: 12px;
+    color: #718096;
+}
+
+.footer-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-secondary {
+    padding: 10px 20px;
+    border: 1px solid #d2d6dc;
+    background: white;
+    color: #374151;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.btn-primary {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* ===== 재료 검색 모달 ===== */
+.ingredient-search-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+}
+
+.search-modal-content {
+    background: white;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.search-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.search-modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #2d3748;
+}
+
+.search-modal-header button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #718096;
+    line-height: 1;
+}
+
+.search-modal-header button:hover {
+    color: #2d3748;
+}
+
+.search-modal-body {
+    padding: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.search-input-wrapper {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.search-input-wrapper input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid #d2d6dc;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.search-input-wrapper input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.search-input-wrapper button {
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.search-input-wrapper button:hover {
+    background: #5a67d8;
+}
+
+/* 검색 결과 아이템 */
+.search-result-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    grid-template-rows: auto auto;
+    gap: 4px 12px;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.search-result-item:hover {
+    border-color: #667eea;
+    background: #f7fafc;
+}
+
+.result-name {
+    grid-column: 1;
+    grid-row: 1;
+    font-weight: 500;
+    color: #2d3748;
+}
+
+.result-spec {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: 11px;
+    color: #718096;
+}
+
+.result-price {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+    font-weight: 500;
+    color: #38a169;
+    font-size: 13px;
+}
+
+.result-supplier {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    align-self: center;
+    font-size: 11px;
+    color: #718096;
+    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .recipe-editor-modal {
+        width: 95%;
+        height: 90vh;
+    }
+
+    .recipe-editor-body {
+        flex-direction: column;
+    }
+
+    .recipe-info-panel,
+    .optimization-panel {
+        flex: none;
+    }
+
+    .recipe-info-panel {
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+        max-height: 60%;
+    }
+
+    .ingredient-item {
+        flex-wrap: wrap;
+    }
+
+    .ingredient-info {
+        flex: 1 1 100%;
+        margin-bottom: 8px;
+    }
+
+    .ingredient-edit {
+        flex: 1;
+    }
+
+    .search-result-item {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto;
+    }
+
+    .result-price,
+    .result-supplier {
+        grid-column: 1;
+        grid-row: auto;
+    }
+}

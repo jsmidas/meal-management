@@ -1,0 +1,464 @@
+/**
+ * 사업장 구조 관리 스타일
+ */
+
+/* 래퍼 */
+.ssm-wrapper {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* 로딩 */
+.ssm-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.ssm-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #3182ce;
+    border-radius: 50%;
+    animation: ssm-spin 0.8s linear infinite;
+}
+
+@keyframes ssm-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 헤더 */
+.ssm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.ssm-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a202c;
+}
+
+.ssm-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* 버튼 */
+.ssm-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ssm-btn-primary {
+    background: #3182ce;
+    color: white;
+}
+
+.ssm-btn-primary:hover {
+    background: #2c5282;
+}
+
+.ssm-btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.ssm-btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+.ssm-btn-icon {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.ssm-btn-icon:hover {
+    opacity: 1;
+}
+
+/* 그룹 */
+.ssm-group {
+    margin-bottom: 12px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.ssm-group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.ssm-group-header:hover {
+    filter: brightness(1.05);
+}
+
+.ssm-expand-btn {
+    font-size: 10px;
+    transition: transform 0.2s;
+}
+
+.ssm-group.expanded > .ssm-group-header .ssm-expand-btn {
+    transform: rotate(90deg);
+}
+
+.ssm-group-name {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.ssm-group-code {
+    opacity: 0.8;
+    font-size: 12px;
+}
+
+.ssm-badge {
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    font-size: 11px;
+}
+
+.ssm-group-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+}
+
+.ssm-group-actions .ssm-btn-icon {
+    color: white;
+    opacity: 0.8;
+}
+
+.ssm-group-content {
+    display: none;
+    padding: 12px 20px 20px;
+    background: #f8fafc;
+}
+
+.ssm-group.expanded > .ssm-group-content {
+    display: block;
+}
+
+/* 카테고리 */
+.ssm-category {
+    margin-bottom: 8px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.ssm-category-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #edf2f7;
+    cursor: pointer;
+}
+
+.ssm-category-header:hover {
+    background: #e2e8f0;
+}
+
+.ssm-category.expanded > .ssm-category-header .ssm-expand-btn {
+    transform: rotate(90deg);
+}
+
+.ssm-category-name {
+    font-weight: 500;
+    color: #2d3748;
+}
+
+.ssm-category-info {
+    font-size: 12px;
+    color: #718096;
+}
+
+.ssm-category-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+}
+
+.ssm-category-content {
+    display: none;
+    padding: 12px 16px;
+}
+
+.ssm-category.expanded > .ssm-category-content {
+    display: block;
+}
+
+/* 사업장 */
+.ssm-site {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    transition: background 0.2s;
+}
+
+.ssm-site:hover {
+    background: #f7fafc;
+}
+
+.ssm-site-icon {
+    font-size: 14px;
+}
+
+.ssm-site-name {
+    font-size: 14px;
+    color: #2d3748;
+}
+
+.ssm-site-code {
+    font-size: 12px;
+    color: #a0aec0;
+}
+
+.ssm-site .ssm-btn-icon {
+    margin-left: auto;
+}
+
+/* 빈 상태 */
+.ssm-empty,
+.ssm-empty-category,
+.ssm-empty-sites {
+    padding: 20px;
+    text-align: center;
+    color: #a0aec0;
+    font-size: 14px;
+}
+
+.ssm-empty-category,
+.ssm-empty-sites {
+    padding: 12px;
+    font-style: italic;
+}
+
+/* 미할당 사업장 섹션 */
+.ssm-unassigned {
+    margin-top: 24px;
+    padding: 20px;
+    background: #fff5f5;
+    border-radius: 12px;
+    border: 1px dashed #fc8181;
+}
+
+.ssm-unassigned h3 {
+    margin: 0 0 12px;
+    color: #c53030;
+    font-size: 16px;
+}
+
+/* 모달 */
+.ssm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.ssm-modal {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.ssm-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.ssm-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #1a202c;
+}
+
+.ssm-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #a0aec0;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.ssm-modal-close:hover {
+    color: #4a5568;
+}
+
+.ssm-modal-body {
+    padding: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.ssm-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 20px;
+    background: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* 폼 */
+.ssm-form-group {
+    margin-bottom: 16px;
+}
+
+.ssm-form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.ssm-form-group input,
+.ssm-form-group textarea,
+.ssm-form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.ssm-form-group input:focus,
+.ssm-form-group textarea:focus,
+.ssm-form-group select:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+.ssm-form-group input[readonly] {
+    background: #f7fafc;
+    color: #718096;
+}
+
+.ssm-form-group textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* 메시지 */
+.ssm-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1002;
+    animation: ssm-slide-in 0.3s ease;
+}
+
+@keyframes ssm-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.ssm-message-success {
+    background: #48bb78;
+    color: white;
+}
+
+.ssm-message-error {
+    background: #f56565;
+    color: white;
+}
+
+.ssm-message-info {
+    background: #4299e1;
+    color: white;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .ssm-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .ssm-group-header {
+        flex-wrap: wrap;
+    }
+
+    .ssm-group-actions {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 8px;
+    }
+
+    .ssm-modal {
+        margin: 16px;
+        max-width: calc(100% - 32px);
+    }
+}

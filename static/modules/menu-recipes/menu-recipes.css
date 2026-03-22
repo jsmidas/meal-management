@@ -1,0 +1,815 @@
+/*
+ * 메뉴/레시피 관리 시스템 스타일시트
+ *
+ * 외부 라이브러리 의존성:
+ * - Handsontable CSS: https://cdn.jsdelivr.net/npm/handsontable@12.4.0/dist/handsontable.full.min.css
+ * - Font Awesome: https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css
+ *
+ * 네임스페이스: .menu-recipe-container
+ * admin 대시보드와의 충돌 방지를 위해 모든 스타일을 .menu-recipe-container 내부로 스코핑
+ */
+
+/* 기본 스타일 리셋 (컨테이너 내부만) */
+.menu-recipe-container * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.menu-recipe-container body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+    background-color: #f5f6fa;
+}
+
+.menu-recipe-container .wrapper {
+    display: flex;
+    height: 100vh;
+    margin-left: 0 !important; /* 공통 사이드바 margin 오버라이드 */
+}
+
+/* 좌측 사이드바 - 공통 사이드바 CSS 오버라이드 */
+.menu-recipe-container .sidebar {
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+    background: linear-gradient(160deg, var(--brand-primary, #2c3e50), var(--brand-secondary, #34495e)) !important;
+    color: white !important;
+    padding: 15px 0 !important;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1) !important;
+    position: relative !important; /* fixed 오버라이드 */
+    left: auto !important;
+    top: auto !important;
+    z-index: auto !important;
+    height: auto !important;
+    flex-shrink: 0 !important;
+}
+
+.menu-recipe-container .logo {
+    text-align: center;
+    padding: 0 15px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 20px;
+}
+
+.menu-recipe-container .logo h1 {
+    font-size: 18px;
+    font-weight: bold;
+    color: #3498db;
+}
+
+.menu-recipe-container .nav-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    transition: all 0.3s;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.menu-recipe-container .nav-item:hover,
+.menu-recipe-container .nav-item.active {
+    background-color: rgba(52, 152, 219, 0.2);
+    color: white;
+    border-right: 3px solid #3498db;
+}
+
+.menu-recipe-container .nav-item i {
+    margin-right: 10px;
+    font-size: 14px;
+    width: 16px;
+}
+
+.menu-recipe-container .nav-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 15px 15px;
+}
+
+.menu-recipe-container .admin-item {
+    background-color: rgba(231, 76, 60, 0.1);
+    border-left: 3px solid #e74c3c;
+}
+
+.menu-recipe-container .admin-item:hover {
+    background-color: rgba(231, 76, 60, 0.2);
+    border-right: 3px solid #e74c3c;
+}
+
+.menu-recipe-container .container {
+    display: flex;
+    flex: 1;
+    gap: 8px;
+    padding: 8px;
+    overflow: hidden;
+}
+
+/* 좌측 메뉴 패널 */
+.menu-recipe-container .left-panel {
+    width: 420px !important;
+    min-width: 420px !important;
+    background: white !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-shrink: 0 !important;
+    z-index: 10 !important;
+    position: relative !important;
+    height: calc(100vh - 40px) !important;
+    min-height: 500px !important;
+}
+
+.menu-recipe-container .search-box {
+    padding: 15px;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+.menu-recipe-container .search-box input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.menu-recipe-container .menu-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+/* 메뉴 카운트 배지 스타일 */
+.menu-recipe-container .menu-count-badge {
+    position: absolute !important;
+    bottom: 10px !important;
+    right: 10px !important;
+    background: rgba(102, 126, 234, 0.1) !important;
+    color: #667eea !important;
+    padding: 4px 8px !important;
+    border-radius: 12px !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(102, 126, 234, 0.2) !important;
+    z-index: 20 !important;
+    white-space: nowrap !important;
+}
+
+.menu-recipe-container .menu-item {
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.menu-recipe-container .menu-item:hover {
+    background: #e7f5ff;
+    border-color: #339af0;
+}
+
+.menu-recipe-container .menu-item.selected {
+    background: #228be6;
+    color: white;
+    border-color: #1c7ed6;
+}
+
+.menu-recipe-container .menu-item h4 {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.menu-recipe-container .menu-item small {
+    font-size: 11px;
+    opacity: 0.8;
+}
+
+/* 우측 메인 패널 */
+.menu-recipe-container .main-panel {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.menu-recipe-container .panel-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #e9ecef;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+.menu-recipe-container .panel-header h2 {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.menu-recipe-container .menu-info {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.menu-recipe-container .menu-info-item {
+    flex: 1;
+}
+
+.menu-recipe-container .menu-info-item label {
+    font-size: 11px;
+    opacity: 0.9;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.menu-recipe-container .menu-info-item input,
+.menu-recipe-container .menu-info-item select {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.menu-recipe-container .menu-info-item input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.menu-recipe-container .action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.menu-recipe-container .btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.menu-recipe-container .btn-primary {
+    background: white;
+    color: #667eea;
+}
+
+.menu-recipe-container .btn-success {
+    background: #51cf66;
+    color: white;
+}
+
+/* 큰 저장 버튼 스타일 */
+.menu-recipe-container .btn-save-large {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.menu-recipe-container .btn-save-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.menu-recipe-container .btn-save-large:active {
+    transform: translateY(0);
+}
+
+.menu-recipe-container .btn-save-large svg {
+    width: 18px;
+    height: 18px;
+}
+
+.menu-recipe-container .grid-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.menu-recipe-container .btn-danger {
+    background: #ff6b6b;
+    color: white;
+}
+
+.menu-recipe-container .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* 그리드 컨테이너 */
+.menu-recipe-container .grid-container {
+    flex: 1;
+    padding: 15px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.menu-recipe-container .grid-toolbar {
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.menu-recipe-container .grid-buttons {
+    margin-bottom: 10px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.menu-recipe-container .grid-info {
+    font-size: 14px;
+    color: #495057;
+}
+
+.menu-recipe-container #ingredientsGrid {
+    flex: 1;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Handsontable 커스터마이징 */
+/* Note: Handsontable은 body에 직접 요소들을 추가하므로 네임스페이스 적용이 제한적 */
+.menu-recipe-container .handsontable .htCore {
+    font-size: 13px;
+}
+
+.menu-recipe-container .handsontable td {
+    padding: 6px 8px !important;
+    line-height: 1.5 !important;
+    vertical-align: middle !important;
+    min-height: 32px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 0;
+}
+
+/* 텍스트가 있는 셀은 무조건 검정색으로 표시 */
+.menu-recipe-container .handsontable td.htDimmed {
+    color: #000 !important;
+}
+
+.menu-recipe-container .handsontable td:not(.htDimmed) {
+    color: #000 !important;
+}
+
+.menu-recipe-container .handsontable .htCore td {
+    color: #000 !important;
+    background-color: #fff !important;
+}
+
+.menu-recipe-container .handsontable th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 8px !important;
+    vertical-align: middle !important;
+}
+
+.menu-recipe-container .handsontable .htRowHeaders {
+    vertical-align: middle !important;
+    width: 45px !important;
+}
+
+.menu-recipe-container .handsontable tbody th {
+    min-height: 32px !important;
+    line-height: 32px !important;
+    padding: 0 10px !important;
+    width: 45px !important;
+    min-width: 45px !important;
+    max-width: 45px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.menu-recipe-container .handsontable tbody th.ht__highlight {
+    vertical-align: middle !important;
+}
+
+.menu-recipe-container .handsontable td.htDimmed {
+    background: #f8f9fa;
+}
+
+.menu-recipe-container .handsontable td.highlight-blue {
+    background: #e7f5ff !important;
+}
+
+.menu-recipe-container .handsontable td.highlight-yellow {
+    background: #fff3cd !important;
+}
+
+.menu-recipe-container .handsontable td.highlight-green {
+    background: #d4edda !important;
+}
+
+.menu-recipe-container .handsontable td.highlight-purple {
+    background: #f3e5f5 !important;
+}
+
+.menu-recipe-container .handsontable td.highlight-sand {
+    background: #fff8e1 !important;
+}
+
+/* Handsontable 전역 스타일 (네임스페이스 없이 적용) */
+/* 메뉴-레시피 페이지에서만 사용되므로 전역 적용해도 안전 */
+.handsontable .htCore {
+    font-size: 13px;
+}
+
+.handsontable td {
+    padding: 6px 8px !important;
+    line-height: 1.5 !important;
+    vertical-align: middle !important;
+    min-height: 32px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 0;
+}
+
+.handsontable td.htDimmed {
+    color: #000 !important;
+}
+
+.handsontable td:not(.htDimmed) {
+    color: #000 !important;
+}
+
+.handsontable .htCore td {
+    color: #000 !important;
+    background-color: #fff !important;
+}
+
+.handsontable th {
+    background: #f8f9fa;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 8px !important;
+    vertical-align: middle !important;
+}
+
+.handsontable .htRowHeaders {
+    vertical-align: middle !important;
+    width: 45px !important;
+}
+
+.handsontable tbody th {
+    min-height: 32px !important;
+    line-height: 32px !important;
+    padding: 0 10px !important;
+    width: 45px !important;
+    min-width: 45px !important;
+    max-width: 45px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.handsontable tbody th.ht__highlight {
+    vertical-align: middle !important;
+}
+
+.handsontable td.htDimmed {
+    background: #f8f9fa;
+}
+
+.handsontable td.highlight-blue {
+    background: #e7f5ff !important;
+}
+
+.handsontable td.highlight-yellow {
+    background: #fff3cd !important;
+}
+
+.handsontable td.highlight-green {
+    background: #d4edda !important;
+}
+
+.handsontable td.highlight-purple {
+    background: #f3e5f5 !important;
+}
+
+.handsontable td.highlight-sand {
+    background: #fff8e1 !important;
+}
+
+/* 자동계산 실패 경고 (주황색) */
+.handsontable td.highlight-warning {
+    background: #ffcc80 !important;
+}
+
+.menu-recipe-container .handsontable td.highlight-warning {
+    background: #ffcc80 !important;
+}
+
+.menu-recipe-container .search-btn {
+    width: 100%;
+    height: 100%;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.menu-recipe-container .search-btn:hover {
+    background: #0056b3;
+}
+
+/* 식자재 검색 모달 */
+.menu-recipe-container .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-recipe-container .modal.active {
+    display: flex;
+}
+
+.menu-recipe-container .modal-content {
+    background: white;
+    width: 95%;
+    max-width: 1400px;
+    height: 85%;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.menu-recipe-container .modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #dee2e6;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.menu-recipe-container .modal-header h3 {
+    font-size: 18px;
+    color: #212529;
+}
+
+.menu-recipe-container .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.menu-recipe-container .modal-body {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.menu-recipe-container .modal-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.menu-recipe-container .modal-search input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.menu-recipe-container .modal-search select {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    min-width: 150px;
+}
+
+.menu-recipe-container .ingredients-results {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: auto;
+    height: calc(100% - 60px);
+}
+
+.menu-recipe-container .ingredients-results table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.menu-recipe-container .ingredients-results th {
+    background: #f8f9fa;
+    padding: 6px 4px;
+    border: 1px solid #dee2e6;
+    font-size: 11px;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    white-space: nowrap;
+}
+
+.menu-recipe-container .ingredients-results td {
+    padding: 5px 4px;
+    border: 1px solid #dee2e6;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.menu-recipe-container .ingredients-results tr:hover {
+    background: #e7f5ff;
+    cursor: pointer;
+}
+
+.menu-recipe-container .total-box {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    padding: 15px 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+}
+
+.menu-recipe-container .total-box .label {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.menu-recipe-container .total-box .amount {
+    font-size: 24px;
+    font-weight: bold;
+    color: #667eea;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1200px) {
+    .menu-recipe-container .left-panel {
+        width: 250px;
+    }
+
+    .menu-recipe-container .handsontable {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .menu-recipe-container .wrapper {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .menu-recipe-container .sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 10px;
+    }
+
+    .menu-recipe-container .container {
+        flex-direction: column;
+        gap: 5px;
+        padding: 5px;
+    }
+
+    .menu-recipe-container .left-panel {
+        width: 100%;
+        max-height: 200px;
+    }
+
+    .menu-recipe-container .modal-content {
+        width: 98%;
+        height: 95%;
+    }
+
+    .menu-recipe-container .grid-buttons {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .menu-recipe-container .btn {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .menu-recipe-container .total-box {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        margin-top: 10px;
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    .menu-recipe-container .handsontable {
+        font-size: 10px;
+    }
+
+    .menu-recipe-container .handsontable td {
+        padding: 4px !important;
+        min-height: 28px !important;
+    }
+
+    .menu-recipe-container .btn-save-large {
+        padding: 8px 15px;
+        font-size: 12px;
+    }
+
+    .menu-recipe-container .modal-header {
+        padding: 15px;
+    }
+
+    .menu-recipe-container .modal-body {
+        padding: 15px;
+    }
+}
+
+/* ========================================
+   Handsontable 선택 행 강조 스타일
+   ======================================== */
+
+/* 선택된 행 전체 배경 강조 */
+.menu-recipe-container .handsontable td.area {
+    background-color: rgba(33, 150, 243, 0.15) !important;
+}
+
+/* 현재 선택된 셀 강조 */
+.menu-recipe-container .handsontable td.current {
+    background-color: rgba(33, 150, 243, 0.3) !important;
+    outline: 2px solid #2196F3 !important;
+}
+
+/* 선택 영역 테두리 */
+.menu-recipe-container .handsontable .wtBorder.current {
+    background-color: #2196F3 !important;
+}
+
+/* 행 헤더(번호) 클릭 시 전체 행 선택 강조 */
+.menu-recipe-container .handsontable th.ht__highlight {
+    background-color: #2196F3 !important;
+    color: white !important;
+}
+
+/* ========================================
+   형제 레시피 동기화 안내 팝업
+   ======================================== */
+.menu-recipe-container .sibling-guide-content {
+    max-width: 520px;
+    height: auto;
+    border-radius: 12px;
+}
+
+.menu-recipe-container .sibling-guide-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #666;
+}
+
+.menu-recipe-container .sibling-guide-checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}

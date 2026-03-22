@@ -1,0 +1,604 @@
+/**
+ * 사용자 권한 관리 스타일
+ */
+
+/* 래퍼 */
+.upm-wrapper {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* 로딩 */
+.upm-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.upm-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #3182ce;
+    border-radius: 50%;
+    animation: upm-spin 0.8s linear infinite;
+}
+
+@keyframes upm-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 헤더 */
+.upm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.upm-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a202c;
+}
+
+.upm-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* 버튼 */
+.upm-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.upm-btn-primary {
+    background: #3182ce;
+    color: white;
+}
+
+.upm-btn-primary:hover {
+    background: #2c5282;
+}
+
+.upm-btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.upm-btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+.upm-btn-icon {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.upm-btn-icon:hover {
+    opacity: 1;
+}
+
+/* 콘텐츠 레이아웃 */
+.upm-content {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    min-height: 600px;
+}
+
+/* 사용자 목록 패널 */
+.upm-user-list {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.upm-panel-header {
+    padding: 16px;
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.upm-panel-header h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.upm-search {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.upm-search:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+.upm-user-items {
+    max-height: 550px;
+    overflow-y: auto;
+}
+
+.upm-user-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.upm-user-item:hover {
+    background: #f7fafc;
+}
+
+.upm-user-item.selected {
+    background: #ebf8ff;
+    border-left: 3px solid #3182ce;
+}
+
+.upm-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.upm-user-avatar.large {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+}
+
+.upm-user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.upm-user-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #2d3748;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.upm-user-role {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 2px;
+}
+
+/* 상세 패널 */
+.upm-user-detail {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+}
+
+.upm-empty-detail {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #a0aec0;
+    font-size: 16px;
+}
+
+.upm-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.upm-detail-user {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.upm-detail-user h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #1a202c;
+}
+
+.upm-detail-user p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #718096;
+}
+
+/* 권한 목록 */
+.upm-access-list {
+    margin-bottom: 24px;
+}
+
+.upm-access-list h4 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    color: #2d3748;
+}
+
+.upm-empty-access {
+    padding: 24px;
+    text-align: center;
+    color: #a0aec0;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.upm-access-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.upm-access-table th,
+.upm-access-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.upm-access-table th {
+    background: #f7fafc;
+    font-weight: 600;
+    font-size: 13px;
+    color: #4a5568;
+}
+
+.upm-access-table td {
+    font-size: 14px;
+    color: #2d3748;
+}
+
+.upm-access-table tr:hover {
+    background: #f7fafc;
+}
+
+/* 배지 */
+.upm-type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.upm-type-badge.site {
+    background: #ebf8ff;
+    color: #2b6cb0;
+}
+
+.upm-type-badge.group {
+    background: #faf5ff;
+    color: #6b46c1;
+}
+
+.upm-role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.upm-role-badge.level-0 {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+.upm-role-badge.level-1 {
+    background: #feebc8;
+    color: #c05621;
+}
+
+.upm-role-badge.level-2 {
+    background: #fefcbf;
+    color: #975a16;
+}
+
+.upm-role-badge.level-3 {
+    background: #c6f6d5;
+    color: #276749;
+}
+
+.upm-role-badge.level-4 {
+    background: #bee3f8;
+    color: #2b6cb0;
+}
+
+.upm-role-badge.level-5 {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+/* 역할 설명 */
+.upm-role-legend {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.upm-role-legend h4 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: #718096;
+}
+
+.upm-role-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.upm-role-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #f7fafc;
+    border-radius: 6px;
+}
+
+.upm-role-desc {
+    font-size: 11px;
+    color: #a0aec0;
+}
+
+/* 모달 */
+.upm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.upm-modal {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.upm-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.upm-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #1a202c;
+}
+
+.upm-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #a0aec0;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.upm-modal-close:hover {
+    color: #4a5568;
+}
+
+.upm-modal-body {
+    padding: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.upm-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 20px;
+    background: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* 폼 */
+.upm-form-group {
+    margin-bottom: 16px;
+}
+
+.upm-form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.upm-form-group input,
+.upm-form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.upm-form-group input:focus,
+.upm-form-group select:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+.upm-form-group input[readonly] {
+    background: #f7fafc;
+    color: #718096;
+}
+
+.upm-form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+}
+
+/* 체크박스 리스트 */
+.upm-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.upm-checkbox-item:hover {
+    background: #f7fafc;
+}
+
+.upm-checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+}
+
+/* 메시지 */
+.upm-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1002;
+    animation: upm-slide-in 0.3s ease;
+}
+
+@keyframes upm-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.upm-message-success {
+    background: #48bb78;
+    color: white;
+}
+
+.upm-message-error {
+    background: #f56565;
+    color: white;
+}
+
+.upm-message-info {
+    background: #4299e1;
+    color: white;
+}
+
+/* 빈 상태 */
+.upm-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: #a0aec0;
+}
+
+/* 반응형 */
+@media (max-width: 900px) {
+    .upm-content {
+        grid-template-columns: 1fr;
+    }
+
+    .upm-user-list {
+        max-height: 300px;
+    }
+
+    .upm-user-items {
+        max-height: 200px;
+    }
+}
+
+@media (max-width: 600px) {
+    .upm-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .upm-detail-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .upm-access-table {
+        font-size: 12px;
+    }
+
+    .upm-access-table th,
+    .upm-access-table td {
+        padding: 8px 6px;
+    }
+}

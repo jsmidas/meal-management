@@ -1,0 +1,702 @@
+/* 식자재 관리 페이지 스타일 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.4;
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* 사이드바 */
+.sidebar {
+    width: 180px;
+    background: linear-gradient(160deg, var(--brand-primary, #2c3e50), var(--brand-secondary, #34495e));
+    color: white;
+    padding: 15px 0;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.logo {
+    text-align: center;
+    padding: 0 15px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 20px;
+}
+
+.logo h1 {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--brand-secondary, #3498db);
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    transition: all 0.3s;
+    font-size: 13px;
+}
+
+.nav-item:hover, .nav-item.active {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: white;
+    border-right: 3px solid var(--brand-secondary, #3498db);
+}
+
+.nav-item i {
+    margin-right: 10px;
+    font-size: 14px;
+    width: 16px;
+}
+
+.nav-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 15px 15px;
+}
+
+.admin-item {
+    background-color: rgba(231, 76, 60, 0.1);
+    border-left: 3px solid #e74c3c;
+}
+
+.admin-item:hover {
+    background-color: rgba(231, 76, 60, 0.2);
+    border-right: 3px solid #e74c3c;
+}
+
+/* 메인 컨텐츠 */
+.main-content {
+    flex: 1;
+    padding: 20px;
+}
+
+.header {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+}
+
+.header h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 28px;
+}
+
+.content-section {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 15px;
+    overflow-x: auto;
+}
+
+/* 테이블 컸테이너 */
+.table-container {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.ingredients-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 11px;
+    font-family: 'Malgun Gothic', Arial, sans-serif;
+}
+
+.ingredients-table th,
+.ingredients-table td {
+    padding: 6px 5px;
+    text-align: left;
+    border: 1px solid #ddd;
+    vertical-align: middle;
+    line-height: 1.4;
+    height: 28px;
+}
+
+.ingredients-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+    color: #333;
+    font-size: 12px;
+    text-align: center;
+    white-space: nowrap;
+    height: 32px;
+}
+
+.ingredients-table td {
+    font-size: 12px;
+    max-width: 200px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.ingredients-table tbody tr {
+    cursor: pointer;
+}
+
+.ingredients-table tbody tr:hover {
+    background: #e8f4fd;
+}
+
+.ingredients-table tbody tr:nth-child(even) {
+    background: #fafafa;
+}
+
+.ingredients-table tbody tr:nth-child(even):hover {
+    background: #e8f4fd;
+}
+
+/* 컬럼별 크기 조정 - 식자재명 최대화 */
+.ingredients-table th:nth-child(1),
+.ingredients-table td:nth-child(1) { width: 4%; font-size: 11px; } /* 분류 */
+.ingredients-table th:nth-child(2),
+.ingredients-table td:nth-child(2) { width: 4%; font-size: 11px; } /* 세분류 */
+.ingredients-table th:nth-child(3),
+.ingredients-table td:nth-child(3) { width: 5%; font-size: 11px; } /* 고유코드 */
+.ingredients-table th:nth-child(4) {
+    width: 25%;
+    font-weight: 500;
+    padding-right: 15px !important;
+} /* 식자재명 헤더 */
+.ingredients-table td:nth-child(4) {
+    width: 25%;
+    font-weight: 500;
+    position: relative;
+    padding-right: 15px !important;
+} /* 식자재명 데이터 */
+.ingredients-table th:nth-child(5),
+.ingredients-table td:nth-child(5) { width: 3%; font-size: 11px; } /* 원산지 */
+.ingredients-table th:nth-child(6),
+.ingredients-table td:nth-child(6) { width: 3%; text-align: center; font-size: 11px; } /* 게시유무 */
+.ingredients-table th:nth-child(7) { width: 10%; font-size: 11px; } /* 규격 헤더 */
+.ingredients-table td:nth-child(7) { width: 10%; font-size: 11px; position: relative; } /* 규격 데이터 */
+.ingredients-table th:nth-child(8),
+.ingredients-table td:nth-child(8) { width: 3%; text-align: center; font-size: 11px; } /* 단위 */
+.ingredients-table th:nth-child(9),
+.ingredients-table td:nth-child(9) { width: 3%; text-align: center; font-size: 11px; } /* 면세 */
+.ingredients-table th:nth-child(10),
+.ingredients-table td:nth-child(10) { width: 3%; text-align: center; font-size: 11px; } /* 선발주일 */
+.ingredients-table th:nth-child(11),
+.ingredients-table td:nth-child(11) { width: 8%; text-align: right; font-size: 11px; font-weight: 600; color: #007bff; } /* 단위당 단가 */
+.ingredients-table th:nth-child(12),
+.ingredients-table td:nth-child(12) { width: 5%; text-align: right; font-size: 11px; } /* 입고가 */
+.ingredients-table th:nth-child(13),
+.ingredients-table td:nth-child(13) { width: 5%; text-align: right; font-size: 11px; } /* 판매가 */
+.ingredients-table th:nth-child(14),
+.ingredients-table td:nth-child(14) { width: 6%; font-size: 11px; } /* 거래처명 */
+.ingredients-table th:nth-child(15),
+.ingredients-table td:nth-child(15) { width: 6%; font-size: 11px; } /* 비고 */
+.ingredients-table th:nth-child(16),
+.ingredients-table td:nth-child(16) { width: 5%; text-align: center; font-size: 10px; } /* 등록일 */
+
+/* 식자재명과 규격 특별 스타일 - 페이드 아웃 효과 */
+/* TD 요소에만 적용 (헤더 제외) */
+td.ingredient-name-cell, td.ingredient-spec-cell {
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+    display: block;
+}
+
+td.ingredient-name-cell::after, td.ingredient-spec-cell::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.8) 50%, white 100%);
+    pointer-events: none;
+}
+
+/* 호버 시 전체 표시 */
+.ingredients-table tr:hover td.ingredient-name-cell,
+.ingredients-table tr:hover td.ingredient-spec-cell {
+    overflow: visible;
+    background: #fffef0;
+    z-index: 10;
+}
+
+.ingredients-table tr:hover td.ingredient-name-cell::after,
+.ingredients-table tr:hover td.ingredient-spec-cell::after {
+    display: none;
+}
+
+.ingredient-name-full, .ingredient-spec-full {
+    display: none;
+    position: absolute;
+    top: -2px;
+    left: 0;
+    background: #fffef0;
+    border: 1px solid #4CAF50;
+    padding: 6px 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    white-space: nowrap;
+    z-index: 100;
+    font-size: 13px;
+    max-width: 500px;
+}
+
+.ingredients-table tr:hover .ingredient-name-full,
+.ingredients-table tr:hover .ingredient-spec-full {
+    display: block;
+}
+
+/* 정렬 가능한 헤더 스타일 */
+.sortable {
+    position: relative;
+    padding-left: 20px;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.sortable:hover {
+    background: #e8e8e8;
+}
+
+.sort-icon {
+    display: inline-block;
+    width: 14px;
+    margin-right: 4px;
+    font-size: 12px;
+    transition: all 0.2s;
+    vertical-align: middle;
+}
+
+.sort-icon.active {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.sort-icon.inactive {
+    color: #ccc;
+    font-size: 10px;
+}
+
+.sortable:hover .sort-icon.inactive {
+    color: #999;
+}
+
+/* 가격 표시 스타일 */
+.price {
+    font-family: 'Consolas', monospace;
+    font-weight: bold;
+    color: #2e7d32;
+}
+
+/* 테이블 스크롤바 스타일링 */
+.table-container::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 6px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 6px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* 헤더 고정 스타일 개선 */
+.ingredients-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f0f0f0;
+    z-index: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 4번째 컬럼(식자재명) 헤더 특별 처리 */
+.ingredients-table thead th:nth-child(4) {
+    z-index: 1001;
+}
+
+/* 반응형 대응 */
+@media (max-width: 1200px) {
+    .ingredients-table {
+        font-size: 9px;
+    }
+
+    .ingredients-table th,
+    .ingredients-table td {
+        padding: 3px 4px;
+    }
+}
+
+/* 추가 Excel 스타일 개선 */
+.ingredients-table td strong {
+    color: #1565c0;
+    font-weight: 600;
+}
+
+/* 인쇄 친화적 스타일 */
+@media print {
+    .ingredients-table {
+        font-size: 8px;
+    }
+
+    .ingredients-table th,
+    .ingredients-table td {
+        padding: 2px 3px;
+        border: 1px solid #000;
+    }
+
+    .sidebar, .header {
+        display: none;
+    }
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+/* Pagination styles - 심플하고 빠른 스타일 */
+.pagination-btn {
+    padding: 6px 10px;
+    background: #5a67d8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin: 0 2px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #4c51bf;
+}
+
+.pagination-btn:disabled {
+    background: #cbd5e0;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.pagination-btn.active {
+    background: #e53e3e;
+    font-weight: bold;
+}
+
+#paginationContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 10px;
+    background: #f7fafc;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.page-info {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 6px;
+    margin: 20px 0;
+}
+/* 업체별 그리드 스타일 */
+.suppliers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+}
+
+.supplier-card {
+    background: white;
+    border-radius: 6px;
+    padding: 10px 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    border-left: 3px solid #3498db;
+    transition: all 0.3s;
+    min-height: 65px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.supplier-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    background: #f8f9fa;
+}
+
+.supplier-name {
+    font-size: 13px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 4px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-height: 18px;
+}
+
+.supplier-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.supplier-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+.stat-label {
+    color: #7f8c8d;
+}
+
+.stat-value {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+/* 모달 스타일 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 95%;
+    max-width: 800px;
+    max-height: 96vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.modal-body {
+    padding: 15px 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 3px;
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 13px;
+}
+
+.form-group input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.modal-footer {
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    border-radius: 0 0 8px 8px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+/* 업체별 통계 스타일 */
+.supplier-card {
+    background: white;
+    border-radius: 6px;
+    padding: 10px 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    border-left: 3px solid #3498db;
+    transition: all 0.3s;
+    min-height: 65px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.supplier-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    background: #f8f9fa;
+}
+
+.supplier-name {
+    font-size: 13px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 4px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-height: 18px;
+}
+
+.supplier-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.supplier-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-value {
+    font-weight: 600;
+    color: #2c3e50;
+}

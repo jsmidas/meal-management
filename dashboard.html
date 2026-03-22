@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📈 대시보드 - 급식관리 시스템</title>
+    <link rel="icon" type="image/x-icon" href="static/favicon.ico">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+
+    <!-- 외부 라이브러리 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- 공통 사이드바 CSS -->
+    <link rel="stylesheet" href="static/css/common-sidebar.css">
+    <script src="static/js/sidebar-dropdown.js"></script>
+
+    <!-- 사업장 선택기 CSS -->
+    <link rel="stylesheet" href="static/css/site-selector.css">
+
+    <!-- 모듈화된 CSS -->
+    <link rel="stylesheet" href="static/css/user/dashboard-styles.css">
+
+    <!-- 폴백 스타일 -->
+    <style>
+        html {
+            overflow-x: hidden;
+            scrollbar-gutter: stable; /* 스크롤바 공간 항상 확보 - 레이아웃 흔들림 방지 */
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 대시보드 전용 스타일 - 활기찬 분위기 */
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            color: white;
+            padding: 18px 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: visible;
+        }
+
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            animation: shimmer 3s ease-in-out infinite;
+            clip-path: inset(0 round 12px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: translateX(-20%) rotate(0deg); }
+            50% { transform: translateX(20%) rotate(5deg); }
+        }
+
+        .dashboard-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .date-info {
+            font-size: 13px;
+            opacity: 0.95;
+            margin-top: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 그리드 레이아웃 - 균형잡힌 배치 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            max-width: 100%;
+            margin: 0;
+        }
+
+        /* 기본 카드 스타일 - 세련되고 활기찬 디자인 */
+        .dashboard-card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: none;
+            border-top: 4px solid #3498db;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: inherit;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 차트 카드 높이 */
+        .chart-card {
+            height: 180px;
+        }
+
+        /* 식수 카드 */
+        .meal-card {
+            height: 180px;
+            border-top: 4px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #00b894, #00cec9) border-box;
+        }
+
+        .meal-card .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .meal-card .card-header i:first-child {
+            color: #00b894;
+            background: linear-gradient(135deg, #00b89420, #00cec920);
+        }
+
+        /* 식수 내비게이션 버튼 */
+        .meal-nav-buttons {
+            display: flex;
+            gap: 4px;
+            margin-left: auto;
+        }
+
+        .meal-nav-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #f0f0f0, #e8e8e8);
+            color: #555;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            transition: all 0.2s ease;
+        }
+
+        .meal-nav-btn:hover {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .meal-nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .meal-nav-today {
+            width: auto;
+            padding: 0 10px;
+            font-weight: 600;
+        }
+
+        .meal-nav-btn i {
+            font-size: 10px;
+            background: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .meal-day-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            height: 100%;
+        }
+
+        .meal-day {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 4px;
+            border-radius: 12px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .meal-day:hover {
+            transform: scale(1.05);
+        }
+
+        .meal-day.past {
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+        }
+
+        .meal-day.past .day-count {
+            color: #d68910;
+        }
+
+        .meal-day.today {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 184, 148, 0.4);
+            transform: scale(1.05);
+        }
+
+        .meal-day.today:hover {
+            transform: scale(1.1);
+        }
+
+        .meal-day.tomorrow {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+        }
+
+        .meal-day.future {
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+            color: white;
+        }
+
+        .day-label {
+            font-size: 11px;
+            font-weight: 600;
+            opacity: 0.9;
+            margin-bottom: 2px;
+        }
+
+        .day-count {
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .day-unit {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        /* 알림 카드들의 높이 - 세로로 더 크게 */
+        .notice-card,
+        .safety-card,
+        .request-card {
+            height: 320px;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-header i {
+            font-size: 18px;
+            margin-right: 10px;
+            padding: 8px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea20, #764ba220);
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .big-number {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .sub-text {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin: 4px 0;
+            font-weight: 500;
+        }
+
+        .progress-info {
+            font-size: 11px;
+            color: #95a5a6;
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        /* 특별 카드 스타일 - 그라데이션 테두리 */
+        .stats-card {
+            border-top: 4px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #3498db, #2ecc71) border-box;
+        }
+
+        .stats-card .card-header i {
+            color: #3498db;
+            background: linear-gradient(135deg, #3498db20, #2ecc7120);
+        }
+
+        .chart-card {
+            border-top: 4px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #e67e22, #f39c12) border-box;
+        }
+
+        .chart-card .card-header i {
+            color: #e67e22;
+            background: linear-gradient(135deg, #e67e2220, #f39c1220);
+        }
+
+        .meal-chart-card {
+            border-top: 4px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #00b894, #00cec9) border-box;
+        }
+
+        .meal-chart-card .card-header i {
+            color: #00b894;
+            background: linear-gradient(135deg, #00b89420, #00cec920);
+        }
+
+        .notice-card {
+            border-top: 4px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #f39c12, #fdcb6e) border-box;
+            cursor: pointer;
+        }
+
+        .notice-card .card-header i {
+            color: #f39c12;
+            background: linear-gradient(135deg, #f39c1220, #fdcb6e20);
+        }
+
+        .health-card {
+            border-top: 4px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #27ae60, #2ecc71) border-box;
+        }
+
+        .health-card .card-header i {
+            color: #27ae60;
+            background: linear-gradient(135deg, #27ae6020, #2ecc7120);
+        }
+
+        .safety-card {
+            border-top: 4px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #e74c3c, #ff6b6b) border-box;
+        }
+
+        .safety-card .card-header i {
+            color: #e74c3c;
+            background: linear-gradient(135deg, #e74c3c20, #ff6b6b20);
+        }
+
+        .request-card {
+            border-top: 4px solid transparent;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #9b59b6, #a29bfe) border-box;
+        }
+
+        .request-card .card-header i {
+            color: #9b59b6;
+            background: linear-gradient(135deg, #9b59b620, #a29bfe20);
+        }
+
+        /* 클릭 가능한 카드 호버 효과 */
+        .clickable-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+        }
+
+        /* 미니 차트 */
+        .mini-chart {
+            height: 70px;
+            margin-bottom: 8px;
+        }
+
+        .chart-summary {
+            font-size: 12px;
+            color: #27ae60;
+            font-weight: 700;
+            background: linear-gradient(135deg, #27ae6010, #2ecc7110);
+            padding: 6px 10px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        /* 알림 콘텐츠 - 메일 형식 */
+        .notice-content,
+        .safety-content,
+        .request-content {
+            font-size: 11px;
+            overflow-y: auto;
+            max-height: 250px;
+        }
+
+        .mail-item {
+            background: linear-gradient(135deg, #f8f9fa, #ffffff);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border-left: 4px solid #3498db;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .mail-item:hover {
+            background: linear-gradient(135deg, #e8f4fd, #f0f8ff);
+            transform: translateX(4px);
+        }
+
+        .mail-item.unread {
+            background: linear-gradient(135deg, #fff8e1, #fffde7);
+            border-left-color: #f39c12;
+        }
+
+        .mail-item.urgent {
+            background: linear-gradient(135deg, #ffebee, #fff5f5);
+            border-left-color: #e74c3c;
+            animation: pulse-urgent 2s infinite;
+        }
+
+        @keyframes pulse-urgent {
+            0%, 100% { box-shadow: 0 2px 8px rgba(231, 76, 60, 0.1); }
+            50% { box-shadow: 0 4px 16px rgba(231, 76, 60, 0.2); }
+        }
+
+        .mail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .mail-subject {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 11px;
+        }
+
+        .mail-date {
+            font-size: 9px;
+            color: #95a5a6;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .mail-author {
+            font-size: 10px;
+            color: #34495e;
+            margin-bottom: 2px;
+        }
+
+        .mail-preview {
+            color: #7f8c8d;
+            font-size: 10px;
+        }
+
+        .mail-count {
+            font-size: 11px;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #f0f0f0;
+            font-weight: 600;
+        }
+
+        /* 보건증 상태 */
+        .health-status {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .status-item.urgent {
+            background: linear-gradient(135deg, #ffebee, #fff5f5);
+            color: #e74c3c;
+            border: 1px solid #ffcdd2;
+        }
+
+        .status-item.warning {
+            background: linear-gradient(135deg, #fff3e0, #fffde7);
+            color: #f39c12;
+            border: 1px solid #ffe0b2;
+        }
+
+        .status-item.normal {
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            color: #27ae60;
+            border: 1px solid #c8e6c9;
+        }
+
+        .next-expire {
+            font-size: 11px;
+            color: #7f8c8d;
+            background: #f8f9fa;
+            padding: 6px 10px;
+            border-radius: 8px;
+        }
+
+        /* 안전 알림 */
+        .safety-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .safety-icon {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .safety-text {
+            flex: 1;
+        }
+
+        .priority-high {
+            background: #ffebee;
+            border-left: 3px solid #e74c3c;
+        }
+
+        /* 인증 버튼 */
+        .auth-buttons {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .auth-buttons .btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .auth-buttons .btn-login {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .auth-buttons .btn-login:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .auth-buttons .btn-logout {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .auth-buttons .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .auth-buttons .user-info {
+            color: rgba(255,255,255,0.95);
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 8px;
+            background: rgba(255,255,255,0.15);
+            padding: 8px 14px;
+            border-radius: 10px;
+        }
+
+        /* 클릭 가능한 카드 커서 */
+        .clickable-card {
+            cursor: pointer;
+        }
+
+        /* 반응형 */
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 사이드바 네비게이션 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item active"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item" id="admin-link" style="display:none;"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="main-content">
+            <!-- 대시보드 헤더 -->
+            <div class="dashboard-header">
+                <div class="dashboard-header-top">
+                    <h1>주요 현황 대시보드</h1>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div id="site-selector-container" class="site-selector-standard site-selector-right"></div>
+                        <div id="auth-buttons" class="auth-buttons">
+                            <!-- 로그인/로그아웃 버튼이 동적으로 채워짐 -->
+                        </div>
+                    </div>
+                </div>
+                <div class="date-info">
+                    <span id="current-date"></span> | 사용자: <span id="current-user">로딩 중...</span>
+                </div>
+            </div>
+
+            <!-- 전체 내용을 3x3 그리드로 재구성 -->
+            <div class="dashboard-grid">
+                <!-- 1열: 기본 현황 -->
+                <div class="dashboard-card stats-card">
+                    <div class="card-header">
+                        <i class="fas fa-carrot"></i>
+                        <h3>식자재 데이터</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="big-number" id="ingredient-count">로딩 중...</div>
+                        <div class="sub-text">총 등록 건수</div>
+                        <div class="progress-info">
+                            버전: <span id="data-version">로딩 중...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card stats-card">
+                    <div class="card-header">
+                        <i class="fas fa-utensils"></i>
+                        <h3>레시피 등록</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="big-number" id="recipe-count">로딩 중...</div>
+                        <div class="sub-text">총 등록 건수</div>
+                        <div class="progress-info">
+                            이번 주 신규: <span id="new-recipes">로딩 중...</span>건
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card stats-card">
+                    <div class="card-header">
+                        <i class="fas fa-truck"></i>
+                        <h3>협력업체</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="big-number" id="supplier-count">로딩 중...</div>
+                        <div class="sub-text">활성 업체 수</div>
+                        <div class="progress-info">
+                            주요: <span id="main-suppliers">로딩 중...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2열: 분석 및 알림 -->
+                <div class="dashboard-card chart-card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-line"></i>
+                        <h3>순기별 단가 분석</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="mini-chart">
+                            <canvas id="priceAnalysisChart"></canvas>
+                        </div>
+                        <div class="chart-summary">
+                            평균 상승률: <span id="price-trend">로딩 중...</span>%
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card meal-card">
+                    <div class="card-header">
+                        <i class="fas fa-users"></i>
+                        <h3>식수 현황</h3>
+                        <div class="meal-nav-buttons">
+                            <button class="meal-nav-btn" onclick="moveMealDays(-1)" title="1일 이전">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="meal-nav-btn meal-nav-today" onclick="moveMealDays(0, true)" title="오늘로 이동">
+                                오늘
+                            </button>
+                            <button class="meal-nav-btn" onclick="moveMealDays(1)" title="1일 이후">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="meal-day-grid" id="meal-day-grid">
+                            <div class="meal-day" id="meal-day-0">
+                                <div class="day-label" id="meal-label-0">어제</div>
+                                <div class="day-count" id="meal-count-0">-</div>
+                                <div class="day-unit">식</div>
+                            </div>
+                            <div class="meal-day" id="meal-day-1">
+                                <div class="day-label" id="meal-label-1">오늘</div>
+                                <div class="day-count" id="meal-count-1">-</div>
+                                <div class="day-unit">식</div>
+                            </div>
+                            <div class="meal-day" id="meal-day-2">
+                                <div class="day-label" id="meal-label-2">내일</div>
+                                <div class="day-count" id="meal-count-2">-</div>
+                                <div class="day-unit">식</div>
+                            </div>
+                            <div class="meal-day" id="meal-day-3">
+                                <div class="day-label" id="meal-label-3">모레</div>
+                                <div class="day-count" id="meal-count-3">-</div>
+                                <div class="day-unit">식</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card health-card clickable-card" onclick="location.href='health_certificate_management.html'">
+                    <div class="card-header">
+                        <i class="fas fa-id-card"></i>
+                        <h3>보건증 만기일</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="health-status">
+                            <div class="status-item urgent" id="urgent-health">
+                                긴급: <span>0</span>건
+                            </div>
+                            <div class="status-item warning" id="warning-health">
+                                주의: <span>0</span>건
+                            </div>
+                            <div class="status-item normal" id="normal-health">
+                                정상: <span>0</span>건
+                            </div>
+                        </div>
+                        <div class="next-expire">
+                            다음 만료: <span id="next-health-expire">로딩 중...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3열: 알림 및 경고 -->
+                <div class="dashboard-card notice-card clickable-card" onclick="location.href='notice_board.html'">
+                    <div class="card-header">
+                        <i class="fas fa-bullhorn"></i>
+                        <h3>업무연락</h3>
+                    </div>
+                    <div class="card-content notice-content" id="notice-list">
+                        <!-- 메일 목록이 여기에 동적으로 로드됩니다 -->
+                    </div>
+                    <div class="mail-count">
+                        총 <span id="notice-count">0</span>건 | 미읽음 <span id="unread-count">0</span>건
+                    </div>
+                </div>
+
+                <div class="dashboard-card safety-card clickable-card" onclick="location.href='hygiene_notice.html'">
+                    <div class="card-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>[필독]위생안전 알림</h3>
+                    </div>
+                    <div class="card-content safety-content" id="safety-list">
+                        <!-- 안전 알림 목록이 여기에 동적으로 로드됩니다 -->
+                    </div>
+                    <div class="mail-count">
+                        총 <span id="safety-count">0</span>건 | 미확인 <span id="safety-unread-count">0</span>건
+                    </div>
+                </div>
+
+                <div class="dashboard-card request-card clickable-card" onclick="location.href='system_request.html'">
+                    <div class="card-header">
+                        <i class="fas fa-cogs"></i>
+                        <h3>시스템 요청사항</h3>
+                    </div>
+                    <div class="card-content request-content" id="request-list">
+                        <!-- 요청사항 목록이 여기에 동적으로 로드됩니다 -->
+                    </div>
+                    <div class="mail-count">
+                        총 <span id="request-count">0</span>건 | 대기 중 <span id="pending-count">0</span>건
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 브랜딩 시스템 -->
+    <script src="config.js"></script>
+    <script src="static/js/branding.js"></script>
+
+    <!-- 사업장 선택기 -->
+    <script src="static/modules/core/site-selector.js"></script>
+
+    <!-- 동적 대시보드 스크립트 -->
+    <script>
+        // 드롭다운 토글 함수
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            if (dropdown) {
+                dropdown.classList.toggle('open');
+            }
+        }
+
+        // 전역 설정
+        window.CONFIG = window.CONFIG || {
+            API_BASE_URL: ''
+        };
+
+        // 🏢 현재 선택된 사업장 ID 가져오기
+        function getCurrentSiteId() {
+            if (window.SiteSelector && typeof SiteSelector.getCurrentContext === 'function') {
+                const context = SiteSelector.getCurrentContext();
+                return context?.site_id || null;
+            }
+            return null;
+        }
+
+        // 🏢 현재 선택된 사업장 이름 가져오기
+        function getCurrentSiteName() {
+            if (window.SiteSelector && typeof SiteSelector.getCurrentContext === 'function') {
+                const context = SiteSelector.getCurrentContext();
+                return context?.site_name || null;
+            }
+            return null;
+        }
+
+        // 사업장 선택기 초기화
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.SiteSelector) {
+                SiteSelector.init('site-selector-container');
+                SiteSelector.on('siteChange', function (context) {
+                    console.log('사업장 변경:', context);
+                    // 대시보드 데이터 새로고침
+                    fetchDashboardData();
+                    // 식수 차트 새로고침
+                    createMealCountChart();
+                    // 4일 식수 현황 새로고침
+                    fetchDailyMealCounts();
+                });
+            }
+        });
+
+        // 날짜 및 사용자 정보 설정
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'short'
+        });
+
+        // 사용자 정보 로드 및 인증 버튼 렌더링
+        const userInfo = JSON.parse(localStorage.getItem('user_info') || localStorage.getItem('user') || '{}');
+        document.getElementById('current-user').textContent = userInfo.username || '미로그인';
+        renderAuthButtons(userInfo);
+
+        // 인증 버튼 렌더링
+        function renderAuthButtons(user) {
+            const authButtons = document.getElementById('auth-buttons');
+            if (user && user.username) {
+                authButtons.innerHTML = `
+                    <span class="user-info"><i class="fas fa-user"></i> ${user.username}</span>
+                    <button class="btn btn-logout" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> 로그아웃
+                    </button>
+                `;
+
+                // admin 또는 headquarters 역할인 경우에만 ADMIN 링크 표시
+                if (user.role === 'admin' || user.role === 'headquarters') {
+                    const adminLink = document.getElementById('admin-link');
+                    if (adminLink) adminLink.style.display = 'block';
+                }
+            } else {
+                authButtons.innerHTML = `
+                    <a href="login.html" class="btn btn-login">
+                        <i class="fas fa-sign-in-alt"></i> 로그인
+                    </a>
+                `;
+            }
+        }
+
+        // 로그아웃 함수
+        async function logout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch (e) {
+                console.error('로그아웃 API 호출 실패:', e);
+            }
+            // 모든 인증 관련 데이터 삭제
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('user_info');
+            localStorage.removeItem('token');
+            localStorage.removeItem('supplier_token');
+            localStorage.removeItem('supplier_info');
+            location.href = 'login.html?logout=true';
+        }
+
+        // API 호출 함수 (병렬 호출로 최적화)
+        async function fetchDashboardData() {
+            try {
+                // 🏢 사업장/그룹 필터링 파라미터
+                const context = SiteSelector?.getCurrentContext?.();
+                let params = new URLSearchParams();
+                if (context?.site_id) {
+                    params.set('site_id', context.site_id);
+                } else if (context?.group_id) {
+                    params.set('group_id', context.group_id);
+                }
+                const queryString = params.toString() ? `?${params.toString()}` : '';
+                const userId = userInfo?.id || 0;
+
+                // 🚀 모든 API 병렬 호출 (순차 → 병렬로 변경)
+                const [
+                    dashboardResponse,
+                    noticesResponse,
+                    safetyResponse,
+                    requestsResponse
+                ] = await Promise.all([
+                    fetch(`/api/admin/dashboard-stats${queryString}`),
+                    fetch(`/api/notices?notice_type=business&limit=4&user_id=${userId}`),
+                    fetch(`/api/notices?notice_type=hygiene&limit=4&user_id=${userId}`),
+                    fetch(`/api/system-requests?limit=4`)
+                ]);
+
+                // JSON 파싱도 병렬로
+                const [dashboardStats, noticesData, safetyData, requestsData] = await Promise.all([
+                    dashboardResponse.json(),
+                    noticesResponse.json(),
+                    safetyResponse.json(),
+                    requestsResponse.json()
+                ]);
+
+                // 데이터 업데이트 (동기적으로 빠르게 처리)
+                updateDashboardCards(dashboardStats);
+                renderWorkNotices(noticesData);
+                renderSafetyAlerts(safetyData);
+                renderSystemRequests(requestsData);
+
+                // 성공적으로 가져온 데이터 캐시에 저장
+                if (dashboardStats.success) {
+                    saveToCache(dashboardStats);
+                }
+
+            } catch (error) {
+                console.error('대시보드 데이터 로드 실패:', error);
+                showErrorState();
+            }
+        }
+
+        // 대시보드 카드 업데이트 (통합 API 응답 사용)
+        function updateDashboardCards(dashboardStats) {
+            if (!dashboardStats.success) {
+                console.error('대시보드 통계 로드 실패:', dashboardStats.error);
+                return;
+            }
+
+            const data = dashboardStats.data;
+
+            // 식자재 데이터 (사업장 발주 가능 식자재 수)
+            document.getElementById('ingredient-count').textContent =
+                (data.total_ingredients || 0).toLocaleString() + '건';
+            document.getElementById('data-version').textContent =
+                dashboardStats.filtered_by?.site_id || dashboardStats.filtered_by?.group_id
+                    ? '사업장 필터 적용'
+                    : '전체';
+
+            // 레시피 데이터 (전체 공용 레시피)
+            document.getElementById('recipe-count').textContent =
+                (data.total_recipes || 0).toLocaleString() + '건';
+            document.getElementById('new-recipes').textContent = '-'; // 신규 레시피는 별도 계산 필요
+
+            // 협력업체 데이터 (사업장 발주 가능 업체)
+            document.getElementById('supplier-count').textContent =
+                (data.total_suppliers || 0) + '개';
+
+            // 주요 협력업체 표시
+            if (data.main_suppliers && data.main_suppliers.length > 0) {
+                document.getElementById('main-suppliers').textContent =
+                    data.main_suppliers.join(', ');
+            } else {
+                document.getElementById('main-suppliers').textContent = '-';
+            }
+
+            // 보건증 상태 업데이트 (API 데이터 사용)
+            const health = data.health_certificates || {};
+            document.querySelector('#urgent-health span').textContent = health.urgent || 0;
+            document.querySelector('#warning-health span').textContent = health.warning || 0;
+            document.querySelector('#normal-health span').textContent = health.normal || 0;
+            document.getElementById('next-health-expire').textContent =
+                health.next_expiry || '등록된 보건증 없음';
+
+            // 가격 분석 (TODO: 실제 데이터 연동 필요)
+            document.getElementById('price-trend').textContent = '-';
+        }
+
+        // 업무연락 렌더링 (데이터는 병렬 호출에서 받음)
+        function renderWorkNotices(result) {
+            try {
+                if (result.success && result.data.notices) {
+                    const notices = result.data.notices;
+                    let noticeHtml = '';
+                    let unreadCount = 0;
+
+                    if (notices.length === 0) {
+                        noticeHtml = '<div class="mail-item"><div class="mail-preview">등록된 업무연락이 없습니다.</div></div>';
+                    } else {
+                        notices.forEach(notice => {
+                            if (!notice.is_read) unreadCount++;
+                            noticeHtml += `
+                                <div class="mail-item ${notice.is_read ? '' : 'unread'} ${notice.is_urgent ? 'urgent' : ''}">
+                                    <div class="mail-header">
+                                        <div class="mail-subject">${notice.title}</div>
+                                        <div class="mail-date">${formatDate(notice.created_at)}</div>
+                                    </div>
+                                    <div class="mail-author">보낸이: ${notice.author_name || '본사'}</div>
+                                    <div class="mail-preview">${notice.content?.substring(0, 50) || ''}</div>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    document.getElementById('notice-list').innerHTML = noticeHtml;
+                    document.getElementById('notice-count').textContent = result.data.total || notices.length;
+                    document.getElementById('unread-count').textContent = unreadCount;
+                }
+            } catch (error) {
+                console.error('업무연락 렌더링 실패:', error);
+                document.getElementById('notice-list').innerHTML = '<div class="mail-item"><div class="mail-preview">로드 실패</div></div>';
+            }
+        }
+
+        // 날짜 포맷
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+        }
+
+        // 안전 알림 렌더링 (데이터는 병렬 호출에서 받음)
+        function renderSafetyAlerts(result) {
+            try {
+                if (result.success && result.data.notices) {
+                    const alerts = result.data.notices;
+                    let alertHtml = '';
+                    let unreadCount = 0;
+
+                    if (alerts.length === 0) {
+                        alertHtml = '<div class="mail-item"><div class="mail-preview">등록된 위생안전 알림이 없습니다.</div></div>';
+                    } else {
+                        alerts.forEach(alert => {
+                            if (!alert.is_read) unreadCount++;
+                            alertHtml += `
+                                <div class="mail-item ${alert.is_read ? '' : 'unread'} ${alert.is_urgent ? 'urgent' : ''}">
+                                    <div class="mail-header">
+                                        <div class="mail-subject">${alert.is_urgent ? '[긴급] ' : ''}${alert.title}</div>
+                                        <div class="mail-date">${formatDate(alert.created_at)}</div>
+                                    </div>
+                                    <div class="mail-author">보낸이: ${alert.author_name || '본사'}</div>
+                                    <div class="mail-preview">${alert.content?.substring(0, 50) || ''}</div>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    document.getElementById('safety-list').innerHTML = alertHtml;
+                    document.getElementById('safety-count').textContent = result.data.total || alerts.length;
+                    document.getElementById('safety-unread-count').textContent = unreadCount;
+                }
+            } catch (error) {
+                console.error('위생안전 알림 렌더링 실패:', error);
+                document.getElementById('safety-list').innerHTML = '<div class="mail-item"><div class="mail-preview">로드 실패</div></div>';
+            }
+        }
+
+        // 시스템 요청사항 렌더링 (데이터는 병렬 호출에서 받음)
+        function renderSystemRequests(result) {
+            try {
+                if (result.success && result.data.requests) {
+                    const requests = result.data.requests;
+                    let requestHtml = '';
+                    let pendingCount = 0;
+
+                    if (requests.length === 0) {
+                        requestHtml = '<div class="mail-item"><div class="mail-preview">등록된 시스템 요청이 없습니다.</div></div>';
+                    } else {
+                        requests.forEach(request => {
+                            const isPending = request.status === 'pending' || request.status === 'in_progress';
+                            if (isPending) pendingCount++;
+                            requestHtml += `
+                                <div class="mail-item ${isPending ? 'unread' : ''}">
+                                    <div class="mail-header">
+                                        <div class="mail-subject">[${getTypeText(request.request_type)}] ${request.title}</div>
+                                        <div class="mail-date">${formatDate(request.created_at)}</div>
+                                    </div>
+                                    <div class="mail-author">요청자: ${request.author_name || '익명'}</div>
+                                    <div class="mail-preview">${request.content?.substring(0, 50) || ''}</div>
+                                </div>
+                            `;
+                        });
+                    }
+
+                    document.getElementById('request-list').innerHTML = requestHtml;
+                    document.getElementById('request-count').textContent = result.data.total || requests.length;
+                    document.getElementById('pending-count').textContent = pendingCount;
+                }
+            } catch (error) {
+                console.error('시스템 요청 렌더링 실패:', error);
+                document.getElementById('request-list').innerHTML = '<div class="mail-item"><div class="mail-preview">로드 실패</div></div>';
+            }
+        }
+
+        function getTypeText(type) {
+            const types = { 'bug': '버그', 'feature': '기능', 'question': '문의' };
+            return types[type] || type;
+        }
+
+
+        // 오류 상태 표시
+        function showErrorState() {
+            const errorElements = [
+                'ingredient-count', 'recipe-count', 'supplier-count', 'user-count'
+            ];
+            errorElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = '연결 오류';
+            });
+        }
+
+        // 가격 분석 차트 생성
+        function createPriceChart() {
+            const ctx = document.getElementById('priceAnalysisChart');
+            if (!ctx) return;
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['지난 달', '이번 달'],
+                    datasets: [{
+                        data: [100, 102.3],
+                        borderColor: '#e67e22',
+                        backgroundColor: 'rgba(230, 126, 34, 0.1)',
+                        tension: 0.4,
+                        pointRadius: 0,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+
+        // 1개월간 식수 현황 차트 생성
+        let mealCountChartInstance = null;
+
+        async function createMealCountChart() {
+            const ctx = document.getElementById('mealCountChart');
+            if (!ctx) return;
+
+            // 기존 차트 제거
+            if (mealCountChartInstance) {
+                mealCountChartInstance.destroy();
+            }
+
+            // 기간 계산: 3주 전 ~ 10일 후
+            const today = new Date();
+            const threeWeeksAgo = new Date();
+            threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);  // 3주 전
+            const tenDaysLater = new Date();
+            tenDaysLater.setDate(tenDaysLater.getDate() + 10);  // 10일 후
+
+            const startDate = threeWeeksAgo.toISOString().split('T')[0];
+            const endDate = tenDaysLater.toISOString().split('T')[0];
+
+            try {
+                // 사업장 필터링 파라미터
+                const context = SiteSelector?.getCurrentContext?.();
+                let params = new URLSearchParams();
+                params.set('start_date', startDate);
+                params.set('end_date', endDate);
+
+                if (context?.site_id) {
+                    params.set('site_id', context.site_id);
+                } else if (context?.group_id) {
+                    params.set('group_id', context.group_id);
+                }
+
+                const response = await fetch(`/api/meal-counts/range?${params.toString()}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    // 일별 식수 합계 계산
+                    const dailyTotals = {};
+                    let totalCount = 0;
+
+                    result.data.forEach(item => {
+                        const date = item.work_date;
+                        const count = item.meal_count || 0;
+
+                        if (!dailyTotals[date]) {
+                            dailyTotals[date] = 0;
+                        }
+                        dailyTotals[date] += count;
+                        totalCount += count;
+                    });
+
+                    // 날짜순 정렬
+                    const sortedDates = Object.keys(dailyTotals).sort();
+                    const labels = sortedDates.map(d => {
+                        const date = new Date(d);
+                        return `${date.getMonth() + 1}/${date.getDate()}`;
+                    });
+                    const data = sortedDates.map(d => dailyTotals[d]);
+
+                    // 총 식수 표시
+                    document.getElementById('total-meal-count').textContent = totalCount.toLocaleString();
+
+                    // 차트 생성
+                    mealCountChartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: 'rgba(0, 184, 148, 0.6)',
+                                borderColor: '#00b894',
+                                borderWidth: 1,
+                                borderRadius: 4,
+                                barPercentage: 0.8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    padding: 10,
+                                    cornerRadius: 8,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.raw.toLocaleString()}식`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    display: false
+                                },
+                                y: {
+                                    display: false,
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // 데이터 없음
+                    document.getElementById('total-meal-count').textContent = '0';
+                    createEmptyMealChart(ctx);
+                }
+            } catch (error) {
+                console.error('식수 데이터 로드 실패:', error);
+                document.getElementById('total-meal-count').textContent = '-';
+                createEmptyMealChart(ctx);
+            }
+        }
+
+        function createEmptyMealChart(ctx) {
+            mealCountChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['데이터 없음'],
+                    datasets: [{
+                        data: [0],
+                        backgroundColor: 'rgba(200, 200, 200, 0.3)',
+                        borderColor: '#ccc',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+
+        // ========== 캐시 우선 로딩 시스템 ==========
+        const CACHE_KEY = 'dashboard_stats_cache';
+        const CACHE_EXPIRY = 30 * 60 * 1000; // 30분
+
+        // 캐시에서 데이터 로드
+        function loadFromCache() {
+            try {
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (cached) {
+                    const { data, timestamp, siteId } = JSON.parse(cached);
+                    const currentSiteId = getCurrentSiteId();
+
+                    // 같은 사업장의 캐시만 사용
+                    if (siteId === currentSiteId) {
+                        console.log('📦 캐시에서 대시보드 데이터 로드');
+                        return data;
+                    }
+                }
+            } catch (e) {
+                console.error('캐시 로드 실패:', e);
+            }
+            return null;
+        }
+
+        // 캐시에 데이터 저장
+        function saveToCache(data) {
+            try {
+                const cacheData = {
+                    data: data,
+                    timestamp: Date.now(),
+                    siteId: getCurrentSiteId()
+                };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+                console.log('💾 대시보드 데이터 캐시 저장');
+            } catch (e) {
+                console.error('캐시 저장 실패:', e);
+            }
+        }
+
+        // ========== 4일 식수 현황 (날짜 이동 가능) ==========
+        let mealDayOffset = 0; // 날짜 오프셋 (0 = 어제/오늘/내일/모레)
+
+        // 날짜 이동 함수
+        function moveMealDays(delta, reset = false) {
+            if (reset) {
+                mealDayOffset = 0;
+            } else {
+                mealDayOffset += delta;
+            }
+            fetchDailyMealCounts();
+        }
+
+        // 날짜 레이블 생성 함수
+        function getDayLabel(offset) {
+            const labels = {
+                '-1': '어제',
+                '0': '오늘',
+                '1': '내일',
+                '2': '모레'
+            };
+            if (labels[offset.toString()]) {
+                return labels[offset.toString()];
+            }
+            // 그 외의 날짜는 월/일 형식으로 표시
+            const date = new Date();
+            date.setDate(date.getDate() + offset);
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+
+        // 날짜 스타일 클래스 반환
+        function getDayClass(offset) {
+            if (offset < 0) return 'past';
+            if (offset === 0) return 'today';
+            if (offset === 1) return 'tomorrow';
+            return 'future';
+        }
+
+        async function fetchDailyMealCounts() {
+            const context = SiteSelector?.getCurrentContext?.();
+
+            // 사업장이 선택되지 않은 경우 기본 메시지 표시
+            if (!context?.site_id) {
+                for (let i = 0; i < 4; i++) {
+                    document.getElementById(`meal-count-${i}`).textContent = '-';
+                }
+                console.log('사업장 미선택 - 식수 현황 스킵');
+                return;
+            }
+
+            // 날짜 계산 (오프셋 적용)
+            const today = new Date();
+            const baseOffset = mealDayOffset - 1; // 첫번째 칸이 기준점-1일
+
+            const dates = [];
+            for (let i = 0; i < 4; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + baseOffset + i);
+                dates.push(d);
+            }
+
+            const formatDate = (d) => d.toISOString().split('T')[0];
+
+            // 레이블 업데이트
+            for (let i = 0; i < 4; i++) {
+                const offset = baseOffset + i;
+                const label = getDayLabel(offset);
+                const dayClass = getDayClass(offset);
+
+                document.getElementById(`meal-label-${i}`).textContent = label;
+
+                // 스타일 클래스 업데이트
+                const dayEl = document.getElementById(`meal-day-${i}`);
+                dayEl.className = `meal-day ${dayClass}`;
+            }
+
+            try {
+                // 4일간의 데이터를 한번에 조회
+                const params = new URLSearchParams();
+                params.set('start_date', formatDate(dates[0]));
+                params.set('end_date', formatDate(dates[3]));
+                params.set('site_id', context.site_id);
+
+                const response = await fetch(`/api/meal-counts/range?${params.toString()}`);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    // 날짜별로 식수 합계 계산
+                    const countsByDate = {};
+                    result.data.forEach(item => {
+                        const date = item.work_date;
+                        if (!countsByDate[date]) countsByDate[date] = 0;
+                        countsByDate[date] += (item.meal_count || 0);
+                    });
+
+                    // 각 날짜의 식수 표시
+                    for (let i = 0; i < 4; i++) {
+                        const dateStr = formatDate(dates[i]);
+                        document.getElementById(`meal-count-${i}`).textContent =
+                            (countsByDate[dateStr] || 0).toLocaleString();
+                    }
+
+                    console.log('✅ 4일 식수 현황 로드 완료:', countsByDate);
+                } else {
+                    // 데이터 없음
+                    for (let i = 0; i < 4; i++) {
+                        document.getElementById(`meal-count-${i}`).textContent = '0';
+                    }
+                }
+            } catch (error) {
+                console.error('식수 현황 로드 실패:', error);
+                for (let i = 0; i < 4; i++) {
+                    document.getElementById(`meal-count-${i}`).textContent = '-';
+                }
+            }
+        }
+
+        // 초기 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            // 브랜딩 시스템 적용
+            if (typeof BrandingManager !== 'undefined') {
+                BrandingManager.applyBranding('급식관리 대시보드');
+                console.log('✅ 브랜딩 시스템 적용 완료 (사용자 대시보드)');
+            }
+
+            // 1. 캐시 데이터 먼저 표시 (즉시 화면에 표시)
+            const cachedData = loadFromCache();
+            if (cachedData) {
+                updateDashboardCards(cachedData);
+                console.log('⚡ 캐시 데이터로 즉시 렌더링');
+            }
+
+            // 2. 새 데이터 백그라운드에서 가져오기
+            fetchDashboardData();
+            createPriceChart();
+
+            // 3. 사업장 선택기 초기화 후 식수 데이터 로드
+            setTimeout(() => {
+                createMealCountChart();
+                fetchDailyMealCounts();  // 4일 식수 현황
+            }, 500);
+
+            // 5분마다 데이터 새로고침
+            setInterval(() => {
+                fetchDashboardData();
+                createMealCountChart();
+                fetchDailyMealCounts();
+            }, 5 * 60 * 1000);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>백업 관리 - 다함 식자재 관리</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #495057;
+            color: white;
+            font-weight: bold;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status-ok { background-color: #28a745; color: white; }
+        .status-warning { background-color: #ffc107; color: black; }
+        .status-error { background-color: #dc3545; color: white; }
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .history-item:hover {
+            background-color: #f1f3f5;
+        }
+        .history-item.selected {
+            background-color: #e7f5ff;
+            border-left: 3px solid #228be6;
+        }
+        .table-sm td, .table-sm th {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+        #logArea {
+            height: 200px;
+            overflow-y: auto;
+            background: #212529;
+            color: #00ff00;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        .btn-action {
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-shield-check"></i> 백업 관리</h2>
+            <div>
+                <a href="admin_dashboard.html" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> 관리자 대시보드
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 백업 상태 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-info-circle"></i> 백업 시스템 상태
+                    </div>
+                    <div class="card-body">
+                        <!-- 스케줄러 상태 -->
+                        <div id="schedulerStatus" class="alert alert-secondary py-2 mb-3">
+                            <i class="bi bi-clock"></i> 스케줄러 상태 확인 중...
+                        </div>
+                        <div id="statusArea">
+                            <p class="text-muted">로딩 중...</p>
+                        </div>
+                        <hr>
+                        <button class="btn btn-primary btn-sm btn-action" onclick="createSnapshot()">
+                            <i class="bi bi-camera"></i> 스냅샷 생성
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm btn-action" onclick="loadStatus()">
+                            <i class="bi bi-arrow-clockwise"></i> 새로고침
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 최근 스냅샷 -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-clock-history"></i> 최근 스냅샷
+                    </div>
+                    <div class="card-body" style="max-height: 200px; overflow-y: auto;">
+                        <div id="snapshotList">
+                            <p class="text-muted">로딩 중...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 식자재 백업 (15일 주기) -->
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-database"></i> 식자재 백업 (15일 주기)
+                    </div>
+                    <div class="card-body">
+                        <div id="ingredientsBackupStatus">
+                            <p class="text-muted">로딩 중...</p>
+                        </div>
+                        <hr>
+                        <button class="btn btn-success btn-sm" onclick="backupIngredients()">
+                            <i class="bi bi-download"></i> 식자재 전체 백업
+                        </button>
+                        <p class="text-muted small mt-2 mb-0">
+                            ~41MB, 기준용량 포함, 1개월 보관
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 식단 이력 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-calendar3"></i> 식단 변경 이력
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <input type="date" id="historyDate" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-6">
+                                <select id="historyCategory" class="form-select form-select-sm">
+                                    <option value="">전체 카테고리</option>
+                                    <option value="도시락">도시락</option>
+                                    <option value="학교">학교</option>
+                                    <option value="요양원">요양원</option>
+                                    <option value="운반">운반</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm mb-3" onclick="loadMealHistory()">
+                            <i class="bi bi-search"></i> 이력 조회
+                        </button>
+                        <div id="mealHistoryList" style="max-height: 400px; overflow-y: auto;">
+                            <p class="text-muted text-center">날짜를 선택하여 조회하세요</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 복원 패널 -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="bi bi-arrow-counterclockwise"></i> 데이터 복원
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>주의:</strong> 복원 시 현재 데이터가 덮어쓰여집니다.
+                        </div>
+
+                        <h6>식단 복원</h6>
+                        <div class="mb-3">
+                            <label class="form-label">복원할 날짜</label>
+                            <input type="date" id="restoreDate" class="form-control form-control-sm">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">카테고리</label>
+                            <select id="restoreCategory" class="form-select form-select-sm">
+                                <option value="">전체</option>
+                                <option value="도시락">도시락</option>
+                                <option value="학교">학교</option>
+                                <option value="요양원">요양원</option>
+                                <option value="운반">운반</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">복원 시점</label>
+                            <select id="restoreTime" class="form-select form-select-sm">
+                                <option value="">이력 조회 후 선택</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-warning btn-sm" onclick="restoreMealPlans()" id="restoreBtn" disabled>
+                            <i class="bi bi-arrow-counterclockwise"></i> 식단 복원
+                        </button>
+
+                        <hr>
+
+                        <h6>스냅샷에서 복원</h6>
+                        <div class="mb-3">
+                            <label class="form-label">스냅샷 날짜</label>
+                            <select id="snapshotSelect" class="form-select form-select-sm">
+                                <option value="">스냅샷 선택</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">테이블</label>
+                            <select id="tableSelect" class="form-select form-select-sm">
+                                <option value="">테이블 선택</option>
+                                <option value="business_locations">사업장 (business_locations)</option>
+                                <option value="site_categories">카테고리 (site_categories)</option>
+                                <option value="category_slots">슬롯 (category_slots)</option>
+                                <option value="meal_slot_settings">슬롯 설정 (meal_slot_settings)</option>
+                                <option value="menu_recipes">메뉴/레시피 (menu_recipes)</option>
+                                <option value="meal_plans">식단 (meal_plans)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-outline-warning btn-sm" onclick="previewSnapshot()">
+                            <i class="bi bi-eye"></i> 미리보기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 파일 내보내기 (범용 백업) -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-file-earmark-arrow-down"></i> 파일 내보내기
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-3">
+                            프로그램 재개발 또는 DB 구조 변경에도 복원 가능한 범용 백업
+                        </p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-info btn-sm" onclick="exportSQL()">
+                                <i class="bi bi-filetype-sql"></i> SQL 파일 내보내기
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="exportCSV()">
+                                <i class="bi bi-filetype-csv"></i> CSV 파일 내보내기
+                            </button>
+                        </div>
+                        <hr>
+                        <div id="exportFileList" style="max-height: 150px; overflow-y: auto;">
+                            <p class="text-muted small mb-0">내보낸 파일 목록</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 로그 -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-terminal"></i> 작업 로그
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="logArea"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 로그 함수
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('logArea');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : '#00ff00';
+            logArea.innerHTML += `<div style="color: ${color}">[${time}] ${message}</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        // 백업 상태 로드
+        async function loadStatus() {
+            try {
+                log('백업 상태 조회 중...');
+                const response = await fetch('/api/backup/status');
+                const data = await response.json();
+
+                if (data.success) {
+                    // 오늘 날짜
+                    const today = new Date().toISOString().split('T')[0];
+                    const hasSnapshotToday = data.recent_snapshots.includes(today);
+
+                    let html = '';
+
+                    // 스냅샷 상태 표시
+                    html += `<div class="alert ${hasSnapshotToday ? 'alert-success' : 'alert-warning'} py-2 mb-3">
+                        <i class="bi bi-${hasSnapshotToday ? 'check-circle-fill' : 'exclamation-triangle'}"></i>
+                        <strong>오늘 스냅샷:</strong> ${hasSnapshotToday ? '완료' : '없음'}
+                    </div>`;
+
+                    // 최근 스냅샷 날짜 표시
+                    if (data.recent_snapshots.length > 0) {
+                        html += `<p class="small text-muted mb-2">최근 스냅샷: ${data.recent_snapshots.slice(0, 3).join(', ')}</p>`;
+                    }
+
+                    // 이력 테이블 상태 (간략하게)
+                    html += '<hr><p class="small text-muted mb-1">변경 이력 기록:</p>';
+                    html += '<table class="table table-sm mb-0">';
+
+                    const historyTables = ['meal_plans_history', 'menu_recipes_history', 'ingredients_history'];
+                    for (const table of historyTables) {
+                        const info = data.history_tables[table];
+                        if (info) {
+                            const displayName = table.replace('_history', '');
+                            const count = info.count || 0;
+                            const statusClass = count > 0 ? 'status-ok' : 'status-warning';
+                            html += `<tr>
+                                <td class="small">${displayName}</td>
+                                <td><span class="status-badge ${statusClass}">${count}</span></td>
+                            </tr>`;
+                        }
+                    }
+                    html += '</table>';
+
+                    document.getElementById('statusArea').innerHTML = html;
+
+                    // 스냅샷 선택 옵션 업데이트
+                    const snapshotSelect = document.getElementById('snapshotSelect');
+                    snapshotSelect.innerHTML = '<option value="">스냅샷 선택</option>';
+                    data.recent_snapshots.forEach(date => {
+                        snapshotSelect.innerHTML += `<option value="${date}">${date}</option>`;
+                    });
+
+                    log('백업 상태 로드 완료', 'success');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                log('상태 조회 실패: ' + error.message, 'error');
+                document.getElementById('statusArea').innerHTML = '<p class="text-danger">상태 조회 실패</p>';
+            }
+        }
+
+        // 스냅샷 목록 로드
+        async function loadSnapshots() {
+            try {
+                const response = await fetch('/api/backup/snapshots?days=30');
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = '';
+                    const sortedDates = Object.keys(data.snapshots).sort().reverse();
+
+                    for (const date of sortedDates) {
+                        const info = data.snapshots[date];
+                        const tableCount = info.tables.length;
+                        const totalRecords = info.tables.reduce((sum, t) => sum + t.record_count, 0);
+                        const isToday = date === new Date().toISOString().split('T')[0];
+
+                        html += `<div class="history-item ${isToday ? 'selected' : ''}" onclick="selectSnapshot('${date}')">
+                            <div class="d-flex justify-content-between">
+                                <strong>${date}</strong>
+                                ${isToday ? '<span class="badge bg-success">오늘</span>' : ''}
+                            </div>
+                            <div class="small text-muted">${tableCount}개 테이블, ${totalRecords.toLocaleString()}개 레코드</div>
+                        </div>`;
+                    }
+                    document.getElementById('snapshotList').innerHTML = html || '<p class="text-muted">스냅샷 없음</p>';
+                }
+            } catch (error) {
+                log('스냅샷 목록 로드 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 스냅샷 생성
+        async function createSnapshot() {
+            const today = new Date().toISOString().split('T')[0];
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+
+            // 버튼 비활성화 및 로딩 표시
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 생성 중...';
+            log('스냅샷 생성 중: ' + today);
+
+            try {
+                const response = await fetch('/api/backup/snapshot/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: today, tables: ['all'] })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    log('스냅샷 생성 완료!', 'success');
+                    let totalRecords = 0;
+                    for (const [table, result] of Object.entries(data.results)) {
+                        if (result.success) {
+                            log(`  - ${table}: ${result.count}개 레코드`, 'success');
+                            totalRecords += result.count;
+                        } else {
+                            log(`  - ${table}: 실패 - ${result.error}`, 'error');
+                        }
+                    }
+
+                    // 성공 알림
+                    alert(`✅ 스냅샷 생성 완료!\n\n날짜: ${today}\n테이블: ${Object.keys(data.results).length}개\n총 레코드: ${totalRecords.toLocaleString()}개`);
+
+                    loadStatus();
+                    loadSnapshots();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                log('스냅샷 생성 실패: ' + error.message, 'error');
+                alert('❌ 스냅샷 생성 실패: ' + error.message);
+            } finally {
+                // 버튼 복원
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // 식자재 백업 상태 로드
+        async function loadIngredientsBackupStatus() {
+            try {
+                const response = await fetch('/api/backup/schedule/check');
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = '<table class="table table-sm mb-0">';
+
+                    const lastBackup = data.last_ingredients_backup
+                        ? new Date(data.last_ingredients_backup).toLocaleDateString()
+                        : '없음';
+                    const daysSince = data.days_since_ingredients_backup;
+                    const needed = data.ingredients_backup_needed;
+
+                    html += `<tr>
+                        <td>마지막 백업</td>
+                        <td><strong>${lastBackup}</strong></td>
+                    </tr>`;
+                    html += `<tr>
+                        <td>경과일</td>
+                        <td><span class="badge ${daysSince >= 15 ? 'bg-danger' : daysSince >= 10 ? 'bg-warning' : 'bg-success'}">${daysSince}일</span></td>
+                    </tr>`;
+                    html += `<tr>
+                        <td>상태</td>
+                        <td>${needed ? '<span class="text-danger">백업 필요</span>' : '<span class="text-success">정상</span>'}</td>
+                    </tr>`;
+                    html += '</table>';
+
+                    document.getElementById('ingredientsBackupStatus').innerHTML = html;
+                }
+            } catch (error) {
+                document.getElementById('ingredientsBackupStatus').innerHTML = '<p class="text-danger">상태 확인 실패</p>';
+            }
+        }
+
+        // 식자재 전체 백업
+        async function backupIngredients() {
+            if (!confirm('식자재 전체 백업을 실행하시겠습니까?\n\n약 89,000개 레코드, ~41MB 용량입니다.')) {
+                return;
+            }
+
+            log('식자재 전체 백업 시작...');
+
+            try {
+                const response = await fetch('/api/backup/ingredients/full', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    log(`식자재 백업 완료: ${data.record_count}개 레코드`, 'success');
+                    if (data.old_backups_deleted > 0) {
+                        log(`  - 오래된 백업 ${data.old_backups_deleted}개 삭제됨`, 'info');
+                    }
+                    alert(`식자재 백업 완료!\n\n- 백업명: ${data.backup_name}\n- 레코드: ${data.record_count}개`);
+                    loadIngredientsBackupStatus();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                log('식자재 백업 실패: ' + error.message, 'error');
+                alert('백업 실패: ' + error.message);
+            }
+        }
+
+        // SQL 파일 내보내기
+        async function exportSQL() {
+            if (!confirm('SQL 파일로 전체 데이터를 내보내시겠습니까?\n\n이 백업은 프로그램 재개발이나 DB 구조 변경에도 복원 가능합니다.')) {
+                return;
+            }
+
+            log('SQL 파일 내보내기 시작...');
+
+            try {
+                const response = await fetch('/api/backup/export/sql', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tables: ['all'] })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    log(`SQL 내보내기 완료: ${data.file}`, 'success');
+                    log(`  - 크기: ${data.size}`, 'success');
+                    alert(`SQL 내보내기 완료!\n\n- 파일: ${data.file}\n- 크기: ${data.size}`);
+                    loadExportFiles();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                log('SQL 내보내기 실패: ' + error.message, 'error');
+                alert('내보내기 실패: ' + error.message);
+            }
+        }
+
+        // CSV 파일 내보내기
+        async function exportCSV() {
+            if (!confirm('CSV 파일로 전체 데이터를 내보내시겠습니까?\n\n엑셀에서 열기 가능한 범용 형식입니다.')) {
+                return;
+            }
+
+            log('CSV 파일 내보내기 시작...');
+
+            try {
+                const response = await fetch('/api/backup/export/csv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tables: ['all'] })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    log(`CSV 내보내기 완료: ${data.directory}`, 'success');
+                    log(`  - 크기: ${data.total_size}`, 'success');
+                    for (const [table, result] of Object.entries(data.tables)) {
+                        if (result.success) {
+                            log(`  - ${table}: ${result.records}개`, 'info');
+                        }
+                    }
+                    alert(`CSV 내보내기 완료!\n\n- 폴더: ${data.directory}\n- 크기: ${data.total_size}`);
+                    loadExportFiles();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                log('CSV 내보내기 실패: ' + error.message, 'error');
+                alert('내보내기 실패: ' + error.message);
+            }
+        }
+
+        // 내보낸 파일 목록 로드
+        async function loadExportFiles() {
+            try {
+                const response = await fetch('/api/backup/export/list');
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = '';
+                    if (data.backups.length === 0) {
+                        html = '<p class="text-muted small mb-0">내보낸 파일 없음</p>';
+                    } else {
+                        data.backups.forEach(b => {
+                            const icon = b.type === 'sql' ? 'filetype-sql' : 'filetype-csv';
+                            const date = new Date(b.created).toLocaleDateString();
+                            html += `<div class="small py-1 border-bottom">
+                                <i class="bi bi-${icon}"></i> ${b.name}
+                                <span class="text-muted float-end">${b.size}</span>
+                            </div>`;
+                        });
+                    }
+                    document.getElementById('exportFileList').innerHTML = html;
+                }
+            } catch (error) {
+                console.error('파일 목록 로드 실패:', error);
+            }
+        }
+
+        // 식단 이력 조회
+        async function loadMealHistory() {
+            const date = document.getElementById('historyDate').value;
+            const category = document.getElementById('historyCategory').value;
+
+            if (!date) {
+                alert('날짜를 선택하세요');
+                return;
+            }
+
+            log(`식단 이력 조회: ${date} ${category || '전체'}`);
+
+            try {
+                let url = `/api/backup/meal-plans/history?plan_date=${date}&limit=50`;
+                if (category) url += `&category=${category}`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = '';
+                    const restoreTimeSelect = document.getElementById('restoreTime');
+                    restoreTimeSelect.innerHTML = '<option value="">시점 선택</option>';
+
+                    const uniqueTimes = new Set();
+
+                    data.history.forEach(item => {
+                        const changedAt = new Date(item.changed_at);
+                        const timeStr = changedAt.toLocaleString();
+
+                        html += `<div class="history-item" onclick="selectHistory('${item.changed_at}')">
+                            <div><strong>${item.slot_name}</strong> <span class="badge bg-secondary">${item.category || ''}</span></div>
+                            <div class="text-muted small">${item.action} - ${timeStr}</div>
+                            <div class="small">메뉴: ${item.menus ? item.menus.length : 0}개</div>
+                        </div>`;
+
+                        // 복원 시점 옵션 추가 (중복 제거)
+                        const timeKey = item.changed_at;
+                        if (!uniqueTimes.has(timeKey)) {
+                            uniqueTimes.add(timeKey);
+                            restoreTimeSelect.innerHTML += `<option value="${timeKey}">${timeStr}</option>`;
+                        }
+                    });
+
+                    document.getElementById('mealHistoryList').innerHTML = html || '<p class="text-muted text-center">이력 없음</p>';
+                    document.getElementById('restoreDate').value = date;
+                    document.getElementById('restoreBtn').disabled = data.history.length === 0;
+
+                    log(`이력 ${data.count}개 조회됨`, 'success');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                log('이력 조회 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 식단 복원
+        async function restoreMealPlans() {
+            const date = document.getElementById('restoreDate').value;
+            const category = document.getElementById('restoreCategory').value;
+            const restoreTo = document.getElementById('restoreTime').value;
+
+            if (!date || !restoreTo) {
+                alert('날짜와 복원 시점을 선택하세요');
+                return;
+            }
+
+            if (!confirm(`정말로 ${date} ${category || '전체'} 식단을 복원하시겠습니까?\n\n현재 데이터가 덮어쓰여집니다.`)) {
+                return;
+            }
+
+            log(`식단 복원 시작: ${date} ${category || '전체'} -> ${restoreTo}`);
+
+            try {
+                const response = await fetch('/api/backup/meal-plans/restore', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        plan_date: date,
+                        category: category || null,
+                        restore_to: restoreTo
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    log(`복원 완료: ${data.deleted}개 삭제, ${data.restored}개 복원`, 'success');
+                    alert('복원이 완료되었습니다.');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                log('복원 실패: ' + error.message, 'error');
+                alert('복원 실패: ' + error.message);
+            }
+        }
+
+        // 스냅샷 미리보기
+        async function previewSnapshot() {
+            const snapshotDate = document.getElementById('snapshotSelect').value;
+            const tableName = document.getElementById('tableSelect').value;
+
+            if (!snapshotDate || !tableName) {
+                alert('스냅샷 날짜와 테이블을 선택하세요');
+                return;
+            }
+
+            log(`스냅샷 미리보기: ${snapshotDate} / ${tableName}`);
+
+            try {
+                const response = await fetch('/api/backup/snapshot/restore', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        snapshot_date: snapshotDate,
+                        table_name: tableName
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    log(`미리보기 성공: ${data.record_count}개 레코드`, 'success');
+                    alert(`스냅샷 정보:\n날짜: ${data.snapshot_date}\n테이블: ${data.table_name}\n레코드: ${data.record_count}개\n\n전체 복원 기능은 추후 지원 예정입니다.`);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                log('미리보기 실패: ' + error.message, 'error');
+            }
+        }
+
+        function selectSnapshot(date) {
+            document.getElementById('snapshotSelect').value = date;
+            log(`스냅샷 선택: ${date}`);
+        }
+
+        function selectHistory(changedAt) {
+            document.getElementById('restoreTime').value = changedAt;
+            log(`복원 시점 선택: ${changedAt}`);
+        }
+
+        // 스케줄러 상태 로드
+        async function loadSchedulerStatus() {
+            try {
+                const response = await fetch('/api/backup/scheduler/status');
+                const data = await response.json();
+
+                const el = document.getElementById('schedulerStatus');
+                if (data.success && data.running) {
+                    const nextRun = data.next_run ? new Date(data.next_run).toLocaleString() : '알 수 없음';
+                    el.className = 'alert alert-success py-2 mb-3';
+                    el.innerHTML = `<i class="bi bi-check-circle-fill"></i> <strong>자동 백업 활성화</strong><br>
+                        <small>다음 백업: ${nextRun}</small>`;
+                } else {
+                    el.className = 'alert alert-warning py-2 mb-3';
+                    el.innerHTML = `<i class="bi bi-exclamation-triangle"></i> 자동 백업 비활성화<br>
+                        <small>서버 재시작 필요</small>`;
+                }
+            } catch (error) {
+                const el = document.getElementById('schedulerStatus');
+                el.className = 'alert alert-danger py-2 mb-3';
+                el.innerHTML = `<i class="bi bi-x-circle"></i> 스케줄러 상태 확인 실패`;
+            }
+        }
+
+        // 초기 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            // 오늘 날짜 기본값
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('historyDate').value = today;
+            document.getElementById('restoreDate').value = today;
+
+            loadSchedulerStatus();
+            loadStatus();
+            loadSnapshots();
+            loadIngredientsBackupStatus();
+            loadExportFiles();
+            log('백업 관리 시스템 초기화 완료', 'success');
+        });
+    </script>
+</body>
+</html>

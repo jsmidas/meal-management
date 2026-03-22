@@ -1,0 +1,22 @@
+<!-- 다함푸드 기본 로고 -->
+<svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- 배경 -->
+  <rect width="120" height="40" rx="8" fill="#2a5298"/>
+
+  <!-- 급식 아이콘 (그릇) -->
+  <g transform="translate(8, 8)">
+    <!-- 그릇 -->
+    <path d="M4 16 C4 20, 8 24, 12 24 C16 24, 20 20, 20 16 L4 16 Z" fill="white"/>
+    <!-- 밥 -->
+    <circle cx="12" cy="14" r="1.5" fill="#f4f4f4"/>
+    <circle cx="9" cy="15" r="1" fill="#f4f4f4"/>
+    <circle cx="15" cy="15" r="1" fill="#f4f4f4"/>
+    <!-- 젓가락 -->
+    <rect x="22" y="10" width="1" height="12" rx="0.5" fill="white"/>
+    <rect x="24" y="10" width="1" height="12" rx="0.5" fill="white"/>
+  </g>
+
+  <!-- 회사명 -->
+  <text x="40" y="18" font-family="'Malgun Gothic', sans-serif" font-size="10" font-weight="bold" fill="white">다함푸드</text>
+  <text x="40" y="30" font-family="'Malgun Gothic', sans-serif" font-size="8" fill="#e0e8ff">급식관리시스템</text>
+</svg>

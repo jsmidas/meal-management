@@ -1,0 +1,1136 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* 사이드바 스타일 제거됨 - common-sidebar.css 사용 */
+
+/* 메인 컨텐츠 */
+.main-content {
+    flex: 1;
+    padding: 0;
+}
+
+
+.header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.main-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* 요약 카드 */
+.summary-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.summary-card {
+    background: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    min-width: 80px;
+    flex: 0 0 auto;
+}
+
+.summary-card::before {
+    display: none;  /* 색상 배경이 있으므로 상단 바 숨김 */
+}
+
+.summary-card h3 {
+    color: white;
+    font-size: 13px;
+    margin-bottom: 2px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.summary-card .number {
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.summary-card .unit {
+    font-size: 10px;
+    color: rgba(255,255,255,0.9);
+}
+
+/* 페이지 헤더 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.page-header h2 {
+    color: #333;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.header-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.date-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+/* 테이블 */
+.data-table {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.data-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.data-table td {
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+
+.data-table tbody tr:hover {
+    background-color: #f8f9ff;
+}
+
+.meal-count-table th {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.meal-count-table td {
+    border-right: 1px solid #f0f0f0;
+}
+
+.meal-count-table .delivery-site {
+    background-color: #f8f9ff;
+    font-weight: 600;
+    color: #333;
+}
+
+.meal-count-table .meal-type {
+    background-color: #fff5f5;
+    color: #666;
+    font-weight: 500;
+}
+
+/* 버튼 */
+.btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-sm {
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+/* 식수 현황 요약 스타일 */
+.stat-item {
+    background: white;
+    border-radius: 10px;
+    padding: 12px 20px;
+    min-width: 80px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid #e8e8e8;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.stat-item .stat-number {
+    font-size: 22px;
+    font-weight: 700;
+    color: #333;
+    line-height: 1.2;
+}
+
+.stat-item .stat-label {
+    font-size: 11px;
+    color: #888;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+/* 전체 합계 스타일 */
+.stat-item.stat-total {
+    min-width: 100px;
+    padding: 14px 24px;
+}
+
+.stat-item.stat-total .stat-number {
+    font-size: 26px;
+}
+
+.stat-item.stat-total .stat-label {
+    color: rgba(255,255,255,0.9);
+}
+
+/* 모달 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px 12px 0 0;
+    position: relative;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.close-btn {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+/* 사이트 입력 섹션 */
+.sites-input-section {
+    border: 2px solid #f0f0f0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.sites-input-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.site-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.site-input-row input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.site-input-row .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* 사업장별 탭 스타일 */
+.business-tabs-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.business-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.business-tab {
+    background: white;
+    border: 2px solid #e0e0e0;
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.business-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+}
+
+.business-tab:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    color: white;
+    border-color: #764ba2;
+}
+
+.business-tab .tab-actions {
+    display: none;
+    margin-left: 8px;
+}
+
+.business-tab:hover .tab-actions {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.business-tab .tab-actions button {
+    background: rgba(255, 255, 255, 0.3);
+    border: none;
+    border-radius: 3px;
+    padding: 2px 5px;
+    cursor: pointer;
+    font-size: 10px;
+    color: inherit;
+}
+
+.business-tab .tab-actions button:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.add-category-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 8px;
+    transition: all 0.3s ease;
+}
+
+.add-category-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+/* 카테고리 추가 모달 */
+.category-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.category-modal.show {
+    display: flex;
+}
+
+.category-modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    min-width: 320px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.category-modal-content h3 {
+    margin-bottom: 16px;
+    color: #333;
+}
+
+.category-modal-content input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.category-modal-content input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.category-modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.category-modal-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.category-modal-actions .btn-cancel {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.category-modal-actions .btn-save {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+/* 식수입력 테이블 스타일 */
+.food-count-table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.table-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 20px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.table-header .title {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.menu-sections {
+    padding: 10px;
+}
+
+.menu-section {
+    margin-bottom: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: white;
+    display: flex;
+    flex-direction: row;
+    min-height: 100px;
+    cursor: grab;
+}
+
+.menu-section.dragging {
+    opacity: 0.5;
+    border: 2px dashed #667eea;
+}
+
+.menu-section.drag-over {
+    border-top: 3px solid #667eea;
+}
+
+.menu-header {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-width: 320px;
+    max-width: 320px;
+}
+
+.menu-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.menu-top-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.menu-name-row,
+.menu-match-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.menu-name-input, .menu-name-select {
+    font-size: 13px;
+    font-weight: bold;
+    color: #667eea;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 4px 8px;
+    min-width: 120px;
+    max-width: 160px;
+}
+
+.menu-match-input {
+    font-size: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 4px 8px;
+    min-width: 100px;
+    max-width: 120px;
+}
+
+.total-count-row {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+}
+
+.total-count {
+    font-size: 14px;
+    font-weight: bold;
+    color: #28a745;
+    background: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #28a745;
+    display: inline-block;
+}
+
+.drag-handle {
+    cursor: grab;
+    color: #999;
+    padding: 4px;
+    margin-right: 6px;
+}
+
+.drag-handle:hover {
+    color: #667eea;
+}
+
+/* 사업장 입력 그리드 */
+.business-detail-container {
+    flex: 1;
+    padding: 8px;
+    overflow-x: auto;
+}
+
+.business-input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 6px;
+    padding: 6px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.business-input-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.business-input-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 1px 4px rgba(102, 126, 234, 0.15);
+}
+
+.business-input-label {
+    font-size: 10px;
+    color: #888;
+    font-weight: bold;
+    margin-bottom: 1px;
+}
+
+.business-name-input {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.business-count-input {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    font-size: 14px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.business-count-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    outline: none;
+}
+
+.business-item-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 5px;
+}
+
+.business-item-remove {
+    padding: 4px 8px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.business-item-remove:hover {
+    background-color: #c82333;
+}
+
+.business-actions-bar {
+    display: none;
+    /* 기존 하단 버튼 숨김 */
+}
+
+.section-side-actions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+    background: #f0f0f0;
+    border-left: 1px solid #e0e0e0;
+    min-width: 40px;
+}
+
+.add-business-btn-vertical {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #667eea;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.add-business-btn-vertical:hover {
+    background: #5a6fd6;
+    transform: scale(1.1);
+}
+
+.business-actions-bar button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.add-business-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.add-business-btn:hover {
+    background-color: #218838;
+}
+
+.add-menu-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.add-menu-btn:hover {
+    background: #5a6fd6;
+    transform: translateY(-1px);
+}
+
+.remove-menu-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.remove-menu-btn:hover {
+    background: #c82333;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .summary-cards {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .data-table {
+        overflow-x: auto;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10px auto;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .business-tabs-container {
+        flex-direction: column;
+    }
+
+    .business-tabs {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .business-tab {
+        justify-content: center;
+    }
+
+    .menu-section {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .menu-header {
+        min-width: auto;
+        max-width: none;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .business-input-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1200px) {
+    .business-input-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.error {
+    text-align: center;
+    padding: 40px;
+    color: #dc3545;
+}
+
+.empty {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+.day-type-btn {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+}
+.day-type-btn:hover {
+    border-color: #4a90d9;
+    background: #f0f7ff;
+}
+.day-type-btn.active {
+    border-color: #4a90d9;
+    background: #4a90d9;
+    color: #fff;
+}
+.day-type-btn.has-data {
+    position: relative;
+}
+.day-type-btn.has-data::after {
+    content: '✓';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #27ae60;
+    color: #fff;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-day {
+    padding: 8px;
+    min-height: 60px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    background: #fff;
+}
+.calendar-day:hover {
+    border-color: #4a90d9;
+    box-shadow: 0 2px 8px rgba(74,144,217,0.2);
+}
+.calendar-day.assigned {
+    border-width: 2px;
+}
+.calendar-day .day-number {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+.calendar-day .day-type-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    color: #fff;
+}
+.calendar-day.weekday .day-type-badge { background: #4a90d9; }
+.calendar-day.saturday .day-type-badge { background: #e67e22; }
+.calendar-day.sunday .day-type-badge { background: #9b59b6; }
+.calendar-day.holiday .day-type-badge { background: #e74c3c; }
+.calendar-header {
+    padding: 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 12px;
+    color: #666;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+.calendar-header.sun { color: #e74c3c; }
+.calendar-header.sat { color: #4a90d9; }

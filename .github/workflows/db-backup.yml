@@ -1,0 +1,53 @@
+name: Daily DB Backup
+
+on:
+  schedule:
+    # 매일 한국시간 새벽 3시 (UTC 18:00)
+    - cron: '0 18 * * *'
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  backup:
+    name: Backup PostgreSQL
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Fly.io CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Create backup directory
+        run: mkdir -p backups
+
+      - name: Dump database via app server
+        run: |
+          DATE=$(date +%Y%m%d_%H%M%S)
+
+          # 앱 서버에서 DATABASE_URL을 읽어옴
+          DB_URL=$(flyctl ssh console -a daham-meal-management -C "printenv DATABASE_URL" 2>/dev/null | tr -d '\r\n')
+
+          if [ -z "$DB_URL" ]; then
+            echo "ERROR: Failed to get DATABASE_URL"
+            exit 1
+          fi
+
+          # pg_dump 실행 (URL 직접 전달)
+          flyctl ssh console -a daham-meal-management -C "pg_dump ${DB_URL} --no-owner --no-privileges -t orders -t order_items -t order_ingredient_overrides" > backups/orders_backup_${DATE}.sql 2>/dev/null
+
+          echo "BACKUP_FILE=orders_backup_${DATE}.sql" >> $GITHUB_ENV
+          FILESIZE=$(wc -c < backups/orders_backup_${DATE}.sql)
+          LINES=$(wc -l < backups/orders_backup_${DATE}.sql)
+          echo "Backup size: ${FILESIZE} bytes, ${LINES} lines"
+
+          if [ "$FILESIZE" -lt 100 ]; then
+            echo "ERROR: Backup file too small, likely failed"
+            cat backups/orders_backup_${DATE}.sql
+            exit 1
+          fi
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ env.BACKUP_FILE }}
+          path: backups/
+          retention-days: 90

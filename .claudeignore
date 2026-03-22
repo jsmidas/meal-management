@@ -1,0 +1,140 @@
+# AI Agent가 무시해야 할 레거시 파일들
+# (Git에는 포함되지만 AI Agent는 수정하지 말 것)
+
+# 레거시 서버 파일
+test_*.py
+*_test.py
+debug_*.py
+migrate_*.py
+setup_*.py
+sync_*.py
+convert_*.py
+simple_*.py
+quick_*.py
+temp_*.py
+railway_*.py
+gcp_*.py
+postgresql_*.py
+sqlite_*.py
+fix_*.py
+validate_*.py
+verify_*.py
+create_*.py
+cleanup_*.py
+batch_*.py
+update_*.py
+upload_*.py
+
+# 특정 레거시 파일
+unified_control_tower.py
+★unified_control_tower.py
+★simple_server.py
+admin_api_server.py
+api_router.py
+basic_server.py
+emergency_server.py
+main_api.py
+main_simple.py
+safe_server.py
+unified_server.py
+
+# 레거시 HTML
+test_*.html
+debug_*.html
+excel_upload_*.html
+meal_plan_*.html
+standalone_*.html
+working_*.html
+
+# 백업 폴더
+backups/
+_LEGACY_DO_NOT_USE/
+_LEGACY_DOCS/
+
+# 데이터베이스 파일
+*.db
+*.sqlite
+*.sqlite3
+
+# 임시 파일
+*.pyc
+__pycache__/
+.DS_Store
+
+# 레거시 문서 (76개)
+# AI Agent는 오직 6개 문서만 사용: CLAUDE.md, FILE_STRUCTURE_GUIDE.md,
+# DB_CONNECTION_GUIDE.md, SYSTEM_SIMPLIFIED.md, PERFORMANCE_OPTIMIZATION.md, README.md
+
+# ! 시리즈 (17개 - FORTRESS/CACHE 레거시)
+!*.md
+
+# ♥ 시리즈 (4개 - Smart Monolith 실패)
+♥*.md
+
+# ★ 시리즈 (3개 - 일회성 보고서)
+★*.md
+
+# AI_ 시리즈 (5개 - 미구현 기능)
+AI_*.md
+
+# DEPLOYMENT 시리즈 (11개 - 배포 실패)
+DEPLOYMENT_*.md
+RAILWAY_*.md
+GOOGLE_CLOUD_*.md
+CAFE24_*.md
+ONLINE_*.md
+deploy_*.md
+
+# POSTGRESQL 시리즈 (2개 - 마이그레이션 완료)
+POSTGRESQL_MIGRATION_*.md
+
+# 아키텍처 관련 (8개 - 구 설계서)
+ADMIN_DASHBOARD_REFACTOR_*.md
+ADMIN_SYSTEM_*.md
+MICROSERVICES_*.md
+MODULARIZATION_*.md
+RECIPE_*_ARCHITECTURE_*.md
+REFACTORING_*.md
+UPDATED_ARCHITECTURE_*.md
+
+# 비즈니스 로직 (6개)
+BRANDING_*.md
+COMMERCIAL_*.md
+CUSTOM_DEPLOYMENT_*.md
+CUSTOMER_CUSTOM_*.md
+MULTI_TENANT_*.md
+WHITE_LABEL_*.md
+
+# 기타 시스템 관리 (14개)
+API_DOCUMENTATION.md
+API_VALIDATION.md
+BACKUP_*.md
+CLEAR_CACHE.md
+CLEANUP_*.md
+CODE_TEMPLATES.md
+DATABASE_MANAGEMENT.md
+DEVELOPMENT_GUIDE.md
+FILE_LOCATIONS_AND_ROLES.md
+GITHUB_UPLOAD_GUIDE.md
+MENU_STRUCTURE.md
+PAGE_STRUCTURE.md
+QUICK_START.md
+
+# 식자재/레시피 관련 (3개)
+INGREDIENTS_MODULE_*.md
+REALISTIC_DATA_*.md
+
+# 상태 체크 (3개)
+PROJECT_STATUS.md
+SYSTEM_IMPROVEMENT_*.md
+SYSTEM_STATUS_*.md
+
+# 한글 레거시 문서 (4개)
+regacy*.md
+다함식단관리*.md
+식자재관리_*.md
+온라인배포_*.md
+*권한*관리*.md
+
+# 백업 폴더의 모든 문서
+backup_before_refactoring/*.md

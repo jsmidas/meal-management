@@ -1,0 +1,3065 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>행사 템플릿 관리</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251027">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <script src="/static/js/sidebar-dropdown.js"></script>
+    <script src="/static/js/auth-check.js"></script>
+    <script src="/static/js/custom-alert.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f7fa;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 180px;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .page-title i {
+            color: #6366f1;
+            margin-right: 10px;
+        }
+
+        /* 필터 영역 */
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-size: 0.9rem;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            min-width: 150px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+        }
+
+        /* 템플릿 그리드 */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .template-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .template-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .template-card.selected {
+            border: 2px solid #6366f1;
+        }
+
+        .template-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .template-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .template-category {
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .template-category.buffet {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .template-category.lunchbox {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .template-category.salad {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .template-category.event {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+
+        .template-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            font-size: 0.85rem;
+        }
+
+        .info-label {
+            color: #94a3b8;
+        }
+
+        .info-value {
+            color: #1f2937;
+            font-weight: 500;
+        }
+
+        .info-value.price {
+            color: #6366f1;
+        }
+
+        .info-value.cost {
+            color: #059669;
+        }
+
+        .template-stats {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .template-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: none;
+            gap: 5px;
+        }
+
+        .template-card:hover .template-actions {
+            display: flex;
+        }
+
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .action-btn.edit {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .action-btn.duplicate {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .action-btn.delete {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* 모달 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 95%;
+            max-width: 1200px;
+            max-height: 98vh;
+            height: 95vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal.small {
+            max-width: 500px;
+            height: auto;
+            max-height: 90vh;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: #f1f5f9;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #64748b;
+        }
+
+        .modal-body {
+            padding: 16px 20px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .modal-footer {
+            padding: 10px 16px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* 폼 스타일 - 컴팩트 */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .form-group label.required::after {
+            content: " *";
+            color: #ef4444;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 6px 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+        }
+
+        /* 카테고리 그룹 */
+        .category-group {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .category-group .form-group {
+            flex: 1;
+        }
+
+        .btn-add-category {
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        /* 가격 정보 영역 */
+        .price-info-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .price-field {
+            flex: 1;
+        }
+
+        .auto-calc-field {
+            flex: 1;
+            text-align: center;
+        }
+
+        .auto-calc-field label {
+            font-size: 0.75rem;
+            color: #64748b;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .auto-calc-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #059669;
+            background: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #d1fae5;
+        }
+
+        .auto-calc-value.ratio {
+            color: #6366f1;
+            border-color: #e0e7ff;
+        }
+
+        /* 메뉴 아코디언 섹션 */
+        .menus-section {
+            margin-top: 12px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+
+        /* 메뉴 아코디언 */
+        .menu-accordion {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: visible;
+            margin-bottom: 8px;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .menu-accordion.sortable-ghost {
+            opacity: 0.4;
+        }
+
+        .menu-accordion.sortable-chosen {
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .menu-accordion.sortable-drag {
+            background: white;
+        }
+
+        .menu-drag-handle {
+            cursor: grab;
+            color: #9ca3af;
+            padding: 4px;
+            margin-right: 4px;
+            display: flex;
+            align-items: center;
+        }
+
+        .menu-drag-handle:hover {
+            color: #6366f1;
+        }
+
+        .menu-drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .menu-accordion-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f8fafc;
+            cursor: pointer;
+            gap: 10px;
+        }
+
+        .menu-accordion-header:hover {
+            background: #f1f5f9;
+        }
+
+        .menu-accordion-header.active {
+            background: #e0e7ff;
+        }
+
+        .menu-toggle-icon {
+            color: #64748b;
+            transition: transform 0.2s;
+        }
+
+        .menu-accordion-header.active .menu-toggle-icon {
+            transform: rotate(90deg);
+        }
+
+        .menu-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-name-input {
+            flex: 1;
+            padding: 4px 8px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            background: transparent;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .menu-name-input:hover,
+        .menu-name-input:focus {
+            border-color: #e2e8f0;
+            background: white;
+        }
+
+        .menu-qty-unit {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .menu-qty-input {
+            width: 40px;
+            padding: 2px 4px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .menu-cost {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6366f1;
+            white-space: nowrap;
+        }
+
+        .menu-delete-btn {
+            padding: 4px 8px;
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .menu-accordion-content {
+            display: none;
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .menu-accordion-content.active {
+            display: block;
+        }
+
+        /* 식자재 테이블 */
+        .ingredients-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+
+        .ingredients-table th,
+        .ingredients-table td {
+            padding: 5px 6px;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        .ingredients-table th {
+            background: #f8fafc;
+            font-weight: 500;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .ingredients-table input {
+            width: 100%;
+            padding: 3px 5px;
+            border: 1px solid #e2e8f0;
+            border-radius: 3px;
+            font-size: 0.75rem;
+        }
+
+        .ingredients-table .amount {
+            text-align: right;
+            font-weight: 500;
+            color: #059669;
+            white-space: nowrap;
+        }
+
+        .remove-row {
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .menu-total-row {
+            background: #f0fdf4;
+            font-weight: 600;
+        }
+
+        .load-ingredients-btn {
+            padding: 6px 12px;
+            background: #dbeafe;
+            color: #2563eb;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+        }
+
+        .load-ingredients-btn:hover {
+            background: #bfdbfe;
+        }
+
+        /* 메뉴 자동완성 */
+        .menu-search-wrapper {
+            position: relative;
+        }
+
+        .menu-autocomplete {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #6366f1;
+            border-radius: 8px;
+            max-height: 350px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .menu-autocomplete.active {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 8px 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .autocomplete-item:hover {
+            background: #f0f9ff;
+        }
+
+        .autocomplete-item .item-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .autocomplete-item .item-info {
+            color: #64748b;
+            font-size: 0.7rem;
+            margin-top: 2px;
+        }
+
+        /* 총계 영역 */
+        .total-summary {
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .total-item {
+            text-align: right;
+        }
+
+        .total-item label {
+            font-size: 0.75rem;
+            color: #64748b;
+            display: block;
+        }
+
+        .total-item .value {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .total-item .value.cost {
+            color: #059669;
+        }
+
+        .total-item .value.ratio {
+            color: #6366f1;
+        }
+
+        /* 이미지 업로드 섹션 */
+        .images-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .image-slot {
+            height: 60px;
+            border: 1px dashed #d1d5db;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+            background: #f9fafb;
+        }
+
+        .image-slot:hover {
+            border-color: #6366f1;
+            background: #f1f5f9;
+        }
+
+        .image-slot.has-image {
+            border-style: solid;
+            border-color: #d1d5db;
+        }
+
+        .image-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-slot .placeholder {
+            text-align: center;
+            color: #9ca3af;
+        }
+
+        .image-slot .placeholder i {
+            font-size: 1rem;
+        }
+
+        .image-slot .placeholder span {
+            font-size: 0.55rem;
+            display: block;
+        }
+
+        .image-slot .remove-image {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.6rem;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-slot.has-image:hover .remove-image {
+            display: flex;
+        }
+
+        /* 이미지 확대 모달 */
+        .image-preview-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-preview-overlay.active {
+            display: flex;
+        }
+
+        .image-preview-container {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+
+        .image-preview-container img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .image-preview-close {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 36px;
+            height: 36px;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #374151;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .image-preview-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #374151;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .image-preview-nav.prev {
+            left: -60px;
+        }
+
+        .image-preview-nav.next {
+            right: -60px;
+        }
+
+        .copy-success {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            z-index: 2000;
+            animation: fadeInOut 2s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            20% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            80% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        /* 카테고리 관리 모달 */
+        .category-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .category-item:last-child {
+            border-bottom: none;
+        }
+
+        .category-item .name {
+            font-weight: 500;
+        }
+
+        .category-item .code {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .category-item .system-badge {
+            font-size: 0.7rem;
+            background: #e0e7ff;
+            color: #4f46e5;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .category-form {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #cbd5e1;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .filter-group select,
+            .filter-group input {
+                flex: 1;
+            }
+
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .images-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 사이드바 -->
+    <nav class="sidebar">
+        <div class="logo">
+            <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+        </div>
+        <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+        <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+        <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+        <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+        <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+        <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+        <div class="nav-dropdown open" id="event-dropdown">
+            <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+            <div class="nav-submenu">
+                <a href="event_template_management.html" class="nav-item active">템플릿 관리</a>
+                <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+            </div>
+        </div>
+        <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+        <div class="nav-dropdown" id="ingredients-dropdown">
+            <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+            <div class="nav-submenu">
+                <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+            </div>
+        </div>
+        <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+        <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+        <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+        <div class="nav-dropdown" id="instruction-dropdown">
+            <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+            <div class="nav-submenu">
+                <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+            </div>
+        </div>
+        <div class="nav-divider"></div>
+        <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+        <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+        <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+        <div class="nav-divider"></div>
+        <a href="admin_dashboard.html" class="nav-item admin-item" id="admin-link" style="display:none;"><i class="fas fa-cog"></i>ADMIN</a>
+    </nav>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="main-content">
+        <div class="page-header">
+            <h1 class="page-title"><i class="fas fa-star"></i>행사 템플릿 관리</h1>
+            <button class="btn btn-primary" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> 새 템플릿
+            </button>
+        </div>
+
+        <!-- 필터 -->
+        <div class="filter-section">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>카테고리</label>
+                    <select id="filterCategory" onchange="loadTemplates()">
+                        <option value="">전체</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>검색</label>
+                    <input type="text" id="filterSearch" placeholder="템플릿명 검색..." onkeyup="debounceSearch()">
+                </div>
+                <button class="btn btn-secondary" onclick="resetFilters()">
+                    <i class="fas fa-redo"></i> 초기화
+                </button>
+            </div>
+        </div>
+
+        <!-- 템플릿 그리드 -->
+        <div id="templateGrid" class="template-grid">
+            <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <p>등록된 템플릿이 없습니다.<br>새 템플릿을 추가해주세요.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- 템플릿 생성/수정 모달 -->
+    <div id="templateModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">새 템플릿</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="templateForm">
+                    <input type="hidden" id="templateId">
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label class="required">템플릿명</label>
+                            <input type="text" id="templateName" placeholder="예: 뷔페A-2만원" required>
+                        </div>
+                        <div class="category-group" style="flex: 1;">
+                            <div class="form-group">
+                                <label class="required">카테고리</label>
+                                <select id="templateCategory" required onchange="updateCategoryName()">
+                                    <option value="">선택</option>
+                                </select>
+                                <input type="hidden" id="templateCategoryName">
+                            </div>
+                            <button type="button" class="btn btn-outline btn-add-category"
+                                onclick="openCategoryModal()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 가격 정보 영역 -->
+                    <div class="price-info-row">
+                        <div class="price-field form-group">
+                            <label class="required">판매 단가</label>
+                            <input type="number" id="templateSellingPrice" placeholder="20000" required
+                                onchange="calculateCostRatio()">
+                        </div>
+                        <div class="auto-calc-field">
+                            <label>식재료비</label>
+                            <div class="auto-calc-value" id="displayIngredientCost">0원</div>
+                        </div>
+                        <div class="auto-calc-field">
+                            <label>식재료비율</label>
+                            <div class="auto-calc-value ratio" id="displayCostRatio">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>설명</label>
+                            <textarea id="templateDescription" rows="2" placeholder="템플릿 설명..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 메뉴 섹션 (아코디언) -->
+                    <div class="menus-section">
+                        <div class="section-header">
+                            <h3 class="section-title"><i class="fas fa-utensils"></i> 메뉴 구성 (<span
+                                    id="menuCount">0</span>종)</h3>
+                            <div class="section-actions">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="copyMenusToClipboard()"
+                                    title="메뉴 목록 복사">
+                                    <i class="fas fa-copy"></i> 복사
+                                </button>
+                                <button type="button" class="btn btn-success btn-sm" onclick="addMenuAccordion()">
+                                    <i class="fas fa-plus"></i> 메뉴 추가
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="menusContainer">
+                            <!-- 메뉴 아코디언들이 여기에 추가됨 -->
+                        </div>
+
+                        <!-- 총계 -->
+                        <div class="total-summary">
+                            <div class="total-item">
+                                <label>총 식재료비</label>
+                                <div class="value cost" id="totalIngredientCost">0원</div>
+                            </div>
+                            <div class="total-item">
+                                <label>식재료비율</label>
+                                <div class="value ratio" id="totalCostRatio">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 이미지 섹션 -->
+                    <div class="images-section">
+                        <div class="section-header">
+                            <h3 class="section-title"><i class="fas fa-images"></i> 사진 (<span
+                                    id="imageCount">0</span>/10)</h3>
+                        </div>
+                        <div class="images-grid" id="imagesGrid">
+                            <!-- 10개의 이미지 슬롯 생성됨 -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveTemplate()">
+                    <i class="fas fa-save"></i> 저장
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 카테고리 관리 모달 -->
+    <div id="categoryModal" class="modal-overlay">
+        <div class="modal small">
+            <div class="modal-header">
+                <h2 class="modal-title">카테고리 관리</h2>
+                <button class="modal-close" onclick="closeCategoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="category-list" id="categoryList">
+                    <!-- 카테고리 목록 -->
+                </div>
+                <div class="category-form">
+                    <h4 style="font-size: 0.85rem; margin-bottom: 10px;">새 카테고리 추가</h4>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>카테고리명</label>
+                            <input type="text" id="newCategoryName" placeholder="카테고리 이름 입력">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCategoryModal()">닫기</button>
+                <button class="btn btn-primary" onclick="addNewCategory()">
+                    <i class="fas fa-plus"></i> 추가
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 이미지 확대 모달 -->
+    <div id="imagePreviewOverlay" class="image-preview-overlay" onclick="closeImagePreview(event)">
+        <div class="image-preview-container" onclick="event.stopPropagation()">
+            <button class="image-preview-close" onclick="closeImagePreview()">&times;</button>
+            <button class="image-preview-nav prev" onclick="navigateImage(-1)"><i
+                    class="fas fa-chevron-left"></i></button>
+            <img id="imagePreviewImg" src="" alt="이미지 미리보기">
+            <button class="image-preview-nav next" onclick="navigateImage(1)"><i
+                    class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <!-- 새 레시피 만들기 모달 -->
+    <div id="newRecipeModal" class="modal-overlay">
+        <div class="modal" style="max-width: 1200px; width: 95%; max-height: 90vh;">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-utensils"></i> 새 레시피 만들기</h2>
+                <button class="modal-close" onclick="closeNewRecipeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label class="required">레시피명</label>
+                        <input type="text" id="newRecipeName" placeholder="레시피 이름 입력">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>카테고리</label>
+                        <select id="newRecipeCategory">
+                            <option value="기타">기타</option>
+                            <option value="밥류">밥류</option>
+                            <option value="국/찌개">국/찌개</option>
+                            <option value="반찬">반찬</option>
+                            <option value="면류">면류</option>
+                            <option value="샐러드">샐러드</option>
+                            <option value="디저트">디저트</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-header" style="margin-top: 15px;">
+                    <h3 class="section-title"><i class="fas fa-carrot"></i> 식자재 목록</h3>
+                </div>
+
+                <!-- 식자재 검색 -->
+                <div class="form-row" style="margin-bottom: 15px;">
+                    <div class="form-group" style="flex: 1; position: relative;">
+                        <label style="font-size: 0.9rem; font-weight: 600; margin-bottom: 5px;">식자재 검색 (이름 또는 코드 입력 후 결과
+                            클릭)</label>
+                        <input type="text" id="ingredientSearchInput" placeholder="식자재명 또는 코드로 검색..."
+                            oninput="searchIngredients(this)"
+                            style="padding: 12px 15px; font-size: 1rem; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        <div class="ingredient-autocomplete" id="ingredientAutocomplete"></div>
+                    </div>
+                </div>
+
+                <!-- 식자재 테이블 -->
+                <div style="max-height: 350px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <table class="ingredients-table" id="newRecipeIngredientsTable" style="font-size: 0.85rem;">
+                        <thead style="position: sticky; top: 0; background: #f1f5f9; z-index: 10;">
+                            <tr>
+                                <th style="width: 18%; padding: 10px 8px;">식자재명</th>
+                                <th style="width: 10%; padding: 10px 8px;">규격</th>
+                                <th style="width: 8%; padding: 10px 8px;">협력업체</th>
+                                <th style="width: 5%; padding: 10px 8px;">단위</th>
+                                <th style="width: 9%; padding: 10px 8px;">판매가</th>
+                                <th style="width: 7%; padding: 10px 8px;">소요량</th>
+                                <th style="width: 9%; padding: 10px 8px;">기준용량(g)</th>
+                                <th style="width: 9%; padding: 10px 8px;">1인필요량(g)</th>
+                                <th style="width: 9%; padding: 10px 8px;">1인재료비</th>
+                                <th style="width: 35px; padding: 10px 5px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="newRecipeIngredients">
+                        </tbody>
+                    </table>
+                </div>
+                <table class="ingredients-table" style="font-size: 0.9rem; margin-top: -1px;">
+                    <tfoot>
+                        <tr class="menu-total-row" style="font-size: 1rem;">
+                            <td colspan="8" style="text-align: right; padding: 15px 10px; font-weight: 600;">총 원가</td>
+                            <td class="amount" id="newRecipeTotalCost" style="padding: 15px 10px; font-size: 1.1rem;">0원
+                            </td>
+                            <td style="width: 35px;"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeNewRecipeModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveNewRecipe()">
+                    <i class="fas fa-save"></i> 레시피 저장 후 추가
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 전역 식자재 자동완성 (테이블용) -->
+    <div id="globalIngredientAutocomplete" class="global-ingredient-autocomplete"></div>
+
+    <!-- 식자재 검색 모달 -->
+    <div id="ingredientSearchModal" class="modal-overlay">
+        <div class="modal" style="max-width: 1200px; width: 95%; height: 90vh; max-height: 90vh;">
+            <div class="modal-header">
+                <h2 class="modal-title"><i class="fas fa-search"></i> 식자재 검색</h2>
+                <button class="modal-close" onclick="closeIngredientSearchModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; height: calc(100% - 100px);">
+                <!-- 협력업체 선택 + 검색창 -->
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                    <select id="modalSupplierFilter" onchange="searchIngredientsInModal(document.getElementById('modalIngredientSearch').value)"
+                            style="padding: 12px 15px; font-size: 1rem; border: 2px solid #0891b2; border-radius: 8px; min-width: 180px; background: white; cursor: pointer;">
+                        <option value="">전체 협력업체</option>
+                    </select>
+                    <input type="text" id="modalIngredientSearch" placeholder="식자재명 또는 코드로 검색... (단위당 단가 낮은 순 정렬)"
+                           oninput="searchIngredientsInModal(this.value)"
+                           style="flex: 1; padding: 12px 15px; font-size: 1rem; border: 2px solid #6366f1; border-radius: 8px;">
+                </div>
+
+                <!-- 검색 결과 목록 -->
+                <div id="modalIngredientResults" style="flex: 1; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; min-height: 0;">
+                    <div style="padding: 30px; text-align: center; color: #94a3b8;">
+                        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>식자재명을 입력하여 검색하세요</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeIngredientSearchModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* 전역 식자재 자동완성 (테이블용) */
+        .global-ingredient-autocomplete {
+            position: fixed;
+            background: white;
+            border: 2px solid #6366f1;
+            border-radius: 8px;
+            max-height: 350px;
+            min-width: 500px;
+            overflow-y: auto;
+            z-index: 10000;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+        }
+
+        .global-ingredient-autocomplete .ing-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .global-ingredient-autocomplete .ing-item:hover {
+            background: #f0f9ff;
+        }
+
+        .global-ingredient-autocomplete .ing-item .ing-main {
+            flex: 1;
+        }
+
+        .global-ingredient-autocomplete .ing-item .ing-main .name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .global-ingredient-autocomplete .ing-item .ing-main .detail {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        .global-ingredient-autocomplete .ing-item .ing-prices {
+            text-align: right;
+            font-size: 0.85rem;
+        }
+
+        .global-ingredient-autocomplete .ing-item .ing-prices .selling {
+            color: #059669;
+            font-weight: 500;
+        }
+
+        .global-ingredient-autocomplete .ing-item .ing-prices .unit-price {
+            color: #6366f1;
+            font-size: 0.75rem;
+        }
+
+        /* 식자재 검색 자동완성 */
+        .ingredient-autocomplete {
+            position: fixed;
+            background: white;
+            border: 2px solid #6366f1;
+            border-radius: 8px;
+            max-height: 400px;
+            width: 600px;
+            overflow-y: auto;
+            z-index: 10000;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+        }
+
+        .ingredient-autocomplete.active {
+            display: block;
+        }
+
+        .ingredient-autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ingredient-autocomplete-item:hover {
+            background: #eef2ff;
+        }
+
+        .ingredient-autocomplete-item:first-child {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+        }
+
+        .ingredient-autocomplete-item .ing-info {
+            flex: 1;
+        }
+
+        .ingredient-autocomplete-item .ing-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.9rem;
+        }
+
+        .ingredient-autocomplete-item .ing-detail {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .ingredient-autocomplete-item .ing-prices {
+            text-align: right;
+            margin-left: 15px;
+        }
+
+        .ingredient-autocomplete-item .ing-selling-price {
+            color: #1f2937;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .ingredient-autocomplete-item .ing-unit-price {
+            color: #059669;
+            font-weight: 700;
+            font-size: 0.9rem;
+            background: #dcfce7;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .create-menu-option {
+            padding: 10px;
+            background: #f0fdf4;
+            border-top: 2px solid #10b981;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #059669;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .create-menu-option:hover {
+            background: #dcfce7;
+        }
+
+        .create-menu-option i {
+            margin-right: 5px;
+        }
+
+        /* 테이블 내 자동완성 */
+        .table-autocomplete {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 400px;
+            max-height: 300px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #6366f1;
+            border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none;
+        }
+
+        .table-autocomplete.active {
+            display: block;
+        }
+    </style>
+
+    <script>
+        let templates = [];
+        let categories = [];
+        let editingTemplateId = null;
+        let searchTimeout = null;
+        let templateImages = [];
+        let currentPreviewIndex = 0;
+        let menuIdCounter = 0;
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function () {
+            loadCategories();
+            loadTemplates();
+            initImageSlots();
+
+            // 외부 클릭시 메뉴 자동완성 닫기
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('.menu-search-wrapper')) {
+                    document.querySelectorAll('.menu-autocomplete').forEach(ac => {
+                        ac.classList.remove('active');
+                    });
+                }
+            });
+        });
+
+        // 카테고리 로드
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/event/categories');
+                const result = await response.json();
+                if (result.success) {
+                    categories = result.categories;
+                    updateCategorySelects();
+                }
+            } catch (e) {
+                console.error('카테고리 로드 실패:', e);
+            }
+        }
+
+        // 카테고리 셀렉트 업데이트
+        function updateCategorySelects() {
+            const filterSelect = document.getElementById('filterCategory');
+            const templateSelect = document.getElementById('templateCategory');
+
+            // 필터 셀렉트
+            filterSelect.innerHTML = '<option value="">전체</option>' +
+                categories.map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+
+            // 템플릿 폼 셀렉트
+            templateSelect.innerHTML = '<option value="">선택</option>' +
+                categories.map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+        }
+
+        // 템플릿 로드
+        async function loadTemplates() {
+            const category = document.getElementById('filterCategory').value;
+            const search = document.getElementById('filterSearch').value;
+
+            let url = '/api/event/templates?';
+            if (category) url += `category=${category}&`;
+            if (search) url += `search=${encodeURIComponent(search)}&`;
+
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    templates = result.templates;
+                    renderTemplates();
+                }
+            } catch (e) {
+                console.error('템플릿 로드 실패:', e);
+            }
+        }
+
+        // 템플릿 렌더링
+        function renderTemplates() {
+            const grid = document.getElementById('templateGrid');
+
+            if (templates.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i class="fas fa-box-open"></i>
+                        <p>등록된 템플릿이 없습니다.<br>새 템플릿을 추가해주세요.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = templates.map(t => `
+                <div class="template-card" onclick="viewTemplate(${t.id})">
+                    <div class="template-actions">
+                        <button class="action-btn edit" onclick="event.stopPropagation(); editTemplate(${t.id})" title="수정">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn duplicate" onclick="event.stopPropagation(); duplicateTemplate(${t.id})" title="복제">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="event.stopPropagation(); deleteTemplate(${t.id}, '${t.name}')" title="삭제">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="template-header">
+                        <div class="template-name">${t.name}</div>
+                        <span class="template-category ${t.category}">${t.category_name || getCategoryName(t.category)}</span>
+                    </div>
+                    <div class="template-info">
+                        <div class="info-item">
+                            <span class="info-label">판매단가</span>
+                            <span class="info-value price">${formatNumber(t.selling_price)}원</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">식재료비</span>
+                            <span class="info-value cost">${formatNumber(Math.round(t.total_ingredient_cost || 0))}원</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">식재료비율</span>
+                            <span class="info-value">${(t.ingredient_cost_ratio || 0).toFixed(1)}%</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">마진율</span>
+                            <span class="info-value">${calculateMargin(t)}%</span>
+                        </div>
+                    </div>
+                    <div class="template-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${t.menu_count || 0}</div>
+                            <div class="stat-label">메뉴</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${t.image_count || 0}</div>
+                            <div class="stat-label">이미지</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 카테고리명 변환
+        function getCategoryName(code) {
+            const cat = categories.find(c => c.code === code);
+            return cat ? cat.name : code;
+        }
+
+        // 마진율 계산
+        function calculateMargin(template) {
+            if (!template.selling_price || template.selling_price === 0) return 0;
+            const cost = template.total_ingredient_cost || 0;
+            const margin = ((template.selling_price - cost) / template.selling_price) * 100;
+            return Math.round(margin);
+        }
+
+        // 숫자 포맷
+        function formatNumber(num) {
+            if (!num) return '0';
+            return Math.round(num).toLocaleString();
+        }
+
+        // 검색 디바운스
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadTemplates, 300);
+        }
+
+        // 필터 초기화
+        function resetFilters() {
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterSearch').value = '';
+            loadTemplates();
+        }
+
+        // 모달 열기 (생성)
+        function openCreateModal() {
+            editingTemplateId = null;
+            menuIdCounter = 0;
+            document.getElementById('modalTitle').textContent = '새 템플릿';
+            document.getElementById('templateForm').reset();
+            document.getElementById('templateId').value = '';
+            document.getElementById('menusContainer').innerHTML = '';
+            document.getElementById('displayIngredientCost').textContent = '0원';
+            document.getElementById('displayCostRatio').textContent = '0%';
+            document.getElementById('totalIngredientCost').textContent = '0원';
+            document.getElementById('totalCostRatio').textContent = '0%';
+            updateMenuCount();
+            initImageSlots();
+            document.getElementById('templateModal').classList.add('active');
+            initMenuSortable();
+        }
+
+        // 메뉴 순서 드래그 앤 드롭 초기화
+        let menuSortable = null;
+        function initMenuSortable() {
+            const container = document.getElementById('menusContainer');
+            if (menuSortable) {
+                menuSortable.destroy();
+            }
+            menuSortable = new Sortable(container, {
+                handle: '.menu-drag-handle',
+                animation: 200,
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                onEnd: function(evt) {
+                    // 순서 변경 후 필요시 추가 작업
+                    console.log('메뉴 순서 변경됨:', evt.oldIndex, '->', evt.newIndex);
+                }
+            });
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('templateModal').classList.remove('active');
+            editingTemplateId = null;
+        }
+
+        // 템플릿 보기/수정
+        async function viewTemplate(id) {
+            editTemplate(id);
+        }
+
+        // 템플릿 수정
+        async function editTemplate(id) {
+            try {
+                const response = await fetch(`/api/event/templates/${id}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert(result.error);
+                    return;
+                }
+
+                const t = result.template;
+                editingTemplateId = t.id;
+                menuIdCounter = 0;
+
+                document.getElementById('modalTitle').textContent = '템플릿 수정';
+                document.getElementById('templateId').value = t.id;
+                document.getElementById('templateName').value = t.name;
+                document.getElementById('templateCategory').value = t.category;
+                document.getElementById('templateCategoryName').value = t.category_name;
+                document.getElementById('templateSellingPrice').value = t.selling_price;
+                document.getElementById('templateDescription').value = t.description || '';
+
+                // 메뉴 및 식자재 로드
+                const container = document.getElementById('menusContainer');
+                container.innerHTML = '';
+
+                if (t.menus) {
+                    t.menus.forEach(menu => {
+                        addMenuAccordion(menu);
+                    });
+                }
+
+                // 이미지 로드
+                initImageSlots();
+                if (t.images) {
+                    t.images.forEach((img, idx) => {
+                        if (idx < 10 && img.image_data) {
+                            templateImages[idx] = img.image_data;
+                            updateImageSlot(idx);
+                        }
+                    });
+                }
+
+                calculateAllCosts();
+                document.getElementById('templateModal').classList.add('active');
+                initMenuSortable();
+
+            } catch (e) {
+                console.error('템플릿 로드 실패:', e);
+                alert('템플릿을 불러올 수 없습니다.');
+            }
+        }
+
+        // 카테고리명 업데이트
+        function updateCategoryName() {
+            const select = document.getElementById('templateCategory');
+            const hidden = document.getElementById('templateCategoryName');
+            hidden.value = getCategoryName(select.value);
+        }
+
+        // =====================
+        // 메뉴 아코디언 관리
+        // =====================
+
+        function addMenuAccordion(menu = {}) {
+            const container = document.getElementById('menusContainer');
+            const menuId = menuIdCounter++;
+            const menuCost = calculateMenuCost(menu.ingredients || []);
+
+            const accordion = document.createElement('div');
+            accordion.className = 'menu-accordion';
+            accordion.dataset.menuId = menuId;
+            accordion.dataset.recipeId = menu.menu_id || '';
+
+            accordion.innerHTML = `
+                <div class="menu-accordion-header" onclick="toggleMenuAccordion(${menuId})">
+                    <span class="menu-drag-handle" onclick="event.stopPropagation()" title="드래그하여 순서 변경">
+                        <i class="fas fa-grip-vertical"></i>
+                    </span>
+                    <i class="fas fa-chevron-right menu-toggle-icon"></i>
+                    <div class="menu-info">
+                        <div class="menu-search-wrapper">
+                            <input type="text" class="menu-name-input" value="${menu.menu_name || ''}"
+                                   placeholder="메뉴명 입력 또는 검색..."
+                                   onclick="event.stopPropagation()"
+                                   onkeyup="searchMenus(this, ${menuId})">
+                            <div class="menu-autocomplete" id="autocomplete-${menuId}"></div>
+                        </div>
+                        <div class="menu-qty-unit">
+                            <input type="number" class="menu-qty-input" value="${menu.quantity || 1}" min="1"
+                                   onclick="event.stopPropagation()" onchange="calculateAllCosts()">
+                            <span>인분</span>
+                        </div>
+                    </div>
+                    <span class="menu-cost" id="menu-cost-${menuId}">${formatNumber(menuCost)}원</span>
+                    <button type="button" class="menu-delete-btn" onclick="event.stopPropagation(); removeMenuAccordion(${menuId})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="menu-accordion-content" id="menu-content-${menuId}">
+                    <button type="button" class="load-ingredients-btn" onclick="loadMenuIngredients(${menuId})" id="load-btn-${menuId}">
+                        <i class="fas fa-download"></i> 레시피에서 식자재 불러오기
+                    </button>
+                    <table class="ingredients-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 16%;">식자재명</th>
+                                <th style="width: 9%;">규격</th>
+                                <th style="width: 8%;">협력업체</th>
+                                <th style="width: 5%;">단위</th>
+                                <th style="width: 9%;">판매가</th>
+                                <th style="width: 7%;">소요량</th>
+                                <th style="width: 9%;">기준용량(g)</th>
+                                <th style="width: 9%;">1인필요량(g)</th>
+                                <th style="width: 9%;">1인재료비</th>
+                                <th style="width: 30px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="ingredients-${menuId}">
+                        </tbody>
+                        <tfoot>
+                            <tr class="menu-total-row">
+                                <td colspan="7" style="text-align: right;">메뉴 1인 원가</td>
+                                <td class="amount" id="menu-total-${menuId}">${formatNumber(menuCost)}원</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline" onclick="openIngredientSearchModal(${menuId})" title="식자재 검색 추가">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
+
+            container.appendChild(accordion);
+
+            // 기존 식자재가 있으면 로드
+            if (menu.ingredients && menu.ingredients.length > 0) {
+                menu.ingredients.forEach(ing => {
+                    addIngredientRow(menuId, ing);
+                });
+            }
+
+            updateMenuCount();
+        }
+
+        function toggleMenuAccordion(menuId) {
+            const header = document.querySelector(`.menu-accordion[data-menu-id="${menuId}"] .menu-accordion-header`);
+            const content = document.getElementById(`menu-content-${menuId}`);
+
+            header.classList.toggle('active');
+            content.classList.toggle('active');
+        }
+
+        function removeMenuAccordion(menuId) {
+            const accordion = document.querySelector(`.menu-accordion[data-menu-id="${menuId}"]`);
+            if (accordion) {
+                accordion.remove();
+                updateMenuCount();
+                calculateAllCosts();
+            }
+        }
+
+        // 식자재 행 추가
+        function addIngredientRow(menuId, ing = {}) {
+            const tbody = document.getElementById(`ingredients-${menuId}`);
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td>
+                    <div style="position: relative; width: 100%;">
+                        <input type="text" class="ing-name" value="${ing.ingredient_name || ''}"
+                               data-code="${ing.ingredient_code || ''}"
+                               data-menu-id="${menuId}"
+                               readonly
+                               onclick="openIngredientSearchModalForRow(this, ${menuId})"
+                               placeholder="클릭하여 식자재 검색"
+                               style="cursor: pointer; background: #f8fafc;">
+                    </div>
+                </td>
+                <td><input type="text" class="ing-spec" value="${ing.specification || ''}"></td>
+                <td><input type="text" class="ing-supplier" value="${ing.supplier_name || ''}"></td>
+                <td><input type="text" class="ing-unit" value="${ing.unit || ''}"></td>
+                <td><input type="number" class="ing-price" value="${ing.selling_price || 0}" step="0.01" onchange="calculateIngredientAmount(this, ${menuId})"></td>
+                <td><input type="number" class="ing-qty" value="${ing.quantity || 0}" step="0.0001" onchange="calculateIngredientAmount(this, ${menuId})"></td>
+                <td><input type="number" class="ing-base-qty" value="${ing.base_quantity || 0}" step="0.01" placeholder="g" onchange="calculateIngredientAmount(this, ${menuId})"></td>
+                <td><input type="number" class="ing-required-grams" value="${ing.required_grams || 0}" step="0.01" placeholder="g" onchange="calculateIngredientAmount(this, ${menuId})"></td>
+                <td class="amount ing-amount">${formatNumber(ing.amount || 0)}원</td>
+                <td><i class="fas fa-trash remove-row" onclick="removeIngredientRow(this, ${menuId})"></i></td>
+            `;
+
+            tbody.appendChild(row);
+        }
+
+        function removeIngredientRow(btn, menuId) {
+            btn.closest('tr').remove();
+            calculateMenuTotal(menuId);
+            calculateAllCosts();
+        }
+
+        // =====================
+        // 식자재 검색 모달
+        // =====================
+        let currentMenuIdForIngredient = null;
+        let currentRowForIngredient = null;  // 현재 편집 중인 행 (테이블 행 클릭 시)
+        let modalIngSearchTimeout = null;
+
+        // 테이블 행에서 식자재 검색 모달 열기 (기존 행 수정용)
+        function openIngredientSearchModalForRow(inputElement, menuId) {
+            currentMenuIdForIngredient = menuId;
+            currentRowForIngredient = inputElement.closest('tr');  // 현재 행 저장
+
+            const currentValue = inputElement.value.trim();
+            document.getElementById('modalIngredientSearch').value = currentValue;
+            document.getElementById('modalSupplierFilter').value = '';
+            document.getElementById('modalIngredientResults').innerHTML = `
+                <div style="padding: 30px; text-align: center; color: #94a3b8;">
+                    <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>식자재명을 입력하여 검색하세요</p>
+                </div>
+            `;
+
+            const modal = document.getElementById('ingredientSearchModal');
+            modal.style.cssText = 'display: flex !important; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;';
+            modal.classList.add('active');
+
+            // 협력업체 목록 로드
+            loadSuppliersForModal();
+
+            setTimeout(() => {
+                const searchInput = document.getElementById('modalIngredientSearch');
+                searchInput.focus();
+                // 기존 값이 있으면 자동 검색
+                if (currentValue) {
+                    searchIngredientsInModal(currentValue);
+                }
+            }, 100);
+        }
+
+        // 협력업체 목록 로드
+        let suppliersLoaded = false;
+        async function loadSuppliersForModal() {
+            if (suppliersLoaded) return;
+            try {
+                const response = await fetch('/api/admin/suppliers?status=active&limit=1000');
+                const result = await response.json();
+                if (result.success && result.suppliers) {
+                    const select = document.getElementById('modalSupplierFilter');
+                    select.innerHTML = '<option value="">전체 협력업체</option>' +
+                        result.suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                    suppliersLoaded = true;
+                }
+            } catch (e) {
+                console.error('협력업체 목록 로드 실패:', e);
+            }
+        }
+
+        function openIngredientSearchModal(menuId) {
+            currentMenuIdForIngredient = menuId;
+            currentRowForIngredient = null;  // 새 행 추가 모드
+            document.getElementById('modalIngredientSearch').value = '';
+            document.getElementById('modalSupplierFilter').value = '';
+            document.getElementById('modalIngredientResults').innerHTML = `
+                <div style="padding: 30px; text-align: center; color: #94a3b8;">
+                    <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>식자재명을 입력하여 검색하세요</p>
+                </div>
+            `;
+
+            const modal = document.getElementById('ingredientSearchModal');
+            modal.style.cssText = 'display: flex !important; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;';
+            modal.classList.add('active');
+
+            // 협력업체 목록 로드
+            loadSuppliersForModal();
+
+            // 검색창에 포커스
+            setTimeout(() => {
+                document.getElementById('modalIngredientSearch').focus();
+            }, 100);
+        }
+
+        function closeIngredientSearchModal() {
+            const modal = document.getElementById('ingredientSearchModal');
+            modal.style.cssText = '';
+            modal.classList.remove('active');
+            currentMenuIdForIngredient = null;
+            currentRowForIngredient = null;
+        }
+
+        function searchIngredientsInModal(query) {
+            clearTimeout(modalIngSearchTimeout);
+            const resultsDiv = document.getElementById('modalIngredientResults');
+            const supplierId = document.getElementById('modalSupplierFilter').value;
+
+            if (query.trim().length < 1) {
+                resultsDiv.innerHTML = `
+                    <div style="padding: 30px; text-align: center; color: #94a3b8;">
+                        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>식자재명을 입력하여 검색하세요</p>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsDiv.innerHTML = `
+                <div style="padding: 20px; text-align: center; color: #6366f1;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem;"></i>
+                    <p style="margin-top: 10px;">검색 중...</p>
+                </div>
+            `;
+
+            modalIngSearchTimeout = setTimeout(async () => {
+                try {
+                    let url = `/api/event/search-ingredients?q=${encodeURIComponent(query.trim())}`;
+                    if (supplierId) {
+                        url += `&supplier_id=${supplierId}`;
+                    }
+                    const response = await fetch(url);
+                    const result = await response.json();
+
+                    if (result.success && result.ingredients.length > 0) {
+                        // 검색 결과를 전역 변수에 저장
+                        window.modalIngredientSearchResults = result.ingredients;
+
+                        resultsDiv.innerHTML = `
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                                <thead style="background: #f1f5f9; position: sticky; top: 0;">
+                                    <tr>
+                                        <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0;">식자재명</th>
+                                        <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0;">규격</th>
+                                        <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0;">협력업체</th>
+                                        <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e2e8f0;">판매가</th>
+                                        <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e2e8f0;">단위당단가</th>
+                                        <th style="padding: 10px; width: 60px; border-bottom: 2px solid #e2e8f0;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${result.ingredients.map((ing, idx) => `
+                                        <tr style="cursor: pointer; ${idx === 0 ? 'background: #f0fdf4;' : ''}"
+                                            onmouseover="this.style.background='#eef2ff'"
+                                            onmouseout="this.style.background='${idx === 0 ? '#f0fdf4' : 'white'}'"
+                                            onclick="selectIngredientByIndex(${idx})">
+                                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">
+                                                ${idx === 0 ? '<span style="color: #10b981; font-weight: bold;">⭐</span> ' : ''}
+                                                <strong>${ing.name}</strong>
+                                            </td>
+                                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #6366f1;">${ing.specification || '-'}</td>
+                                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; color: #0891b2;">${ing.supplier_name || '-'}</td>
+                                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 500;">${formatNumber(ing.selling_price || 0)}원</td>
+                                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #6366f1; font-size: 0.85rem;">${(ing.price_per_unit || 0).toFixed(1)}원</td>
+                                            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">
+                                                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); selectIngredientByIndex(${idx})">
+                                                    <i class="fas fa-plus"></i> 추가
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                    } else {
+                        resultsDiv.innerHTML = `
+                            <div style="padding: 30px; text-align: center; color: #94a3b8;">
+                                <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                <p>검색 결과가 없습니다.</p>
+                            </div>
+                        `;
+                    }
+                } catch (e) {
+                    console.error('식자재 검색 오류:', e);
+                    resultsDiv.innerHTML = `
+                        <div style="padding: 30px; text-align: center; color: #ef4444;">
+                            <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            <p>검색 중 오류가 발생했습니다.</p>
+                        </div>
+                    `;
+                }
+            }, 300);
+        }
+
+        // 인덱스로 식자재 선택 (특수문자 이스케이프 문제 방지)
+        function selectIngredientByIndex(idx) {
+            console.log('selectIngredientByIndex called with idx:', idx);
+            const results = window.modalIngredientSearchResults;
+            console.log('results:', results);
+            if (!results || !results[idx]) {
+                console.error('No results found at index', idx);
+                return;
+            }
+
+            const ing = results[idx];
+            selectIngredientFromModal(
+                ing.code || '',
+                ing.name || '',
+                ing.specification || '',
+                ing.supplier_name || '',
+                ing.unit || '',
+                ing.selling_price || 0,
+                ing.base_weight_grams || 0
+            );
+        }
+
+        function selectIngredientFromModal(code, name, spec, supplier, unit, price, baseWeightGrams) {
+            if (currentMenuIdForIngredient === null || currentMenuIdForIngredient === undefined) {
+                console.error('currentMenuIdForIngredient is not set');
+                return;
+            }
+
+            if (currentRowForIngredient) {
+                // 기존 행 업데이트 모드
+                const row = currentRowForIngredient;
+                row.querySelector('.ing-name').value = name;
+                row.querySelector('.ing-name').dataset.code = code;
+                row.querySelector('.ing-spec').value = spec || '';
+                row.querySelector('.ing-supplier').value = supplier || '';
+                row.querySelector('.ing-unit').value = unit || '';
+                row.querySelector('.ing-price').value = price || 0;
+                row.querySelector('.ing-base-qty').value = baseWeightGrams || 0;
+
+                // 금액 재계산
+                calculateIngredientAmount(row.querySelector('.ing-price'), currentMenuIdForIngredient);
+
+                // 행 수정 완료 후 모달 닫기
+                closeIngredientSearchModal();
+            } else {
+                // 새 행 추가 모드
+                addIngredientRow(currentMenuIdForIngredient, {
+                    ingredient_code: code,
+                    ingredient_name: name,
+                    specification: spec,
+                    supplier_name: supplier,
+                    unit: unit,
+                    selling_price: price,
+                    base_quantity: baseWeightGrams || 0,
+                    quantity: 0,
+                    amount: 0
+                });
+
+                // 식자재 추가 후 모달 닫기
+                closeIngredientSearchModal();
+            }
+        }
+
+        function calculateIngredientAmount(input, menuId) {
+            const row = input.closest('tr');
+            const price = parseFloat(row.querySelector('.ing-price').value) || 0;
+            const qtyInput = row.querySelector('.ing-qty');
+            const baseQty = parseFloat(row.querySelector('.ing-base-qty')?.value) || 0;
+            const requiredGrams = parseFloat(row.querySelector('.ing-required-grams')?.value) || 0;
+
+            let qty = parseFloat(qtyInput.value) || 0;
+            let amount = 0;
+
+            // 1인필요량과 기준용량이 있으면 소요량 자동 계산
+            if (baseQty > 0 && requiredGrams > 0) {
+                qty = requiredGrams / baseQty;
+                qtyInput.value = qty.toFixed(4);  // 소요량 자동 입력
+                amount = price * qty;
+            } else if (qty > 0) {
+                // 소요량이 직접 입력된 경우
+                amount = price * qty;
+            }
+
+            row.querySelector('.ing-amount').textContent = formatNumber(Math.round(amount)) + '원';
+            calculateMenuTotal(menuId);
+            calculateAllCosts();
+        }
+
+        function calculateMenuTotal(menuId) {
+            const tbody = document.getElementById(`ingredients-${menuId}`);
+            let total = 0;
+
+            tbody.querySelectorAll('tr').forEach(row => {
+                const price = parseFloat(row.querySelector('.ing-price').value) || 0;
+                const qtyInput = row.querySelector('.ing-qty');
+                const baseQty = parseFloat(row.querySelector('.ing-base-qty')?.value) || 0;
+                const requiredGrams = parseFloat(row.querySelector('.ing-required-grams')?.value) || 0;
+
+                let qty = parseFloat(qtyInput?.value) || 0;
+                let amount = 0;
+
+                // 1인필요량과 기준용량이 있으면 소요량 자동 계산
+                if (baseQty > 0 && requiredGrams > 0) {
+                    qty = requiredGrams / baseQty;
+                    if (qtyInput) qtyInput.value = qty.toFixed(4);  // 소요량 자동 입력
+                    amount = price * qty;
+                } else if (qty > 0) {
+                    // 소요량이 직접 입력된 경우
+                    amount = price * qty;
+                }
+
+                // 개별 행의 1인재료비도 업데이트
+                const amountCell = row.querySelector('.ing-amount');
+                if (amountCell) {
+                    amountCell.textContent = formatNumber(Math.round(amount)) + '원';
+                }
+
+                total += amount;
+            });
+
+            document.getElementById(`menu-total-${menuId}`).textContent = formatNumber(Math.round(total)) + '원';
+            document.getElementById(`menu-cost-${menuId}`).textContent = formatNumber(Math.round(total)) + '원';
+
+            return total;
+        }
+
+        function calculateMenuCost(ingredients) {
+            return ingredients.reduce((sum, ing) => sum + (ing.amount || 0), 0);
+        }
+
+        // 전체 비용 계산
+        function calculateAllCosts() {
+            let totalCost = 0;
+
+            document.querySelectorAll('.menu-accordion').forEach(accordion => {
+                const menuId = accordion.dataset.menuId;
+                const qty = parseFloat(accordion.querySelector('.menu-qty-input').value) || 1;
+                const menuCost = calculateMenuTotal(menuId);
+                totalCost += menuCost * qty;
+            });
+
+            const sellingPrice = parseFloat(document.getElementById('templateSellingPrice').value) || 0;
+            const ratio = sellingPrice > 0 ? (totalCost / sellingPrice) * 100 : 0;
+
+            document.getElementById('displayIngredientCost').textContent = formatNumber(Math.round(totalCost)) + '원';
+            document.getElementById('displayCostRatio').textContent = ratio.toFixed(1) + '%';
+            document.getElementById('totalIngredientCost').textContent = formatNumber(Math.round(totalCost)) + '원';
+            document.getElementById('totalCostRatio').textContent = ratio.toFixed(1) + '%';
+        }
+
+        function calculateCostRatio() {
+            calculateAllCosts();
+        }
+
+        // 레시피에서 식자재 불러오기
+        async function loadMenuIngredients(menuId) {
+            const accordion = document.querySelector(`.menu-accordion[data-menu-id="${menuId}"]`);
+            const recipeId = accordion.dataset.recipeId;
+
+            if (!recipeId) {
+                alert('먼저 메뉴를 검색하여 선택해주세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/event/menu-ingredients/${recipeId}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert(result.error || '식자재 정보를 불러올 수 없습니다.');
+                    return;
+                }
+
+                // 기존 식자재 초기화
+                const tbody = document.getElementById(`ingredients-${menuId}`);
+                tbody.innerHTML = '';
+
+                // 새 식자재 추가
+                result.ingredients.forEach(ing => {
+                    addIngredientRow(menuId, ing);
+                });
+
+                calculateMenuTotal(menuId);
+                calculateAllCosts();
+
+            } catch (e) {
+                console.error('식자재 로드 오류:', e);
+                alert('식자재 정보를 불러오는 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 메뉴 검색
+        let menuSearchTimeout = null;
+        let currentMenuIdForNewRecipe = null;
+
+        function searchMenus(input, menuId) {
+            clearTimeout(menuSearchTimeout);
+            const query = input.value.trim();
+            const autocomplete = document.getElementById(`autocomplete-${menuId}`);
+
+            if (query.length < 1) {
+                autocomplete.classList.remove('active');
+                return;
+            }
+
+            menuSearchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/event/search-menus?q=${encodeURIComponent(query)}`);
+                    const result = await response.json();
+
+                    let html = '';
+
+                    if (result.success && result.menus.length > 0) {
+                        html = result.menus.map(m => `
+                            <div class="autocomplete-item" onclick="selectMenu(${menuId}, ${m.id}, '${m.name.replace(/'/g, "\\'")}', ${m.cost_per_serving || 0})">
+                                <div class="item-name">${m.name}</div>
+                                <div class="item-info">${m.category || ''} | ${formatNumber(m.cost_per_serving || 0)}원/인분</div>
+                            </div>
+                        `).join('');
+                    }
+
+                    // "새 레시피 만들기" 옵션 항상 추가
+                    html += `
+                        <div class="create-menu-option" onclick="event.stopPropagation(); openNewRecipeModal(${menuId}, '${query.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-plus-circle"></i> "${query}" 새 레시피 만들기
+                        </div>
+                    `;
+
+                    autocomplete.innerHTML = html;
+                    autocomplete.classList.add('active');
+                } catch (e) {
+                    console.error('메뉴 검색 오류:', e);
+                }
+            }, 200);
+        }
+
+        function selectMenu(menuId, recipeId, menuName, costPerServing) {
+            const accordion = document.querySelector(`.menu-accordion[data-menu-id="${menuId}"]`);
+            accordion.dataset.recipeId = recipeId;
+            accordion.querySelector('.menu-name-input').value = menuName;
+            document.getElementById(`autocomplete-${menuId}`).classList.remove('active');
+
+            // 자동으로 식자재 불러오기
+            loadMenuIngredients(menuId);
+        }
+
+        // 메뉴 개수 업데이트
+        function updateMenuCount() {
+            const count = document.querySelectorAll('.menu-accordion').length;
+            document.getElementById('menuCount').textContent = count;
+        }
+
+        // =====================
+        // 새 레시피 만들기 모달
+        // =====================
+
+        function openNewRecipeModal(menuId, recipeName = '') {
+            currentMenuIdForNewRecipe = menuId;
+            document.getElementById('newRecipeName').value = recipeName;
+            document.getElementById('newRecipeCategory').value = '기타';
+            document.getElementById('newRecipeIngredients').innerHTML = '';
+            document.getElementById('newRecipeTotalCost').textContent = '0원';
+            document.getElementById('ingredientSearchInput').value = '';
+
+            // 모달 열기 (cssText로 직접 스타일 강제 설정)
+            const modal = document.getElementById('newRecipeModal');
+            modal.style.cssText = 'display: flex !important; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;';
+            modal.classList.add('active');
+            console.log('newRecipeModal opened:', modal.style.display, modal);
+
+            // 자동완성 닫기
+            document.querySelectorAll('.menu-autocomplete').forEach(ac => {
+                ac.classList.remove('active');
+            });
+        }
+
+        function closeNewRecipeModal() {
+            const modal = document.getElementById('newRecipeModal');
+            modal.style.cssText = '';  // 스타일 초기화
+            modal.classList.remove('active');
+            currentMenuIdForNewRecipe = null;
+        }
+
+        // 식자재 검색
+        let ingredientSearchTimeout = null;
+        function searchIngredients(input) {
+            console.log('searchIngredients called:', input.value);
+            clearTimeout(ingredientSearchTimeout);
+            const query = input.value.trim();
+            const autocomplete = document.getElementById('ingredientAutocomplete');
+
+            if (query.length < 1) {
+                autocomplete.style.display = 'none';
+                autocomplete.classList.remove('active');
+                return;
+            }
+
+            // position: fixed 이므로 input 위치 계산
+            const rect = input.getBoundingClientRect();
+            autocomplete.style.top = (rect.bottom + 5) + 'px';
+            autocomplete.style.left = rect.left + 'px';
+            autocomplete.style.width = Math.max(rect.width, 600) + 'px';
+
+            ingredientSearchTimeout = setTimeout(async () => {
+                try {
+                    console.log('Fetching ingredients for:', query);
+                    const response = await fetch(`/api/event/search-ingredients?q=${encodeURIComponent(query)}`);
+                    const result = await response.json();
+                    console.log('Search result:', result);
+
+                    if (result.success && result.ingredients.length > 0) {
+                        autocomplete.innerHTML = result.ingredients.map((ing, idx) => `
+                            <div class="ingredient-autocomplete-item" onclick="addIngredientToNewRecipe('${ing.code}', '${ing.name.replace(/'/g, "\\'")}', '${(ing.specification || '').replace(/'/g, "\\'")}', '${ing.unit || ''}', ${ing.selling_price || 0}, '${(ing.supplier_name || '').replace(/'/g, "\\'")}')">
+                                <div class="ing-info">
+                                    <div class="ing-name">${idx === 0 ? '⭐ ' : ''}${ing.name}</div>
+                                    <div class="ing-detail">
+                                        <span style="color:#6366f1; font-weight:500;">${ing.specification || ''}</span> |
+                                        ${ing.unit || ''} |
+                                        <span style="color:#0891b2; font-weight:500;">${ing.supplier_name || ''}</span>
+                                    </div>
+                                </div>
+                                <div class="ing-prices">
+                                    <div class="ing-selling-price">판매가: ${formatNumber(ing.selling_price || 0)}원</div>
+                                    <div class="ing-unit-price">단가: ${formatNumber(Math.round(ing.price_per_unit || 0))}원</div>
+                                </div>
+                            </div>
+                        `).join('');
+                        autocomplete.style.display = 'block';
+                        autocomplete.classList.add('active');
+                    } else {
+                        autocomplete.innerHTML = '<div style="padding: 15px; color: #94a3b8; text-align: center; font-size: 0.9rem;">검색 결과가 없습니다.</div>';
+                        autocomplete.style.display = 'block';
+                        autocomplete.classList.add('active');
+                    }
+                } catch (e) {
+                    console.error('식자재 검색 오류:', e);
+                }
+            }, 200);
+        }
+
+        // 새 레시피에 식자재 추가
+        function addIngredientToNewRecipe(code, name, spec, unit, price, supplier) {
+            const tbody = document.getElementById('newRecipeIngredients');
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td><input type="text" class="ing-name" value="${name}" data-code="${code}" readonly style="background:#f8fafc; font-weight:500;"></td>
+                <td><input type="text" class="ing-spec" value="${spec}" readonly style="background:#f8fafc; font-size:0.8rem;"></td>
+                <td><input type="text" class="ing-supplier" value="${supplier}" readonly style="background:#f8fafc; color:#0891b2; font-size:0.8rem;"></td>
+                <td><input type="text" class="ing-unit" value="${unit}" readonly style="background:#f8fafc;"></td>
+                <td><input type="number" class="ing-price" value="${price}" step="0.01" readonly style="background:#f8fafc; text-align:right;"></td>
+                <td><input type="number" class="ing-qty" value="0" step="0.0001" onchange="calculateNewRecipeTotal()" placeholder="소요량" style="text-align:center;"></td>
+                <td><input type="number" class="ing-base-qty" value="0" step="0.01" onchange="calculateNewRecipeTotal()" placeholder="g" style="text-align:center;"></td>
+                <td><input type="number" class="ing-required-grams" value="0" step="0.01" placeholder="g" style="text-align:center;" onchange="calculateNewRecipeTotal()"></td>
+                <td class="amount ing-amount" style="font-weight:600;">0원</td>
+                <td><i class="fas fa-trash remove-row" onclick="this.closest('tr').remove(); calculateNewRecipeTotal();" style="cursor:pointer; color:#ef4444;"></i></td>
+            `;
+
+            tbody.appendChild(row);
+
+            // 검색창 초기화
+            document.getElementById('ingredientSearchInput').value = '';
+            document.getElementById('ingredientAutocomplete').classList.remove('active');
+
+            // 소요량 입력 필드에 포커스
+            row.querySelector('.ing-qty').focus();
+        }
+
+        // 새 레시피 총 원가 계산
+        function calculateNewRecipeTotal() {
+            let total = 0;
+            document.querySelectorAll('#newRecipeIngredients tr').forEach(row => {
+                const price = parseFloat(row.querySelector('.ing-price').value) || 0;
+                const qty = parseFloat(row.querySelector('.ing-qty').value) || 0;
+                const baseQty = parseFloat(row.querySelector('.ing-base-qty')?.value) || 0;
+                const requiredGrams = parseFloat(row.querySelector('.ing-required-grams')?.value) || 0;
+
+                let amount = 0;
+                if (qty > 0) {
+                    // 소요량이 있으면 직접 계산
+                    amount = price * qty;
+                } else if (baseQty > 0 && requiredGrams > 0) {
+                    // 기준용량과 1인필요량으로 계산
+                    amount = price * (requiredGrams / baseQty);
+                }
+
+                row.querySelector('.ing-amount').textContent = formatNumber(Math.round(amount)) + '원';
+                total += amount;
+            });
+            document.getElementById('newRecipeTotalCost').textContent = formatNumber(Math.round(total)) + '원';
+        }
+
+        // 새 레시피 저장
+        async function saveNewRecipe() {
+            const recipeName = document.getElementById('newRecipeName').value.trim();
+            const category = document.getElementById('newRecipeCategory').value;
+
+            if (!recipeName) {
+                alert('레시피 이름을 입력하세요.');
+                return;
+            }
+
+            // 식자재 수집
+            const ingredients = [];
+            document.querySelectorAll('#newRecipeIngredients tr').forEach(row => {
+                const nameInput = row.querySelector('.ing-name');
+                const name = nameInput.value.trim();
+                if (!name) return;
+
+                const price = parseFloat(row.querySelector('.ing-price').value) || 0;
+                const qty = parseFloat(row.querySelector('.ing-qty').value) || 0;
+
+                ingredients.push({
+                    ingredient_code: nameInput.dataset.code || '',
+                    ingredient_name: name,
+                    specification: row.querySelector('.ing-spec').value || '',
+                    unit: row.querySelector('.ing-unit').value || '',
+                    selling_price: price,
+                    quantity: qty,
+                    amount: price * qty,
+                    supplier_name: row.querySelector('.ing-supplier')?.value || ''
+                });
+            });
+
+            if (ingredients.length === 0) {
+                alert('최소 1개 이상의 식자재를 추가하세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/event/create-recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: recipeName,
+                        category: category,
+                        ingredients: ingredients
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+
+                    // 템플릿 메뉴에 자동 추가
+                    if (currentMenuIdForNewRecipe !== null) {
+                        const accordion = document.querySelector(`.menu-accordion[data-menu-id="${currentMenuIdForNewRecipe}"]`);
+                        if (accordion) {
+                            accordion.dataset.recipeId = result.recipe.id;
+                            accordion.querySelector('.menu-name-input').value = recipeName;
+
+                            // 식자재 로드
+                            const menuId = currentMenuIdForNewRecipe;
+                            const tbody = document.getElementById(`ingredients-${menuId}`);
+                            tbody.innerHTML = '';
+
+                            ingredients.forEach(ing => {
+                                addIngredientRow(menuId, ing);
+                            });
+
+                            calculateMenuTotal(menuId);
+                            calculateAllCosts();
+
+                            // 아코디언 펼치기
+                            const header = accordion.querySelector('.menu-accordion-header');
+                            const content = document.getElementById(`menu-content-${menuId}`);
+                            header.classList.add('active');
+                            content.classList.add('active');
+                        }
+                    }
+
+                    closeNewRecipeModal();
+                } else {
+                    alert('저장 실패: ' + result.error);
+                }
+            } catch (e) {
+                console.error('레시피 저장 오류:', e);
+                alert('레시피 저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 메뉴 목록 클립보드 복사
+        function copyMenusToClipboard() {
+            const accordions = document.querySelectorAll('.menu-accordion');
+            if (accordions.length === 0) {
+                alert('복사할 메뉴가 없습니다.');
+                return;
+            }
+
+            let text = '';
+            accordions.forEach(accordion => {
+                const menuName = accordion.querySelector('.menu-name-input').value;
+                const qty = accordion.querySelector('.menu-qty-input').value;
+                const cost = accordion.querySelector('.menu-cost').textContent;
+                text += `${menuName}\t${qty}인분\t${cost}\n`;
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                showCopySuccess('메뉴 목록이 클립보드에 복사되었습니다.');
+            }).catch(err => {
+                console.error('복사 실패:', err);
+            });
+        }
+
+        // =====================
+        // 카테고리 관리
+        // =====================
+
+        function openCategoryModal() {
+            renderCategoryList();
+            document.getElementById('newCategoryName').value = '';
+            document.getElementById('categoryModal').classList.add('active');
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').classList.remove('active');
+        }
+
+        function renderCategoryList() {
+            const list = document.getElementById('categoryList');
+            list.innerHTML = categories.map(c => `
+                <div class="category-item">
+                    <div>
+                        <span class="name">${c.name}</span>
+                        <span class="code">(${c.code})</span>
+                        ${c.is_system ? '<span class="system-badge">시스템</span>' : ''}
+                    </div>
+                    ${!c.is_system ? `
+                        <button class="btn btn-sm btn-danger" onclick="deleteCategory(${c.id}, '${c.name}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function addNewCategory() {
+            const name = document.getElementById('newCategoryName').value.trim();
+
+            if (!name) {
+                alert('카테고리 이름을 입력하세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/event/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    await loadCategories();
+                    renderCategoryList();
+                    document.getElementById('newCategoryName').value = '';
+                    alert('카테고리가 추가되었습니다.');
+                } else {
+                    alert(result.error);
+                }
+            } catch (e) {
+                console.error('카테고리 추가 오류:', e);
+                alert('카테고리 추가 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function deleteCategory(id, name) {
+            if (!confirm(`'${name}' 카테고리를 삭제하시겠습니까?`)) return;
+
+            try {
+                const response = await fetch(`/api/event/categories/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    await loadCategories();
+                    renderCategoryList();
+                    alert(result.message);
+                } else {
+                    alert(result.error);
+                }
+            } catch (e) {
+                console.error('카테고리 삭제 오류:', e);
+                alert('카테고리 삭제 중 오류가 발생했습니다.');
+            }
+        }
+
+        // =====================
+        // 이미지 처리
+        // =====================
+
+        function initImageSlots() {
+            templateImages = new Array(10).fill(null);
+            const grid = document.getElementById('imagesGrid');
+            grid.innerHTML = '';
+
+            for (let i = 0; i < 10; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'image-slot';
+                slot.dataset.index = i;
+                slot.innerHTML = `
+                    <div class="placeholder">
+                        <i class="fas fa-camera"></i>
+                        <span>${i + 1}</span>
+                    </div>
+                    <input type="file" accept="image/*" style="display:none" onchange="handleImageUpload(this, ${i})">
+                `;
+                slot.onclick = function (e) {
+                    if (e.target.classList.contains('remove-image') || e.target.closest('.remove-image')) return;
+                    if (e.target.tagName === 'IMG') return;
+                    this.querySelector('input[type="file"]').click();
+                };
+                grid.appendChild(slot);
+            }
+            updateImageCount();
+        }
+
+        function handleImageUpload(input, index) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('이미지 파일만 업로드 가능합니다.');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('이미지 크기는 5MB 이하만 가능합니다.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                templateImages[index] = e.target.result;
+                updateImageSlot(index);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateImageSlot(index) {
+            const slot = document.querySelectorAll('.image-slot')[index];
+            if (templateImages[index]) {
+                slot.classList.add('has-image');
+                slot.innerHTML = `
+                    <img src="${templateImages[index]}" alt="이미지 ${index + 1}" onclick="openImagePreview(event, ${index})">
+                    <button type="button" class="remove-image" onclick="removeImage(event, ${index})"><i class="fas fa-times"></i></button>
+                    <input type="file" accept="image/*" style="display:none" onchange="handleImageUpload(this, ${index})">
+                `;
+            } else {
+                slot.classList.remove('has-image');
+                slot.innerHTML = `
+                    <div class="placeholder">
+                        <i class="fas fa-camera"></i>
+                        <span>${index + 1}</span>
+                    </div>
+                    <input type="file" accept="image/*" style="display:none" onchange="handleImageUpload(this, ${index})">
+                `;
+            }
+            updateImageCount();
+        }
+
+        function removeImage(e, index) {
+            e.stopPropagation();
+            templateImages[index] = null;
+            updateImageSlot(index);
+        }
+
+        function updateImageCount() {
+            const count = templateImages.filter(img => img).length;
+            document.getElementById('imageCount').textContent = count;
+        }
+
+        function openImagePreview(e, index) {
+            e.stopPropagation();
+            if (!templateImages[index]) return;
+            currentPreviewIndex = index;
+            document.getElementById('imagePreviewImg').src = templateImages[index];
+            document.getElementById('imagePreviewOverlay').classList.add('active');
+        }
+
+        function closeImagePreview(e) {
+            if (e && e.target !== e.currentTarget) return;
+            document.getElementById('imagePreviewOverlay').classList.remove('active');
+        }
+
+        function navigateImage(direction) {
+            const filledIndices = templateImages.map((img, idx) => img ? idx : -1).filter(idx => idx !== -1);
+            if (filledIndices.length === 0) return;
+
+            const currentPos = filledIndices.indexOf(currentPreviewIndex);
+            let newPos = currentPos + direction;
+            if (newPos < 0) newPos = filledIndices.length - 1;
+            if (newPos >= filledIndices.length) newPos = 0;
+
+            currentPreviewIndex = filledIndices[newPos];
+            document.getElementById('imagePreviewImg').src = templateImages[currentPreviewIndex];
+        }
+
+        function showCopySuccess(message) {
+            const div = document.createElement('div');
+            div.className = 'copy-success';
+            div.innerHTML = `<i class="fas fa-check"></i> ${message}`;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 2000);
+        }
+
+        // =====================
+        // 템플릿 저장/삭제
+        // =====================
+
+        async function saveTemplate() {
+            const name = document.getElementById('templateName').value.trim();
+            const category = document.getElementById('templateCategory').value;
+            const categoryName = document.getElementById('templateCategoryName').value;
+            const sellingPrice = parseInt(document.getElementById('templateSellingPrice').value) || 0;
+            const description = document.getElementById('templateDescription').value;
+
+            if (!name) {
+                alert('템플릿명을 입력하세요.');
+                return;
+            }
+            if (!category) {
+                alert('카테고리를 선택하세요.');
+                return;
+            }
+            if (!sellingPrice) {
+                alert('판매 단가를 입력하세요.');
+                return;
+            }
+
+            // 메뉴 및 식자재 수집
+            const menus = [];
+            document.querySelectorAll('.menu-accordion').forEach(accordion => {
+                const menuName = accordion.querySelector('.menu-name-input').value.trim();
+                if (!menuName) return;
+
+                const menuId = accordion.dataset.menuId;
+                const recipeId = accordion.dataset.recipeId;
+                const quantity = parseFloat(accordion.querySelector('.menu-qty-input').value) || 1;
+
+                const ingredients = [];
+                document.querySelectorAll(`#ingredients-${menuId} tr`).forEach(row => {
+                    const ingName = row.querySelector('.ing-name').value.trim();
+                    if (!ingName) return;
+
+                    const price = parseFloat(row.querySelector('.ing-price').value) || 0;
+                    const qty = parseFloat(row.querySelector('.ing-qty').value) || 0;
+                    const baseQty = parseFloat(row.querySelector('.ing-base-qty')?.value) || 0;
+                    const reqGrams = parseFloat(row.querySelector('.ing-required-grams')?.value) || 0;
+
+                    // 금액 계산: 소요량 우선, 없으면 기준용량/1인필요량 사용
+                    let amount = 0;
+                    if (qty > 0) {
+                        amount = price * qty;
+                    } else if (baseQty > 0 && reqGrams > 0) {
+                        amount = price * (reqGrams / baseQty);
+                    }
+
+                    ingredients.push({
+                        ingredient_code: row.querySelector('.ing-name').dataset.code || '',
+                        ingredient_name: ingName,
+                        specification: row.querySelector('.ing-spec').value || '',
+                        supplier_name: row.querySelector('.ing-supplier')?.value || '',
+                        unit: row.querySelector('.ing-unit').value || '',
+                        selling_price: price,
+                        quantity: qty,
+                        base_quantity: baseQty,
+                        required_grams: reqGrams,
+                        amount: amount
+                    });
+                });
+
+                menus.push({
+                    menu_id: recipeId || null,
+                    menu_name: menuName,
+                    quantity: quantity,
+                    unit: '인분',
+                    unit_price: ingredients.reduce((sum, ing) => sum + ing.amount, 0),
+                    ingredients: ingredients
+                });
+            });
+
+            // 이미지 수집
+            const images = [];
+            templateImages.forEach((imgData, idx) => {
+                if (imgData) {
+                    images.push({
+                        image_data: imgData,
+                        image_order: idx,
+                        caption: ''
+                    });
+                }
+            });
+
+            const data = {
+                name,
+                category,
+                category_name: categoryName,
+                price_tier: 0,
+                selling_price: sellingPrice,
+                base_serving: 1,
+                description,
+                menus,
+                images
+            };
+
+            try {
+                const url = editingTemplateId
+                    ? `/api/event/templates/${editingTemplateId}`
+                    : '/api/event/templates';
+                const method = editingTemplateId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    closeModal();
+                    loadTemplates();
+                } else {
+                    alert('저장 실패: ' + result.error);
+                }
+            } catch (e) {
+                console.error('저장 오류:', e);
+                alert('저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function duplicateTemplate(id) {
+            const newName = prompt('복제할 템플릿 이름을 입력하세요:');
+            if (newName === null) return;
+
+            try {
+                const response = await fetch(`/api/event/templates/${id}/duplicate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    loadTemplates();
+                } else {
+                    alert('복제 실패: ' + result.error);
+                }
+            } catch (e) {
+                console.error('복제 오류:', e);
+                alert('복제 중 오류가 발생했습니다.');
+            }
+        }
+
+        async function deleteTemplate(id, name) {
+            if (!confirm(`'${name}' 템플릿을 삭제하시겠습니까?`)) return;
+
+            try {
+                const response = await fetch(`/api/event/templates/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    loadTemplates();
+                } else {
+                    alert('삭제 실패: ' + result.error);
+                }
+            } catch (e) {
+                console.error('삭제 오류:', e);
+                alert('삭제 중 오류가 발생했습니다.');
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js" defer></script>
+    <title>식수 등록 관리 - 급식관리 시스템</title>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251027">
+    <link rel="stylesheet" href="/static/css/meal-count-management.css">
+    <script src="/static/js/sidebar-dropdown.js" defer></script>
+    <!-- 사업장 선택기 CSS -->
+    <link rel="stylesheet" href="/static/css/site-selector.css">
+    <script src="config.js" defer></script>
+    <script src="static/js/branding.js" defer></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item active"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content">
+            <!-- 로딩 오버레이 -->
+            <div id="loadingOverlay"
+                style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center;">
+                <div style="text-align:center;">
+                    <div
+                        style="width:50px; height:50px; border:4px solid #e0e0e0; border-top-color:#4a90d9; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 15px;">
+                    </div>
+                    <div id="loadingText" style="font-size:14px; color:#666;">데이터 로딩 중...</div>
+                </div>
+            </div>
+
+            <div class="header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1 id="pageTitle">👥 식수 등록 관리</h1>
+                    <div style="display: flex; gap: 20px; align-items: center;">
+                        <!-- 사업장 관리 버튼 -->
+                        <button onclick="openSiteManagementModal()" style="background: #9c27b0; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-building"></i> 사업장 관리
+                        </button>
+                        <!-- 사업장 선택기 -->
+                        <div id="meal-count-site-selector" class="site-selector-standard"></div>
+                        <!-- 현재 사업장 강조 표시 -->
+                        <div id="current-site-badge" style="display: none; background: #ff9800; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); animation: pulse 2s infinite;">
+                            📍 <span id="current-site-name">사업장 선택</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="color: white; font-weight: 600;">현재 날짜:</span>
+                            <span id="currentDateTime"
+                                style="color: white; background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px;"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-container">
+                <!-- 요약 정보 -->
+                <div class="summary-cards">
+                    <div class="summary-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <h3>전체</h3>
+                        <div class="number" id="total-meal-count">0</div>
+                        <div class="unit">명</div>
+                    </div>
+                    <!-- 카테고리별 식수 (동적 생성) -->
+                    <div id="category-summary-cards" style="display: contents;"></div>
+                </div>
+
+                <!-- 페이지 헤더 -->
+                <div class="page-header" style="flex-direction: column; gap: 15px;">
+                    <!-- 첫 번째 줄: 제목, 날짜, 데이터 저장/불러오기 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <h2>식수 등록 현황</h2>
+                        <div class="header-actions">
+                            <div class="date-selector">
+                                <button onclick="changeDate(-1)" class="btn btn-secondary btn-sm" title="하루 전">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <input type="date" id="meal-count-date" class="date-input">
+                                <button onclick="changeDate(1)" class="btn btn-secondary btn-sm" title="하루 후">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <button onclick="setToday()" class="btn btn-secondary btn-sm" title="오늘">
+                                    <i class="fas fa-home"></i> 오늘
+                                </button>
+                            </div>
+                            <button class="btn btn-primary" onclick="showLoadFromDateModal()" title="다른 날짜에서 불러오기">
+                                <i class="fas fa-copy"></i> 불러오기
+                            </button>
+                            <button class="btn btn-secondary" onclick="applyPreviousDayData()" title="전날 입력한 데이터 불러오기">
+                                <i class="fas fa-history"></i> 전날
+                            </button>
+                            <button class="btn btn-outline" onclick="showCopyToMultipleDatesModal()" title="현재 날짜 데이터를 여러 날짜에 복사" style="background: #fff; border: 1px solid #9c27b0; color: #9c27b0;">
+                                <i class="fas fa-clone"></i> 복수복사
+                            </button>
+                            <button class="btn btn-success" onclick="saveFoodCountData()" title="식수 데이터만 저장합니다">
+                                <i class="fas fa-save"></i> 식수만 저장
+                            </button>
+                            <button class="btn btn-info" onclick="saveStructureToTemplate()" title="현재 화면 구조를 템플릿에 저장 (요일별)">
+                                <i class="fas fa-sitemap"></i> 구조 저장
+                            </button>
+                        </div>
+                    </div>
+                    <!-- 두 번째 줄: 템플릿 관리 -->
+                    <div
+                        style="display: flex; justify-content: flex-end; align-items: center; width: 100%; padding-top: 10px; border-top: 1px solid #eee;">
+                        <span style="color: #666; font-size: 13px; margin-right: 10px;">📋 메뉴 템플릿:</span>
+                        <span id="currentTemplateName" style="font-weight: 600; color: #333; margin-right: 12px; padding: 6px 12px; background: #e8f4fd; border-radius: 6px;">
+                            템플릿 로딩중...
+                        </span>
+                        <!-- 숨겨진 select (기존 기능 유지용) -->
+                        <select id="mealTemplateSelect" class="form-control" style="display: none;">
+                            <option value="">-- 템플릿 선택 --</option>
+                        </select>
+                        <!-- 템플릿 수정 버튼 숨김 (식수+구조 저장에서 자동 처리) -->
+                        <button class="btn btn-secondary" onclick="editMealTemplate()" title="선택한 템플릿 수정"
+                            style="white-space: nowrap; display: none;">
+                            <i class="fas fa-edit"></i> 수정
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="toggleTemplateList()" title="템플릿 목록 보기/숨기기"
+                            style="white-space: nowrap; margin-left: 8px;">
+                            <i class="fas fa-list"></i> 목록
+                        </button>
+                        <button class="btn btn-primary" onclick="openTemplateCalendar()" title="캘린더에서 날짜별 템플릿 지정"
+                            style="white-space: nowrap; margin-left: 8px;">
+                            <i class="fas fa-calendar-alt"></i> 일정설정
+                        </button>
+                    </div>
+                    <!-- 템플릿 목록 패널 (토글) -->
+                    <div id="templateListPanel"
+                        style="display: none; width: 100%; margin-top: 12px; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4 style="margin: 0; font-size: 15px; color: #333;">📋 저장된 템플릿 목록</h4>
+                            <span style="font-size: 12px; color: #666;" id="templateCountBadge">0개</span>
+                        </div>
+                        <div id="templateListGrid"
+                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
+                            <div style="text-align: center; color: #999; padding: 20px;">템플릿이 없습니다.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 식시별 탭 및 요약 (동적 생성) -->
+                <div class="business-tabs-container">
+                    <div class="business-tabs" id="businessTabs">
+                        <!-- 탭이 동적으로 생성됩니다 -->
+                    </div>
+                    <!-- 식수 현황 요약 -->
+                    <div class="summary-section"
+                        style="margin: 0; padding: 15px; border-radius: 8px; min-width: 300px; background: #f8f9fa;">
+                        <div class="summary-header"
+                            style="margin-bottom: 10px; font-size: 14px; font-weight: bold; color: #667eea;">
+                            <i class="fas fa-chart-bar"></i> 식수 현황 요약
+                        </div>
+                        <div class="summary-stats" id="summaryStats"
+                            style="display: flex; gap: 10px; flex-wrap: wrap; min-height: 50px;">
+                            <!-- 통계 정보가 여기에 동적으로 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 식수입력 테이블들 -->
+                <div id="foodCountTables">
+                    <!-- 사업장별 식수입력 테이블이 여기에 동적으로 생성됩니다 -->
+                </div>
+            </div>
+
+            <!-- 카테고리 추가/수정 모달 -->
+            <div id="categoryModal" class="category-modal">
+                <div class="category-modal-content">
+                    <h3 id="categoryModalTitle">카테고리 추가</h3>
+                    <input type="text" id="categoryNameInput" placeholder="카테고리명 (예: 도시락, 운반, 학교...)">
+                    <div class="category-modal-actions">
+                        <button class="btn-cancel" onclick="closeCategoryModal()">취소</button>
+                        <button class="btn-save" onclick="saveCategory()">저장</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 식수 등록/수정 모달 -->
+            <div id="mealCountModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="meal-count-modal-title">식수 등록</h3>
+                        <span class="close" onclick="closeMealCountModal()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <form id="mealCountForm">
+                            <input type="hidden" id="meal-count-id">
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>등록 날짜 *</label>
+                                    <input type="date" id="form-meal-date" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>운반처 *</label>
+                                    <input type="text" id="form-delivery-site" class="form-control"
+                                        placeholder="운반처명을 입력하세요" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>식사유형 *</label>
+                                    <select id="form-meal-type" class="form-control" required>
+                                        <option value="">선택하세요</option>
+                                        <option value="조식">조식</option>
+                                        <option value="중식">중식</option>
+                                        <option value="석식">석식</option>
+                                        <option value="야식">야식</option>
+                                        <option value="행사">행사</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>목표재료비 (원)</label>
+                                    <input type="number" id="form-target-cost" class="form-control"
+                                        placeholder="목표재료비를 입력하세요" min="0">
+                                </div>
+                            </div>
+
+                            <!-- 사업장별 식수 입력 -->
+                            <div class="sites-input-section">
+                                <div class="sites-input-header">
+                                    <label><strong>사업장별 식수 입력 *</strong></label>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addSiteRow()">
+                                        ➕ 사업장 추가
+                                    </button>
+                                </div>
+                                <div id="sites-container">
+                                    <div class="site-input-row">
+                                        <input type="text" placeholder="사업장명" class="site-name" required readonly
+                                               style="background: #f5f5f5; cursor: not-allowed;"
+                                               title="사업장명은 Admin에서만 수정 가능합니다">
+                                        <input type="number" placeholder="식수" class="site-count" min="0" required>
+                                        <button type="button" class="btn btn-danger btn-sm"
+                                            onclick="removeSiteRow(this)">삭제</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeMealCountModal()">취소</button>
+                        <button type="button" class="btn btn-primary" onclick="saveMealCount()">저장</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사업장 관리 모달 -->
+    <div id="siteManagementModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 700px; max-height: 85vh;">
+            <div class="modal-header" style="background: #9c27b0;">
+                <h3><i class="fas fa-building"></i> 식수관리용 사업장 관리</h3>
+                <button class="close-btn" onclick="closeSiteManagementModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px; overflow-y: auto; max-height: 60vh;">
+                <!-- 구조 변경 안내 -->
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; font-size: 13px;">
+                    <i class="fas fa-info-circle" style="color: #856404; margin-right: 8px;"></i>
+                    <strong>안내:</strong> 여기서 슬롯/사업장을 추가·삭제하면 <strong>모든 날짜</strong>의 구조가 변경됩니다.
+                    <br><span style="color: #666; margin-left: 24px;">기존에 저장된 식수 데이터는 유지되지만, 삭제된 사업장의 식수는 표시되지 않습니다.</span>
+                </div>
+                <!-- 새 사업장 추가 폼 (원스탑) -->
+                <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 12px 0; color: #333;"><i class="fas fa-plus-circle"></i> 새 사업장 추가 <span style="font-size: 11px; color: #4caf50;">(슬롯 자동 생성)</span></h4>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <select id="newSiteBusinessType" onchange="loadSlotsForSiteManagement()" style="min-width: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-weight: 600; background: #fff3e0;">
+                            <option value="">카테고리 로딩중...</option>
+                        </select>
+                        <span style="color: #999;">></span>
+                        <!-- ★ 슬롯: 기존 선택 또는 새로 입력 가능 (datalist 사용) -->
+                        <input type="text" id="newSiteSlotName" list="slotDatalist" placeholder="슬롯명 입력 또는 선택"
+                               style="min-width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-weight: 600; background: #e3f2fd;"
+                               title="기존 슬롯 선택 또는 새 슬롯명 직접 입력">
+                        <datalist id="slotDatalist"></datalist>
+                        <span style="color: #999;">></span>
+                        <!-- ★ 끼니 타입 (필수) -->
+                        <select id="newSiteMealType" style="min-width: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-weight: 600; background: #fce4ec;" title="끼니 타입 선택 (필수)">
+                            <option value="">끼니*</option>
+                            <option value="조식">조식</option>
+                            <option value="중식" selected>중식</option>
+                            <option value="석식">석식</option>
+                            <option value="야식">야식</option>
+                        </select>
+                        <span style="color: #999;">></span>
+                        <input type="text" id="newSiteName" placeholder="사업장명" style="flex: 2; min-width: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="number" id="newSiteOrder" placeholder="순서" value="0" style="width: 55px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px;">
+                        <label style="color: #666; font-size: 12px; white-space: nowrap;">운영기간:</label>
+                        <input type="date" id="newSiteStartDate" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px;" title="시작일 (비워두면 제한 없음)">
+                        <span style="color: #999;">~</span>
+                        <input type="date" id="newSiteEndDate" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px;" title="종료일 (비워두면 제한 없음)">
+                    </div>
+                    <!-- ★ 운영 요일 선택 (원스톱) -->
+                    <div style="margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <label style="color: #555; font-size: 12px; font-weight: 600; white-space: nowrap;">
+                                <i class="fas fa-calendar-week" style="color: #2196f3; margin-right: 3px;"></i>운영 요일 *
+                            </label>
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <button type="button" onclick="setNewSiteDays('all')" style="padding: 3px 8px; border: 1px solid #4caf50; background: #e8f5e9; color: #2e7d32; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: 600;">매일</button>
+                                <button type="button" onclick="setNewSiteDays('weekdays')" style="padding: 3px 8px; border: 1px solid #2196f3; background: #e3f2fd; color: #1565c0; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: 600;">평일</button>
+                                <button type="button" onclick="setNewSiteDays('sat')" style="padding: 3px 8px; border: 1px solid #ff9800; background: #fff3e0; color: #e65100; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: 600;">토요일</button>
+                                <button type="button" onclick="setNewSiteDays('sun')" style="padding: 3px 8px; border: 1px solid #f44336; background: #ffebee; color: #c62828; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: 600;">일요일</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 3px; padding: 4px 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 15px; cursor: pointer; font-size: 12px;">
+                                <input type="checkbox" id="newDay_mon" checked> <span style="font-weight: 500;">월</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 3px; padding: 4px 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 15px; cursor: pointer; font-size: 12px;">
+                                <input type="checkbox" id="newDay_tue" checked> <span style="font-weight: 500;">화</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 3px; padding: 4px 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 15px; cursor: pointer; font-size: 12px;">
+                                <input type="checkbox" id="newDay_wed" checked> <span style="font-weight: 500;">수</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 3px; padding: 4px 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 15px; cursor: pointer; font-size: 12px;">
+                                <input type="checkbox" id="newDay_thu" checked> <span style="font-weight: 500;">목</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 3px; padding: 4px 8px; background: #fafafa; border: 1px solid #ddd; border-radius: 15px; cursor: pointer; font-size: 12px;">
+                                <input type="checkbox" id="newDay_fri" checked> <span style="font-weight: 500;">금</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 3px; padding: 4px 8px; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 15px; cursor: pointer; font-size: 12px;">
+                                <input type="checkbox" id="newDay_sat" checked> <span style="font-weight: 500; color: #e65100;">토</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 3px; padding: 4px 8px; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 15px; cursor: pointer; font-size: 12px;">
+                                <input type="checkbox" id="newDay_sun" checked> <span style="font-weight: 500; color: #c62828;">일</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                        <button onclick="addNewSiteOneStop()" style="background: #4caf50; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            <i class="fas fa-magic"></i> 원스탑 추가
+                        </button>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 11px; color: #666;">
+                        <i class="fas fa-info-circle"></i> 슬롯이 없으면 자동 생성됩니다. 사업장명을 비워두면 슬롯명과 동일하게 생성됩니다.
+                    </div>
+                </div>
+
+                <!-- 마이그레이션 버튼 -->
+                <div style="margin-bottom: 15px; padding: 10px; background: #fff3e0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #e65100;"><i class="fas fa-info-circle"></i> 기존 식수 데이터에서 사업장 목록을 가져올 수 있습니다.</span>
+                    <button onclick="migrateSites()" style="background: #ff9800; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-download"></i> 기존 데이터에서 가져오기
+                    </button>
+                </div>
+
+                <!-- 사업장 목록 -->
+                <h4 style="margin: 0 0 12px 0; color: #333;"><i class="fas fa-list"></i> 등록된 사업장</h4>
+                <div id="siteList" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+                    <div style="text-align: center; padding: 30px; color: #999;">
+                        <i class="fas fa-spinner fa-spin"></i> 로딩 중...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 15px 20px; background: #f5f5f5; text-align: right;">
+                <button onclick="closeSiteManagementModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사업장 수정 모달 -->
+    <div id="editSiteModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 680px;">
+            <div class="modal-header" style="background: #2196f3;">
+                <h3><i class="fas fa-edit"></i> 사업장 수정</h3>
+                <button class="close-btn" onclick="closeEditSiteModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <input type="hidden" id="editSiteId">
+                <input type="hidden" id="editSiteSlotId">
+
+                <!-- 기본 정보 -->
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #333;">고객사명</label>
+                    <input type="text" id="editSiteName" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                </div>
+
+                <!-- ★ 끼니 타입 (슬롯 속성) -->
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #333;">
+                        끼니 타입 <span style="font-size: 11px; color: #f44336;">*필수</span>
+                    </label>
+                    <select id="editSiteMealType" style="width: 150px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: #fce4ec;">
+                        <option value="">선택</option>
+                        <option value="조식">조식</option>
+                        <option value="중식">중식</option>
+                        <option value="석식">석식</option>
+                        <option value="야식">야식</option>
+                    </select>
+                    <span style="font-size: 11px; color: #666; margin-left: 8px;">* 슬롯의 끼니 타입 (같은 슬롯의 모든 사업장에 적용)</span>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #333;">표시 순서</label>
+                    <input type="number" id="editSiteOrder" style="width: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                </div>
+
+                <!-- 운영 기간 -->
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #333;">운영 기간</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="date" id="editSiteStartDate" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                        <span style="color: #999;">~</span>
+                        <input type="date" id="editSiteEndDate" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div style="margin-top: 5px; font-size: 11px; color: #888;">비워두면 기간 제한 없음</div>
+                </div>
+
+                <!-- 운영 요일 -->
+                <div style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #333;">
+                        <i class="fas fa-calendar-week" style="color: #2196f3; margin-right: 5px;"></i>
+                        운영 요일
+                    </label>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                        <label style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: white; border: 1px solid #ddd; border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" id="editDay_mon" checked> <span style="font-weight: 500;">월</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: white; border: 1px solid #ddd; border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" id="editDay_tue" checked> <span style="font-weight: 500;">화</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: white; border: 1px solid #ddd; border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" id="editDay_wed" checked> <span style="font-weight: 500;">수</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: white; border: 1px solid #ddd; border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" id="editDay_thu" checked> <span style="font-weight: 500;">목</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: white; border: 1px solid #ddd; border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" id="editDay_fri" checked> <span style="font-weight: 500;">금</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" id="editDay_sat" checked> <span style="font-weight: 500; color: #e65100;">토</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: #ffebee; border: 1px solid #ef9a9a; border-radius: 20px; cursor: pointer;">
+                            <input type="checkbox" id="editDay_sun" checked> <span style="font-weight: 500; color: #c62828;">일</span>
+                        </label>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button onclick="setAllDays(true)" style="padding: 6px 12px; border: 1px solid #4caf50; background: #e8f5e9; color: #2e7d32; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                            📅 매일
+                        </button>
+                        <button onclick="setWeekdays()" style="padding: 6px 12px; border: 1px solid #2196f3; background: #e3f2fd; color: #1565c0; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                            🏢 평일
+                        </button>
+                        <button onclick="setSaturdayOnly()" style="padding: 6px 12px; border: 1px solid #ff9800; background: #fff3e0; color: #e65100; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                            📆 토요일
+                        </button>
+                        <button onclick="setSundayOnly()" style="padding: 6px 12px; border: 1px solid #f44336; background: #ffebee; color: #c62828; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                            🌙 일요일
+                        </button>
+                        <button onclick="setAllDays(false)" style="padding: 6px 12px; border: 1px solid #9e9e9e; background: white; color: #666; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                            ✖ 전체해제
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ★★★ 끼니별 요일 스케줄 (고급 설정) ★★★ -->
+                <div style="margin-bottom: 15px;">
+                    <div onclick="toggleMealSchedule()" style="cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px; background: #e8eaf6; border-radius: 6px;">
+                        <i id="mealScheduleArrow" class="fas fa-chevron-right" style="color: #3f51b5; transition: transform 0.2s;"></i>
+                        <span style="font-weight: 600; color: #3f51b5;">🍽️ 끼니별 요일 설정 (고급)</span>
+                        <span style="font-size: 11px; color: #666; margin-left: auto;">클릭하여 펼치기</span>
+                    </div>
+                    <div id="mealScheduleSection" style="display: none; margin-top: 10px; padding: 15px; background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px;">
+                        <div style="margin-bottom: 10px; font-size: 12px; color: #666;">
+                            <i class="fas fa-info-circle"></i> 끼니마다 다른 요일에 운영하는 경우 설정하세요. (예: 월~금 중식만, 토 조식+중식)
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead>
+                                <tr style="background: #e3f2fd;">
+                                    <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">끼니</th>
+                                    <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">월</th>
+                                    <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">화</th>
+                                    <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">수</th>
+                                    <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">목</th>
+                                    <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">금</th>
+                                    <th style="padding: 8px; border: 1px solid #ddd; text-align: center; background: #fff3e0;">토</th>
+                                    <th style="padding: 8px; border: 1px solid #ddd; text-align: center; background: #ffebee;">일</th>
+                                    <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">빠른선택</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 600; background: #fff8e1;">🌅 조식</td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_조식_mon"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_조식_tue"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_조식_wed"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_조식_thu"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_조식_fri"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; background: #fff3e0;"><input type="checkbox" id="schedule_조식_sat"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; background: #ffebee;"><input type="checkbox" id="schedule_조식_sun"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;">
+                                        <button onclick="setMealRow('조식', 'all')" style="padding: 2px 6px; font-size: 10px; border: 1px solid #4caf50; background: #e8f5e9; color: #2e7d32; border-radius: 3px; cursor: pointer;">매일</button>
+                                        <button onclick="setMealRow('조식', 'weekdays')" style="padding: 2px 6px; font-size: 10px; border: 1px solid #2196f3; background: #e3f2fd; color: #1565c0; border-radius: 3px; cursor: pointer;">평일</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 600; background: #e3f2fd;">☀️ 중식</td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_중식_mon" checked></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_중식_tue" checked></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_중식_wed" checked></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_중식_thu" checked></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_중식_fri" checked></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; background: #fff3e0;"><input type="checkbox" id="schedule_중식_sat" checked></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; background: #ffebee;"><input type="checkbox" id="schedule_중식_sun" checked></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;">
+                                        <button onclick="setMealRow('중식', 'all')" style="padding: 2px 6px; font-size: 10px; border: 1px solid #4caf50; background: #e8f5e9; color: #2e7d32; border-radius: 3px; cursor: pointer;">매일</button>
+                                        <button onclick="setMealRow('중식', 'weekdays')" style="padding: 2px 6px; font-size: 10px; border: 1px solid #2196f3; background: #e3f2fd; color: #1565c0; border-radius: 3px; cursor: pointer;">평일</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 600; background: #fce4ec;">🌙 석식</td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_석식_mon"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_석식_tue"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_석식_wed"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_석식_thu"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_석식_fri"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; background: #fff3e0;"><input type="checkbox" id="schedule_석식_sat"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; background: #ffebee;"><input type="checkbox" id="schedule_석식_sun"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;">
+                                        <button onclick="setMealRow('석식', 'all')" style="padding: 2px 6px; font-size: 10px; border: 1px solid #4caf50; background: #e8f5e9; color: #2e7d32; border-radius: 3px; cursor: pointer;">매일</button>
+                                        <button onclick="setMealRow('석식', 'weekdays')" style="padding: 2px 6px; font-size: 10px; border: 1px solid #2196f3; background: #e3f2fd; color: #1565c0; border-radius: 3px; cursor: pointer;">평일</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 600; background: #ede7f6;">🌃 야식</td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_야식_mon"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_야식_tue"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_야식_wed"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_야식_thu"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;"><input type="checkbox" id="schedule_야식_fri"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; background: #fff3e0;"><input type="checkbox" id="schedule_야식_sat"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center; background: #ffebee;"><input type="checkbox" id="schedule_야식_sun"></td>
+                                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;">
+                                        <button onclick="setMealRow('야식', 'all')" style="padding: 2px 6px; font-size: 10px; border: 1px solid #4caf50; background: #e8f5e9; color: #2e7d32; border-radius: 3px; cursor: pointer;">매일</button>
+                                        <button onclick="setMealRow('야식', 'weekdays')" style="padding: 2px 6px; font-size: 10px; border: 1px solid #2196f3; background: #e3f2fd; color: #1565c0; border-radius: 3px; cursor: pointer;">평일</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button onclick="clearAllSchedule()" style="padding: 5px 10px; font-size: 11px; border: 1px solid #9e9e9e; background: white; color: #666; border-radius: 4px; cursor: pointer;">전체 해제</button>
+                            <button onclick="setDefaultSchedule()" style="padding: 5px 10px; font-size: 11px; border: 1px solid #2196f3; background: #e3f2fd; color: #1565c0; border-radius: 4px; cursor: pointer;">기본값 (중식만 매일)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ★★★ 특별 운영일 ★★★ -->
+                <div style="margin-bottom: 15px;">
+                    <div onclick="toggleSpecialDates()" style="cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px; background: #fff3e0; border-radius: 6px;">
+                        <i id="specialDatesArrow" class="fas fa-chevron-right" style="color: #e65100; transition: transform 0.2s;"></i>
+                        <span style="font-weight: 600; color: #e65100;">📅 특별 운영일 (추가/휴무)</span>
+                        <span style="font-size: 11px; color: #666; margin-left: auto;">클릭하여 펼치기</span>
+                    </div>
+                    <div id="specialDatesSection" style="display: none; margin-top: 10px; padding: 15px; background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px;">
+                        <div style="margin-bottom: 10px; font-size: 12px; color: #666;">
+                            <i class="fas fa-info-circle"></i> 정기 운영일 외에 특별히 운영하거나 휴무하는 날짜를 추가하세요.
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+                            <input type="date" id="specialDateInput" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <select id="specialDateType" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="operate">특별 운영</option>
+                                <option value="closed">휴무</option>
+                            </select>
+                            <input type="text" id="specialDateMemo" placeholder="메모 (선택)" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 120px;">
+                            <button onclick="addSpecialDate()" style="padding: 8px 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                                <i class="fas fa-plus"></i> 추가
+                            </button>
+                        </div>
+                        <div id="specialDatesList" style="max-height: 150px; overflow-y: auto;">
+                            <div style="color: #999; font-size: 12px; text-align: center; padding: 20px;">등록된 특별 운영일이 없습니다.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 15px 20px; background: #f5f5f5; display: flex; justify-content: flex-end; gap: 10px;">
+                <button onclick="closeEditSiteModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    취소
+                </button>
+                <button onclick="saveEditSite()" style="background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    <i class="fas fa-save"></i> 저장
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ★★★ 복수 날짜 복사 모달 ★★★ -->
+    <div id="copyToMultipleDatesModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header" style="background: #9c27b0;">
+                <h3><i class="fas fa-clone"></i> 복수 날짜로 복사</h3>
+                <button class="close-btn" onclick="closeCopyToMultipleDatesModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div style="background: #f3e5f5; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                    <p style="margin: 0; font-size: 13px; color: #7b1fa2;">
+                        <i class="fas fa-info-circle"></i> 현재 날짜(<strong id="copySourceDate"></strong>)의 식수 데이터를 선택한 날짜들에 복사합니다.
+                    </p>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">
+                        <i class="fas fa-calendar-plus" style="color: #9c27b0;"></i> 복사할 날짜 선택 (최대 14일)
+                    </label>
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                        <input type="date" id="copyTargetDateInput" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <button onclick="addCopyTargetDate()" style="background: #9c27b0; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            <i class="fas fa-plus"></i> 추가
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+                        <button onclick="addWeekdayDates()" style="padding: 5px 10px; border: 1px solid #2196f3; background: #e3f2fd; color: #1565c0; border-radius: 4px; cursor: pointer; font-size: 11px;">+평일 5일</button>
+                        <button onclick="addNextWeekDates()" style="padding: 5px 10px; border: 1px solid #4caf50; background: #e8f5e9; color: #2e7d32; border-radius: 4px; cursor: pointer; font-size: 11px;">+다음주 평일</button>
+                        <button onclick="clearCopyTargetDates()" style="padding: 5px 10px; border: 1px solid #f44336; background: #ffebee; color: #c62828; border-radius: 4px; cursor: pointer; font-size: 11px;">전체 삭제</button>
+                    </div>
+                    <div id="copyTargetDatesList" style="max-height: 200px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px; background: #fafafa;">
+                        <div style="color: #999; text-align: center; padding: 20px;">선택된 날짜가 없습니다</div>
+                    </div>
+                </div>
+
+                <div style="background: #fff3e0; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
+                    <p style="margin: 0; font-size: 12px; color: #e65100;">
+                        <i class="fas fa-exclamation-triangle"></i> 주의: 대상 날짜에 기존 데이터가 있으면 덮어씁니다.
+                        <br>각 날짜의 운영요일에 해당하지 않는 사업장은 자동으로 건너뜁니다.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 15px 20px; background: #f5f5f5; display: flex; justify-content: flex-end; gap: 10px;">
+                <button onclick="closeCopyToMultipleDatesModal()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                    취소
+                </button>
+                <button onclick="executeCopyToMultipleDates()" style="background: #9c27b0; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    <i class="fas fa-copy"></i> 복사 실행
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 템플릿 저장 모달 (단일 템플릿 + 요일별 구조) -->
+    <div id="templateSaveModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 550px;">
+            <div class="modal-header">
+                <h3>📋 템플릿 저장</h3>
+                <button class="close-btn" onclick="closeTemplateSaveModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label><strong>템플릿 이름 *</strong></label>
+                    <input type="text" id="templateName" class="form-control" placeholder="예: 본사 기본 템플릿" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label><strong>설명</strong></label>
+                    <input type="text" id="templateDescription" class="form-control" placeholder="예: 본사 운영용 통합 템플릿">
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label><strong>현재 화면을 저장할 요일 유형 *</strong></label>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button type="button" class="btn day-type-btn active" data-daytype="weekday" onclick="selectDayType('weekday')">
+                            📅 평일 (월~금)
+                        </button>
+                        <button type="button" class="btn day-type-btn" data-daytype="saturday" onclick="selectDayType('saturday')">
+                            📆 토요일
+                        </button>
+                        <button type="button" class="btn day-type-btn" data-daytype="sunday" onclick="selectDayType('sunday')">
+                            🌙 일요일
+                        </button>
+                        <button type="button" class="btn day-type-btn" data-daytype="holiday" onclick="selectDayType('holiday')">
+                            🎉 공휴일
+                        </button>
+                    </div>
+                    <input type="hidden" id="selectedDayType" value="weekday">
+                </div>
+                <div id="dayTypeStatus" style="background: #e8f4fd; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                    <div style="font-size: 13px; color: #1976d2;">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="dayTypeStatusText">현재 화면의 메뉴 구조가 <strong>평일(월~금)</strong>에 적용됩니다.</span>
+                    </div>
+                    <div id="existingDayTypes" style="margin-top: 8px; font-size: 12px; color: #666;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeTemplateSaveModal()">취소</button>
+                <button type="button" class="btn btn-primary" onclick="confirmSaveTemplate()">💾 저장</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- 템플릿 캘린더 모달 -->
+    <div id="templateCalendarModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3>📅 템플릿 일정 설정</h3>
+                <button class="close-btn" onclick="closeTemplateCalendar()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 월 네비게이션 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <button class="btn btn-outline-secondary" onclick="changeCalendarMonth(-1)">
+                        <i class="fas fa-chevron-left"></i> 이전달
+                    </button>
+                    <h4 id="calendarMonthTitle" style="margin: 0; font-size: 18px;"></h4>
+                    <button class="btn btn-outline-secondary" onclick="changeCalendarMonth(1)">
+                        다음달 <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- 템플릿 선택 -->
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                    <label style="font-weight: 600; white-space: nowrap;">적용할 템플릿:</label>
+                    <select id="calendarTemplateSelect" class="form-control" style="flex: 1; max-width: 300px;">
+                        <option value="">-- 선택 --</option>
+                    </select>
+                    <label style="font-weight: 600; white-space: nowrap; margin-left: 15px;">요일타입:</label>
+                    <select id="calendarDayType" class="form-control" style="width: 120px;">
+                        <option value="weekday">평일</option>
+                        <option value="saturday">토요일</option>
+                        <option value="sunday">일요일</option>
+                        <option value="holiday">공휴일</option>
+                    </select>
+                </div>
+
+                <!-- 범례 -->
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; font-size: 12px; flex-wrap: wrap;">
+                    <span><span style="display:inline-block; width:14px; height:14px; background:#4a90d9; border-radius:3px; margin-right:4px;"></span>평일</span>
+                    <span><span style="display:inline-block; width:14px; height:14px; background:#e67e22; border-radius:3px; margin-right:4px;"></span>토요일</span>
+                    <span><span style="display:inline-block; width:14px; height:14px; background:#9b59b6; border-radius:3px; margin-right:4px;"></span>일요일</span>
+                    <span><span style="display:inline-block; width:14px; height:14px; background:#e74c3c; border-radius:3px; margin-right:4px;"></span>공휴일</span>
+                    <span><span style="display:inline-block; width:14px; height:14px; background:#ecf0f1; border:1px solid #bdc3c7; border-radius:3px; margin-right:4px;"></span>미지정</span>
+                </div>
+
+                <!-- 캘린더 그리드 -->
+                <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"></div>
+
+                <!-- 일괄 지정 버튼 -->
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-outline-primary" onclick="bulkAssignWeekdays()">
+                        <i class="fas fa-briefcase"></i> 이번달 평일 일괄지정
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="bulkAssignSaturdays()">
+                        <i class="fas fa-calendar-day"></i> 이번달 토요일 일괄지정
+                    </button>
+                    <button class="btn btn-outline-info" onclick="bulkAssignSundays()">
+                        <i class="fas fa-calendar-week"></i> 이번달 일요일 일괄지정
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeTemplateCalendar()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 사업장 선택기 -->
+    <script src="/static/modules/core/site-selector.js" defer></script>
+    <script src="/static/js/meal-count-management.js" defer></script>
+</body>
+
+</html>

@@ -1,0 +1,58 @@
+# Python 캐시
+*.pyc
+*.pyo
+__pycache__/
+.pytest_cache/
+
+# 환경 설정
+.env
+.env.local
+.env.production
+
+# 개발 도구
+.vscode/
+.idea/
+.DS_Store
+
+# Git 관련
+.git/
+.github/workflows/
+*.md
+docs/
+
+# 로그 및 임시 파일
+*.log
+*.tmp
+*.swp
+*~
+
+# 로컬 데이터베이스
+*.db
+*.sqlite
+*.sqlite3
+backups/
+*.sql
+
+# 테스트 파일
+test_*.py
+*_test.py
+tests/
+
+# Claude 설정
+.claude/
+claude*
+
+# 대용량 파일 (빌드 속도 개선)
+*.zip
+*.tar.gz
+*.dump
+node_modules/
+archives/
+sample data/
+sample?data/
+_SQLITE_ARCHIVES/
+_LEGACY_CODE/
+scripts/
+*.bat
+*.bak
+*.backup

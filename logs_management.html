@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title>각종 일지 - 급식관리 시스템</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251027">
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <script src="/static/js/sidebar-dropdown.js"></script>
+    <!-- 사업장 선택기 CSS -->
+    <link rel="stylesheet" href="/static/css/site-selector.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* 탭 스타일 */
+        .log-tabs {
+            display: flex;
+            gap: 5px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        .log-tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: #f0f0f0;
+            color: #666;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-tab-btn:hover {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .log-tab-btn.active {
+            background: #27ae60;
+            color: white;
+        }
+
+        .log-tab-btn i {
+            font-size: 16px;
+        }
+
+        /* 탭 컨텐츠 */
+        .log-tab-content {
+            display: none;
+            background: white;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            min-height: 500px;
+        }
+
+        .log-tab-content.active {
+            display: block;
+        }
+
+        /* 공통 섹션 스타일 */
+        .log-section {
+            padding: 20px;
+        }
+
+        .section-header {
+            background: #27ae60;
+            color: white;
+            padding: 15px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 날짜/끼니 선택 */
+        .date-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        .date-selector label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .date-selector input,
+        .date-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 카테고리 필터 */
+        .category-filter {
+            padding: 15px 20px;
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .category-filter h3 {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .category-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .category-btn {
+            padding: 6px 14px;
+            border: 2px solid #27ae60;
+            background: white;
+            color: #27ae60;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .category-btn:hover {
+            background: #e8f5e9;
+        }
+
+        .category-btn.active {
+            background: #27ae60;
+            color: white;
+        }
+
+        .category-btn.all {
+            border-color: #2c3e50;
+            color: #2c3e50;
+        }
+
+        .category-btn.all.active {
+            background: #2c3e50;
+            color: white;
+        }
+
+        /* 테이블 스타일 */
+        .table-container {
+            overflow-x: auto;
+            overflow-y: visible;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .log-table th {
+            background: #27ae60;
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid #1e8449;
+            font-weight: bold;
+            font-size: 13px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .log-table td {
+            padding: 10px 8px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 12px;
+        }
+
+        .log-table tbody tr:hover {
+            background-color: #f0fff4;
+        }
+
+        .product-name {
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: left !important;
+        }
+
+        .ingredient-name {
+            text-align: left !important;
+        }
+
+        .number-cell {
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .handwrite-cell {
+            background: #fffef0;
+            min-height: 25px;
+        }
+
+        .category-header-row td {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            padding: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        /* 액션 버튼 영역 */
+        .action-buttons {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* 로딩 오버레이 */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #27ae60;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 준비중 메시지 */
+        .coming-soon {
+            text-align: center;
+            padding: 80px 20px;
+            color: #999;
+        }
+
+        .coming-soon i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        .coming-soon h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        /* A4 출력 스타일 */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 5mm;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            body {
+                background: white !important;
+                font-size: 8px !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .sidebar, nav.sidebar {
+                display: none !important;
+                width: 0 !important;
+                min-width: 0 !important;
+                max-width: 0 !important;
+                flex: none !important;
+            }
+
+            .container {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .header, .log-tabs, .date-selector, .category-filter, .action-buttons {
+                display: none !important;
+            }
+
+            .main-content {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin-left: 0 !important;
+            }
+
+            /* 활성화된 탭만 출력 */
+            .log-tab-content {
+                display: none !important;
+                box-shadow: none !important;
+            }
+
+            .log-tab-content.active {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            .log-section {
+                padding: 0 !important;
+            }
+
+            .table-container {
+                max-height: none !important;
+                overflow: visible !important;
+                width: 100% !important;
+            }
+
+            .section-header {
+                padding: 5px 8px !important;
+                font-size: 12px !important;
+                margin-bottom: 3px !important;
+            }
+
+            /* 테이블 전체 너비 사용 */
+            .log-table {
+                width: 100% !important;
+                table-layout: fixed !important;
+                border-collapse: collapse !important;
+                page-break-inside: auto !important;
+            }
+
+            /* 인쇄용 열 너비 조정 (A4 세로 기준) */
+            .log-table th:nth-child(1) { width: 6% !important; }   /* No. */
+            .log-table th:nth-child(2) { width: 18% !important; }  /* 제품명 */
+            .log-table th:nth-child(3) { width: 10% !important; }  /* 생산량 */
+            .log-table th:nth-child(4) { width: 10% !important; }  /* 생산시간 */
+            .log-table th:nth-child(5) { width: 22% !important; }  /* 원료명 */
+            .log-table th:nth-child(6) { width: 12% !important; }  /* Lot */
+            .log-table th:nth-child(7) { width: 10% !important; }  /* 투입량 */
+            .log-table th:nth-child(8) { width: 12% !important; }  /* 비고 */
+
+            .log-table th {
+                padding: 4px 3px !important;
+                font-size: 9px !important;
+                font-weight: bold !important;
+                background: #27ae60 !important;
+                color: white !important;
+            }
+
+            .log-table td {
+                padding: 4px 3px !important;
+                font-size: 9px !important;
+                border: 1px solid #aaa !important;
+                word-break: keep-all !important;
+                overflow: hidden !important;
+                line-height: 1.3 !important;
+            }
+
+            .log-table tr {
+                page-break-inside: avoid !important;
+            }
+
+            /* 카테고리 헤더 행 */
+            .category-header-row td {
+                background: #27ae60 !important;
+                color: white !important;
+                font-weight: bold !important;
+                font-size: 10px !important;
+                padding: 5px 8px !important;
+            }
+
+            .handwrite-cell {
+                min-height: 18px !important;
+                background: #fffef0 !important;
+            }
+
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 8px;
+                padding-bottom: 8px;
+                border-bottom: 2px solid #333;
+            }
+
+            .print-header h2 {
+                font-size: 16px;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }
+
+            .print-header #printDateInfo {
+                font-size: 11px;
+            }
+
+            /* 숫자 셀 스타일 */
+            .number-cell {
+                font-weight: bold !important;
+                font-size: 9px !important;
+            }
+
+            .product-name {
+                font-weight: bold !important;
+                text-align: left !important;
+                font-size: 9px !important;
+            }
+
+            .ingredient-name {
+                text-align: left !important;
+                font-size: 9px !important;
+            }
+        }
+
+        .print-header {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item active"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content">
+            <!-- 인쇄용 헤더 -->
+            <div class="print-header">
+                <h2 id="printTitle">HACCP 생산 작업 일지</h2>
+                <div id="printDateInfo"></div>
+            </div>
+
+            <div class="header">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h1><i class="fas fa-book"></i> 각종 일지</h1>
+                        <p>HACCP 관련 각종 일지 관리</p>
+                    </div>
+                    <!-- 사업장 선택기 -->
+                    <div id="logs-site-selector" class="site-selector-standard"></div>
+                </div>
+            </div>
+
+            <!-- 탭 버튼들 -->
+            <div class="log-tabs">
+                <button class="log-tab-btn active" data-tab="production-log">
+                    <i class="fas fa-clipboard-list"></i> 생산 작업 일지
+                </button>
+                <button class="log-tab-btn" data-tab="temperature-log">
+                    <i class="fas fa-thermometer-half"></i> 온도 점검 일지
+                </button>
+                <button class="log-tab-btn" data-tab="cleaning-log">
+                    <i class="fas fa-broom"></i> 청소 점검 일지
+                </button>
+                <button class="log-tab-btn" data-tab="equipment-log">
+                    <i class="fas fa-tools"></i> 장비 점검 일지
+                </button>
+            </div>
+
+            <!-- 탭 컨텐츠: 생산 작업 일지 -->
+            <div id="production-log" class="log-tab-content active">
+                <div class="section-header" id="productionSectionHeader">
+                    <i class="fas fa-clipboard-list"></i> 생산 작업 일지
+                </div>
+
+                <div class="date-selector">
+                    <label>생산일자:</label>
+                    <button type="button" class="btn" onclick="changeDate(-1)" style="padding: 5px 10px; min-width: auto;">◀</button>
+                    <input type="date" id="productionDate">
+                    <button type="button" class="btn" onclick="changeDate(1)" style="padding: 5px 10px; min-width: auto;">▶</button>
+                    <label>끼니:</label>
+                    <select id="mealType">
+                        <option value="all" selected>전체</option>
+                        <option value="breakfast">조식</option>
+                        <option value="lunch">중식</option>
+                        <option value="dinner">석식</option>
+                        <option value="night">야식</option>
+                        <option value="event">행사</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadProductionData()">
+                        <i class="fas fa-search"></i> 조회
+                    </button>
+                </div>
+
+                <div class="category-filter">
+                    <h3><i class="fas fa-filter"></i> 카테고리 필터</h3>
+                    <div class="category-buttons" id="categoryButtons">
+                        <button class="category-btn all active" data-category="all">전체</button>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button class="btn" id="combineLunchboxBtn" onclick="toggleCombineLunchboxTransport()" style="background: #9b59b6; color: white;">
+                            <i class="fas fa-layer-group"></i> 도시락+운반 합산
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">No.</th>
+                                <th style="width: 130px;">제품명</th>
+                                <th style="width: 65px;">생산량(kg)</th>
+                                <th style="width: 75px;">생산시간</th>
+                                <th style="width: 140px;">원료명</th>
+                                <th style="width: 70px;">Lot.</th>
+                                <th style="width: 65px;">투입량(kg)</th>
+                                <th style="width: 90px;">비고</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productionTableBody">
+                            <!-- 동적으로 생성됨 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-warning" onclick="printLog('production')">
+                        <i class="fas fa-print"></i> A4 출력
+                    </button>
+                </div>
+            </div>
+
+            <!-- 탭 컨텐츠: 온도 점검 일지 -->
+            <div id="temperature-log" class="log-tab-content">
+                <div class="section-header">
+                    <i class="fas fa-thermometer-half"></i> 온도 점검 일지
+                </div>
+                <div class="coming-soon">
+                    <i class="fas fa-hard-hat"></i>
+                    <h3>준비 중입니다</h3>
+                    <p>온도 점검 일지 기능이 곧 추가될 예정입니다.</p>
+                </div>
+            </div>
+
+            <!-- 탭 컨텐츠: 청소 점검 일지 -->
+            <div id="cleaning-log" class="log-tab-content">
+                <div class="section-header">
+                    <i class="fas fa-broom"></i> 청소 점검 일지
+                </div>
+                <div class="coming-soon">
+                    <i class="fas fa-hard-hat"></i>
+                    <h3>준비 중입니다</h3>
+                    <p>청소 점검 일지 기능이 곧 추가될 예정입니다.</p>
+                </div>
+            </div>
+
+            <!-- 탭 컨텐츠: 장비 점검 일지 -->
+            <div id="equipment-log" class="log-tab-content">
+                <div class="section-header">
+                    <i class="fas fa-tools"></i> 장비 점검 일지
+                </div>
+                <div class="coming-soon">
+                    <i class="fas fa-hard-hat"></i>
+                    <h3>준비 중입니다</h3>
+                    <p>장비 점검 일지 기능이 곧 추가될 예정입니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>처리 중입니다...</p>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let currentData = {
+            date: '',
+            mealType: 'all',
+            categoryCounts: {},
+            menus: [],
+            selectedCategory: 'all',
+            combineLunchboxTransport: false  // 도시락+운반 합산 모드
+        };
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function () {
+            initializePage();
+            setupTabEvents();
+        });
+
+        function getLocalDateString(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function initializePage() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const defaultDate = getLocalDateString(tomorrow);
+            document.getElementById('productionDate').value = defaultDate;
+            currentData.date = defaultDate;
+
+            setupCategoryButtons();
+            // 초기 데이터 로드 - 사용자가 조회 버튼 클릭 시에만 로드
+            // loadProductionData();
+        }
+
+        // 탭 이벤트 설정
+        function setupTabEvents() {
+            document.querySelectorAll('.log-tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+
+                    // 모든 탭 버튼 비활성화
+                    document.querySelectorAll('.log-tab-btn').forEach(b => b.classList.remove('active'));
+                    // 클릭한 탭 활성화
+                    this.classList.add('active');
+
+                    // 모든 탭 컨텐츠 숨기기
+                    document.querySelectorAll('.log-tab-content').forEach(c => c.classList.remove('active'));
+                    // 선택한 탭 컨텐츠 표시
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+        }
+
+        function setupCategoryButtons() {
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    selectCategory(this.dataset.category);
+                });
+            });
+        }
+
+        function updateCategoryButtons() {
+            const container = document.getElementById('categoryButtons');
+            if (!container) return;
+
+            const categories = Object.keys(currentData.categoryCounts || {});
+            const selected = currentData.selectedCategory;
+
+            let html = `<button class="category-btn all ${selected === 'all' ? 'active' : ''}" data-category="all">전체</button>`;
+
+            categories.forEach(category => {
+                const count = currentData.categoryCounts[category] || 0;
+                const isActive = selected === category ? 'active' : '';
+                html += `<button class="category-btn ${isActive}" data-category="${category}">${category} <span style="font-size:11px;opacity:0.8;">(${count})</span></button>`;
+            });
+
+            container.innerHTML = html;
+            setupCategoryButtons();
+        }
+
+        function selectCategory(category) {
+            currentData.selectedCategory = category;
+
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.category === category);
+            });
+
+            updateSectionHeader();
+            renderProductionTable();
+        }
+
+        function changeDate(days) {
+            const dateInput = document.getElementById('productionDate');
+            const currentDate = new Date(dateInput.value || new Date());
+            currentDate.setDate(currentDate.getDate() + days);
+            dateInput.value = getLocalDateString(currentDate);
+            loadProductionData();
+        }
+
+        function getCurrentSiteId() {
+            // SiteSelector 모듈 사용
+            if (typeof SiteSelector !== 'undefined') {
+                return SiteSelector.getCurrentSiteId();
+            }
+            // 폴백: localStorage에서 가져오기
+            try {
+                const saved = localStorage.getItem('currentSiteContext');
+                if (saved) {
+                    const context = JSON.parse(saved);
+                    return context.site_id || context.group_id || null;
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('show', show);
+        }
+
+        async function loadProductionData() {
+            showLoading(true);
+
+            const date = document.getElementById('productionDate').value;
+            const mealType = document.getElementById('mealType').value;
+            const siteId = getCurrentSiteId();
+
+            currentData.date = date;
+            currentData.mealType = mealType;
+
+            try {
+                let url = `/api/cooking-instruction?cooking_date=${date}`;
+
+                const mealTypeMap = {
+                    'all': '전체', 'breakfast': '조식', 'lunch': '중식',
+                    'dinner': '석식', 'night': '야식', 'event': '행사'
+                };
+
+                if (mealType && mealType !== 'all') {
+                    url += `&meal_type=${encodeURIComponent(mealTypeMap[mealType] || mealType)}`;
+                }
+                if (siteId) {
+                    url += `&site_id=${siteId}`;
+                }
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    currentData.categoryCounts = result.category_counts || {};
+                    currentData.menus = result.menus || [];
+
+                    updateCategoryButtons();
+                    updateSectionHeader();
+                    renderProductionTable();
+                } else {
+                    console.error('로드 실패:', result.error);
+                    alert('데이터 로드 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('로드 오류:', error);
+                alert('데이터 로드 오류: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function updateSectionHeader() {
+            const header = document.getElementById('productionSectionHeader');
+            const mealTypeText = {
+                'all': '전체', 'breakfast': '조식', 'lunch': '중식',
+                'dinner': '석식', 'night': '야식', 'event': '행사'
+            };
+
+            const dateObj = new Date(currentData.date);
+            const dateStr = dateObj.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+            const dayStr = ['일', '월', '화', '수', '목', '금', '토'][dateObj.getDay()];
+
+            // 도시락+운반 합산 모드 표시
+            let categoryText = '';
+            if (currentData.combineLunchboxTransport) {
+                categoryText = ' [도시락+운반 합산]';
+            } else if (currentData.selectedCategory !== 'all') {
+                categoryText = ` [${currentData.selectedCategory}]`;
+            }
+
+            header.innerHTML = `<i class="fas fa-clipboard-list"></i> 생산 작업 일지 - ${dateStr} (${dayStr}) ${mealTypeText[currentData.mealType]}${categoryText}`;
+
+            // 인쇄용 정보 업데이트
+            document.getElementById('printDateInfo').textContent = `${dateStr} (${dayStr}) ${mealTypeText[currentData.mealType]}${categoryText}`;
+        }
+
+        // 도시락+운반 합산 모드 토글
+        function toggleCombineLunchboxTransport() {
+            currentData.combineLunchboxTransport = !currentData.combineLunchboxTransport;
+
+            const btn = document.getElementById('combineLunchboxBtn');
+            if (currentData.combineLunchboxTransport) {
+                btn.style.background = '#e74c3c';
+                btn.innerHTML = '<i class="fas fa-layer-group"></i> 도시락+운반 합산 (적용중)';
+                // 합산 모드일 때는 카테고리 선택 해제
+                currentData.selectedCategory = 'all';
+                document.querySelectorAll('.category-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.category === 'all');
+                });
+            } else {
+                btn.style.background = '#9b59b6';
+                btn.innerHTML = '<i class="fas fa-layer-group"></i> 도시락+운반 합산';
+            }
+
+            updateSectionHeader();
+            renderProductionTable();
+        }
+
+        function getFilteredMenus() {
+            // 도시락+운반 합산 모드
+            if (currentData.combineLunchboxTransport) {
+                return (currentData.menus || []).filter(menu => {
+                    const categoryMealCounts = menu.category_meal_counts || {};
+                    // 도시락 또는 운반 카테고리에 포함된 메뉴
+                    return (categoryMealCounts['도시락'] > 0) || (categoryMealCounts['운반'] > 0);
+                });
+            }
+
+            if (currentData.selectedCategory === 'all') {
+                return currentData.menus || [];
+            }
+            // category_meal_counts에 선택한 카테고리가 포함된 메뉴 필터링
+            // (잡곡밥처럼 여러 카테고리에 배분되는 메뉴도 표시)
+            return (currentData.menus || []).filter(menu => {
+                const categoryMealCounts = menu.category_meal_counts || {};
+                return categoryMealCounts[currentData.selectedCategory] > 0;
+            });
+        }
+
+        function renderProductionTable() {
+            const tbody = document.getElementById('productionTableBody');
+            if (!tbody) return;
+
+            const filteredMenus = getFilteredMenus();
+
+            if (!filteredMenus || filteredMenus.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 60px; color: #666;">
+                            <i class="fas fa-info-circle" style="font-size: 48px; display: block; margin-bottom: 20px; color: #ccc;"></i>
+                            ${currentData.selectedCategory === 'all' ? '해당 날짜의 생산 데이터가 없습니다.' : `'${currentData.selectedCategory}' 카테고리의 데이터가 없습니다.`}<br>
+                            <span style="font-size: 14px; color: #999;">발주가 완료된 날짜를 선택해 주세요.</span>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            let rowNo = 1;
+
+            const isAllMealTypes = currentData.mealType === 'all';
+
+            if (isAllMealTypes) {
+                const mealTypeOrder = ['조식', '중식', '석식', '야식', '행사'];
+                const menusByMealType = {};
+
+                filteredMenus.forEach(menu => {
+                    const mt = menu.meal_type || '기타';
+                    if (!menusByMealType[mt]) menusByMealType[mt] = [];
+                    menusByMealType[mt].push(menu);
+                });
+
+                const mealTypeIcons = { '조식': '🌅', '중식': '☀️', '석식': '🌙', '야식': '🌃', '행사': '🎉', '기타': '📋' };
+
+                mealTypeOrder.forEach(mt => {
+                    if (!menusByMealType[mt] || menusByMealType[mt].length === 0) return;
+
+                    html += `<tr class="category-header-row"><td colspan="8">${mealTypeIcons[mt] || '📋'} ${mt}</td></tr>`;
+
+                    menusByMealType[mt].forEach(menu => {
+                        html += renderMenuRows(menu, rowNo);
+                        rowNo += (menu.ingredients?.length || 1);
+                    });
+                });
+
+                if (menusByMealType['기타']?.length > 0) {
+                    html += `<tr class="category-header-row"><td colspan="8">📋 기타</td></tr>`;
+                    menusByMealType['기타'].forEach(menu => {
+                        html += renderMenuRows(menu, rowNo);
+                        rowNo += (menu.ingredients?.length || 1);
+                    });
+                }
+            } else {
+                filteredMenus.forEach(menu => {
+                    html += renderMenuRows(menu, rowNo);
+                    rowNo += (menu.ingredients?.length || 1);
+                });
+            }
+
+            tbody.innerHTML = html;
+        }
+
+        function renderMenuRows(menu, startNo) {
+            const ingredients = menu.ingredients || [];
+            const ingredientCount = ingredients.length || 1;
+            const selectedCategory = currentData.selectedCategory;
+            const isCombinedMode = currentData.combineLunchboxTransport;
+
+            // 카테고리 선택 시 해당 카테고리의 정확한 수량 계산
+            // category_qty: 재료별 카테고리별 전처리량 (백엔드에서 제공)
+            // cooked_qty = preprocessed_qty × cooking_yield / 100
+            function getCategoryQty(ing, category) {
+                // 도시락+운반 합산 모드
+                if (isCombinedMode) {
+                    const categoryQty = ing.category_qty || {};
+                    const cookingYield = parseFloat(ing.cooking_yield) || 100;
+                    const preprocessingYield = parseFloat(ing.preprocessing_yield) || 100;
+
+                    // 도시락 + 운반 수량 합산
+                    const lunchboxQty = parseFloat(categoryQty['도시락']) || 0;
+                    const transportQty = parseFloat(categoryQty['운반']) || 0;
+                    const combinedPreprocessedQty = lunchboxQty + transportQty;
+
+                    // 조리후량 = 전처리량 × 조리수율/100
+                    const cookedQty = combinedPreprocessedQty * (cookingYield / 100);
+
+                    // 투입량(필요량)은 전처리 전 원물량 = 전처리량 / (전처리수율/100)
+                    const requiredQty = preprocessingYield > 0 ? combinedPreprocessedQty / (preprocessingYield / 100) : combinedPreprocessedQty;
+
+                    return {
+                        preprocessed: combinedPreprocessedQty,  // ★ 전처리량 (투입량)
+                        cooked: cookedQty,
+                        required: requiredQty
+                    };
+                }
+
+                if (category === 'all') {
+                    return {
+                        preprocessed: parseFloat(ing.preprocessed_qty) || 0,  // ★ 전처리량 (투입량)
+                        cooked: parseFloat(ing.cooked_qty) || 0,
+                        required: parseFloat(ing.required_qty) || 0
+                    };
+                }
+
+                // category_qty가 있으면 정확한 카테고리별 수량 사용
+                const categoryQty = ing.category_qty || {};
+                const preprocessedQty = parseFloat(categoryQty[category]) || 0;
+                const cookingYield = parseFloat(ing.cooking_yield) || 100;
+
+                // 조리후량 = 전처리량 × 조리수율/100
+                const cookedQty = preprocessedQty * (cookingYield / 100);
+
+                // 투입량(필요량)은 전처리 전 원물량 = 전처리량 / (전처리수율/100)
+                const preprocessingYield = parseFloat(ing.preprocessing_yield) || 100;
+                const requiredQty = preprocessingYield > 0 ? preprocessedQty / (preprocessingYield / 100) : preprocessedQty;
+
+                return {
+                    preprocessed: preprocessedQty,  // ★ 전처리량 (투입량으로 사용)
+                    cooked: cookedQty,              // 조리후량 (생산량으로 사용)
+                    required: requiredQty           // 원물량
+                };
+            }
+
+            // 생산량 = 조리후량 합계
+            let totalProductionKg = 0;
+            ingredients.forEach(ing => {
+                const qty = getCategoryQty(ing, selectedCategory);
+                totalProductionKg += qty.cooked;
+            });
+            totalProductionKg = totalProductionKg.toFixed(2);
+
+            let html = '';
+
+            ingredients.forEach((ing, idx) => {
+                const isFirst = idx === 0;
+                const qty = getCategoryQty(ing, selectedCategory) || { preprocessed: 0, cooked: 0 };
+                // ★ 투입량 = 전처리량 (조리수율 미적용, 전처리수율만 적용)
+                const preprocessedVal = qty.preprocessed ?? qty.cooked ?? 0;
+                const inputKg = preprocessedVal.toFixed(3);
+
+                html += `<tr>`;
+
+                if (isFirst) {
+                    html += `
+                        <td rowspan="${ingredientCount}" class="number-cell">${startNo}</td>
+                        <td rowspan="${ingredientCount}" class="product-name">${menu.menu_name || '-'}</td>
+                        <td rowspan="${ingredientCount}" class="number-cell">${totalProductionKg}</td>
+                        <td rowspan="${ingredientCount}" class="handwrite-cell"></td>
+                    `;
+                }
+
+                html += `
+                    <td class="ingredient-name">${ing.ingredient_name || '-'}</td>
+                    <td class="handwrite-cell"></td>
+                    <td class="number-cell">${inputKg}</td>
+                    <td class="handwrite-cell"></td>
+                </tr>`;
+            });
+
+            if (ingredients.length === 0) {
+                html += `
+                    <tr>
+                        <td class="number-cell">${startNo}</td>
+                        <td class="product-name">${menu.menu_name || '-'}</td>
+                        <td class="number-cell">-</td>
+                        <td class="handwrite-cell"></td>
+                        <td class="ingredient-name">-</td>
+                        <td class="handwrite-cell"></td>
+                        <td class="number-cell">-</td>
+                        <td class="handwrite-cell"></td>
+                    </tr>
+                `;
+            }
+
+            return html;
+        }
+
+        function printLog(logType) {
+            if (logType === 'production') {
+                document.getElementById('printTitle').textContent = 'HACCP 생산 작업 일지';
+            }
+            window.print();
+        }
+    </script>
+
+    <!-- 사업장 선택기 스크립트 -->
+    <script src="/static/modules/core/site-selector.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            // SiteSelector 모듈 초기화
+            if (typeof SiteSelector !== 'undefined') {
+                await SiteSelector.init('logs-site-selector');
+
+                // 사업장 변경 이벤트 리스너
+                SiteSelector.on('siteChange', function(context) {
+                    console.log('사업장 변경:', context);
+                    loadProductionData();
+                });
+            } else {
+                console.warn('SiteSelector 모듈을 찾을 수 없습니다.');
+            }
+        });
+    </script>
+</body>
+
+</html>

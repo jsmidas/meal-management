@@ -1,0 +1,361 @@
+/* 사용자 대시보드 스타일시트 */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+    color: #333;
+    line-height: 1.4;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* 사이드바 */
+.sidebar {
+    width: 180px;
+    background: linear-gradient(160deg, var(--brand-primary, #2c3e50), var(--brand-secondary, #34495e));
+    color: white;
+    padding: 15px 0;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.logo {
+    text-align: center;
+    padding: 0 15px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 20px;
+}
+
+.logo h1 {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--brand-secondary, #3498db);
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    transition: all 0.3s;
+    font-size: 13px;
+}
+
+.nav-item:hover, .nav-item.active {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: white;
+    border-right: 3px solid var(--brand-secondary, #3498db);
+}
+
+.nav-item i {
+    margin-right: 10px;
+    font-size: 14px;
+    width: 16px;
+}
+
+.nav-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 15px 15px;
+}
+
+.admin-item {
+    background-color: rgba(231, 76, 60, 0.1);
+    border-left: 3px solid #e74c3c;
+}
+
+.admin-item:hover {
+    background-color: rgba(231, 76, 60, 0.2);
+    border-right: 3px solid #e74c3c;
+}
+
+/* 메인 컨텐츠 */
+.main-content {
+    flex: 1;
+    padding: 20px;
+}
+
+/* 대시보드 헤더 */
+.dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+.dashboard-header h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.dashboard-header p {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+/* KPI 카드 그리드 */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.kpi-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.kpi-card.meals::before {
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+.kpi-card.revenue::before {
+    background: linear-gradient(90deg, #22c55e, #16a085);
+}
+
+.kpi-card.average::before {
+    background: linear-gradient(90deg, #f59e0b, #e67e22);
+}
+
+.kpi-card.cost::before {
+    background: linear-gradient(90deg, #ef4444, #c0392b);
+}
+
+.kpi-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.8;
+}
+
+.kpi-value {
+    font-size: 36px;
+    font-weight: bold;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.kpi-label {
+    font-size: 16px;
+    color: #64748b;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.kpi-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.kpi-change.positive {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.kpi-change.negative {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* 차트 컨테이너 */
+.charts-section {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.chart-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s;
+}
+
+.chart-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+
+.chart-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chart-container {
+    position: relative;
+    height: 350px;
+}
+
+.chart-container.small {
+    height: 280px;
+}
+
+/* 요약 테이블 */
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.summary-table th,
+.summary-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.summary-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 13px;
+}
+
+.summary-table td {
+    font-size: 14px;
+}
+
+.summary-table tr:hover {
+    background: #f8fafc;
+}
+
+/* 인사이트 패널 */
+.insights-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin: 20px auto;
+    max-width: 1400px;
+}
+
+.insight-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    transition: all 0.3s;
+}
+
+.insight-item:hover {
+    background: #f8fafc;
+}
+
+.insight-item.warning {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+}
+
+.insight-item.info {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+}
+
+.insight-item.success {
+    background: #f0fdf4;
+    border-left: 4px solid #22c55e;
+}
+
+.insight-icon {
+    font-size: 22px;
+    margin-right: 15px;
+    margin-top: 2px;
+}
+
+.insight-content {
+    flex: 1;
+}
+
+.insight-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 6px;
+    color: #1e293b;
+}
+
+.insight-description {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 1024px) {
+    .chart-row {
+        grid-template-columns: 1fr;
+    }
+
+    .kpi-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        padding: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+        padding: 15px;
+    }
+
+    .chart-container {
+        height: 300px;
+    }
+
+    .chart-container.small {
+        height: 250px;
+    }
+}

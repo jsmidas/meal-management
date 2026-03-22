@@ -1,0 +1,17 @@
+pg_restore: 오류: could not execute query: ERROR:  extension "repmgr" is not available
+상세정보:  Could not open extension control file "/usr/share/postgresql/17/extension/repmgr.control": No such file or directory.
+힌트:  The extension must first be installed on the system where PostgreSQL is running.
+사용된 명령: CREATE EXTENSION IF NOT EXISTS repmgr WITH SCHEMA repmgr;
+
+
+pg_restore: 오류: could not execute query: ERROR:  extension "repmgr" does not exist
+사용된 명령: COMMENT ON EXTENSION repmgr IS 'Replication manager for PostgreSQL';
+
+
+pg_restore: 오류: could not execute query: ERROR:  relation "repmgr.events" does not exist
+사용된 명령: COPY repmgr.events (node_id, event, successful, event_timestamp, details) FROM stdin;
+pg_restore: 오류: could not execute query: ERROR:  relation "repmgr.monitoring_history" does not exist
+사용된 명령: COPY repmgr.monitoring_history (primary_node_id, standby_node_id, last_monitor_time, last_apply_time, last_wal_primary_location, last_wal_standby_location, replication_lag, apply_lag) FROM stdin;
+pg_restore: 오류: could not execute query: ERROR:  relation "repmgr.nodes" does not exist
+사용된 명령: COPY repmgr.nodes (node_id, upstream_node_id, active, node_name, type, location, priority, conninfo, repluser, slot_name, config_file) FROM stdin;
+pg_restore: 경고: 복원작업에서의 오류들이 무시되었음: 5

@@ -1,0 +1,132 @@
+<!-- 협력업체 관리 컨텐츠 -->
+<div class="content-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">협력업체 관리</h2>
+        <div class="header-buttons" style="display: flex; gap: 10px;">
+            <button class="btn" style="padding: 8px 16px; border: none; background: #6366f1; color: white; border-radius: 4px; cursor: pointer;" onclick="window.SupplierManagement.initAllAccounts()">
+                🔐 전체 계정 초기화
+            </button>
+            <button class="btn btn-secondary" style="padding: 8px 16px; border: 1px solid #ccc; background: #f5f5f5; border-radius: 4px; cursor: pointer;" onclick="SuppliersManagementFull.showBlackoutPeriodsModal()">
+                📅 휴무일 관리
+            </button>
+            <button class="btn btn-primary" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="openCreateSupplierModal()">
+                ➕ 새 협력업체 추가
+            </button>
+        </div>
+    </div>
+
+    <!-- 통계 카드 -->
+    <div class="stats-grid" style="display: flex !important; flex-direction: row !important; gap: 16px !important; margin-bottom: 20px !important;">
+        <div class="stat-card" style="flex: 1; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="stat-value" id="totalSuppliers" style="font-size: 28px; font-weight: bold; color: #333;">0</div>
+            <div class="stat-label" style="font-size: 12px; color: #666; margin-top: 4px;">전체 협력업체</div>
+        </div>
+        <div class="stat-card" style="flex: 1; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="stat-value" id="activeSuppliers" style="font-size: 28px; font-weight: bold; color: #28a745;">0</div>
+            <div class="stat-label" style="font-size: 12px; color: #666; margin-top: 4px;">활성 협력업체</div>
+        </div>
+        <div class="stat-card" style="flex: 1; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="stat-value" id="currentBlackouts" style="font-size: 28px; font-weight: bold; color: #dc3545;">0</div>
+            <div class="stat-label" style="font-size: 12px; color: #666; margin-top: 4px;">현재 휴무중</div>
+        </div>
+        <div class="stat-card" style="flex: 1; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="stat-value" id="upcomingBlackouts" style="font-size: 28px; font-weight: bold; color: #ffc107;">0</div>
+            <div class="stat-label" style="font-size: 12px; color: #666; margin-top: 4px;">예정 휴무</div>
+        </div>
+    </div>
+
+    <!-- 검색 및 필터 -->
+    <div class="search-filter-container">
+        <div class="search-box">
+            <input type="text" id="supplierSearchInput" placeholder="협력업체명 또는 코드로 검색...">
+            <button onclick="SuppliersManagementFull.loadSuppliers(1)">검색</button>
+        </div>
+    </div>
+
+    <!-- 벌크 액션 -->
+    <div id="supplierBulkActions" class="bulk-actions" style="display: none;">
+        <span>선택된 항목: <strong id="supplierSelectedCount">0</strong>개</span>
+        <button class="btn btn-danger" onclick="SuppliersManagementFull.bulkDelete()">
+            일괄 삭제
+        </button>
+    </div>
+
+    <!-- 협력업체 테이블 -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAllSuppliers"></th>
+                    <th>ID</th>
+                    <th>업체명</th>
+                    <th>업종</th>
+                    <th>배송코드</th>
+                    <th>지역</th>
+                    <th>대표자</th>
+                    <th>연락처</th>
+                    <th>이메일</th>
+                    <th>로그인ID</th>
+                    <th>비밀번호</th>
+                    <th>상태</th>
+                    <th>작업</th>
+                </tr>
+            </thead>
+            <tbody id="suppliersTableBody">
+                <tr>
+                    <td colspan="13" class="loading">데이터 로딩 중...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 페이지네이션 -->
+    <div id="suppliersPagination" class="pagination"></div>
+
+<!-- 협력업체 수정 모달 -->
+<div id="supplierModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="supplierModalTitle">협력업체 수정</h3>
+            <button class="close" onclick="window.SupplierManagement.closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="supplierForm">
+                <div class="form-group">
+                    <label for="supplierName">업체명</label>
+                    <input type="text" id="supplierName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="supplierCode">업체코드</label>
+                    <input type="text" id="supplierCode" name="supplier_code" placeholder="예: CJ001, GS002">
+                </div>
+                <div class="form-group">
+                    <label for="supplierDeliveryCode">배송코드</label>
+                    <input type="text" id="supplierDeliveryCode" name="delivery_code" placeholder="배송업체 코드를 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label for="supplierContact">담당자</label>
+                    <input type="text" id="supplierContact" name="contact">
+                </div>
+                <div class="form-group">
+                    <label for="supplierAddress">주소</label>
+                    <input type="text" id="supplierAddress" name="address">
+                </div>
+                <div class="form-group">
+                    <label for="supplierPhone">전화번호</label>
+                    <input type="text" id="supplierPhone" name="phone">
+                </div>
+                <div class="form-group">
+                    <label for="supplierEmail">이메일</label>
+                    <input type="email" id="supplierEmail" name="email">
+                </div>
+                <div class="form-group">
+                    <label for="supplierIngredientCount">식자재 수</label>
+                    <input type="number" id="supplierIngredientCount" name="ingredient_count" readonly>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="window.SupplierManagement.closeModal()">취소</button>
+            <button type="button" id="supplierSubmitBtn" class="btn btn-primary" onclick="window.SupplierManagement.handleFormSubmit(event)">저장</button>
+        </div>
+    </div>
+</div>

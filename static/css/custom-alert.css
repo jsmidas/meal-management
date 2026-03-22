@@ -1,0 +1,121 @@
+/* 커스텀 알림창 스타일 */
+.custom-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.custom-alert-overlay.show {
+    opacity: 1;
+}
+
+.custom-alert-box {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    min-width: 320px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    transform: scale(0.9);
+    transition: transform 0.2s ease;
+}
+
+.custom-alert-overlay.show .custom-alert-box {
+    transform: scale(1);
+}
+
+.custom-alert-header {
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+    font-size: 15px;
+    color: #333;
+}
+
+.custom-alert-body {
+    padding: 24px 20px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    word-break: keep-all;
+    white-space: pre-wrap;
+}
+
+.custom-alert-footer {
+    padding: 12px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.custom-alert-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.custom-alert-btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.custom-alert-btn-primary:hover {
+    background: #2563eb;
+}
+
+.custom-alert-btn-secondary {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.custom-alert-btn-secondary:hover {
+    background: #d1d5db;
+}
+
+/* 알림 유형별 아이콘 */
+.custom-alert-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.custom-alert-icon::before {
+    font-size: 18px;
+}
+
+.custom-alert-header.info .custom-alert-icon::before {
+    content: 'ℹ️';
+}
+
+.custom-alert-header.success .custom-alert-icon::before {
+    content: '✅';
+}
+
+.custom-alert-header.warning .custom-alert-icon::before {
+    content: '⚠️';
+}
+
+.custom-alert-header.error .custom-alert-icon::before {
+    content: '❌';
+}
+
+.custom-alert-header.confirm .custom-alert-icon::before {
+    content: '❓';
+}

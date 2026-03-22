@@ -1,0 +1,2698 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>반찬위치지정서 - 급식관리 시스템</title>
+    <link rel="icon" type="image/x-icon" href="static/favicon.ico">
+
+    <!-- 인증 체크 -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+
+    <!-- 외부 라이브러리 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- 공통 사이드바 CSS -->
+    <link rel="stylesheet" href="static/css/common-sidebar.css?v=20251027">
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <script src="static/js/sidebar-dropdown.js"></script>
+    <link rel="stylesheet" href="static/css/site-selector.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .main-container {
+            display: flex;
+            gap: 1rem;
+            height: calc(100vh - 2rem);
+            margin: 1rem;
+        }
+
+        /* 좌측 패널 - 슬롯 목록 */
+        .left-panel {
+            width: 280px;
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            overflow-y: auto;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .date-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .date-nav input[type="date"] {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .date-nav-btn {
+            padding: 0.5rem;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .date-nav-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .slot-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .slot-item {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .slot-item:hover {
+            background: #e8f4fd;
+        }
+
+        .slot-item.selected {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .slot-item input[type="checkbox"] {
+            margin-right: 0.5rem;
+            width: 18px;
+            height: 18px;
+        }
+
+        .slot-name {
+            flex: 1;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .slot-count {
+            font-size: 0.8rem;
+            color: #666;
+            background: #fff;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* 우측 패널 */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* 우측 상단 - 선택된 슬롯 식단 */
+        .menu-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            min-height: 150px;
+        }
+
+        .selected-slot-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .slot-tab {
+            padding: 0.4rem 0.8rem;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .slot-tab:hover {
+            background: #e0e0e0;
+        }
+
+        .slot-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .menu-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .menu-item {
+            padding: 0.5rem 0.8rem;
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            border-radius: 8px;
+            cursor: grab;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(9, 132, 227, 0.4);
+        }
+
+        .menu-item:active {
+            cursor: grabbing;
+        }
+
+        .menu-item.dragging {
+            opacity: 0.5;
+        }
+
+        /* 사용된 메뉴 (중복 배치 가능) */
+        .menu-item.used {
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+            cursor: grab;
+            opacity: 0.7;
+        }
+
+        .menu-item.used::after {
+            content: ' ✓';
+            font-size: 0.7em;
+        }
+
+        .menu-item.used:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
+            opacity: 1;
+        }
+
+        /* 우측 하단 - 도시락 레이아웃 편집 */
+        .layout-panel {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .layout-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        .layout-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .layout-date {
+            font-size: 1.8rem;  /* 날짜 크게 표시 */
+            font-weight: 700;
+        }
+
+        .layout-quantity {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .layout-quantity input {
+            width: 80px;
+            padding: 0.4rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .layout-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd6;
+        }
+
+        .btn-success {
+            background: #00b894;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #00a383;
+        }
+
+        .btn-warning {
+            background: #fdcb6e;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background: #f0b93c;
+        }
+
+        /* 도시락 그리드 레이아웃 */
+        .lunchbox-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .lunchbox-section {
+            border: 3px solid #5d4e37;
+            border-radius: 16px;
+            padding: 1rem;
+            background: #f5f0e8;
+        }
+
+        .lunchbox-section.type-ilpum {
+            background: #2d3436;
+            border-color: #636e72;
+        }
+
+        .lunchbox-section.type-ilpum .lunchbox-section-title,
+        .lunchbox-section.type-ilpum .lunchbox-section-count span {
+            color: #dfe6e9;
+        }
+
+        .lunchbox-section.type-ilpum .lunchbox-section-count input {
+            background: #636e72;
+            color: white;
+            border-color: #636e72;
+        }
+
+        .lunchbox-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .lunchbox-section-title {
+            font-weight: 700;
+            font-size: 1.9rem;  /* 2배 확대 */
+            width: 300px;
+        }
+
+        .lunchbox-section-count {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;  /* 식수 표시 확대 */
+            font-weight: 600;
+        }
+
+        .lunchbox-section-count input {
+            width: 80px;
+            padding: 0.4rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .lunchbox-grid {
+            display: grid;
+            gap: 6px;
+        }
+
+        /* 6찬도시락 그리드 - 실제 용기 비율 반영 (3행 4열) */
+        /* Row 1: [주찬  ] [찬1] [찬2] [찬3(김치)] - 작은 높이 */
+        /* Row 2: [주찬  ] [ 국 (2칸) ] [찬4     ] - 큰 높이 */
+        /* Row 3: [밥   ] [ 국 계속  ] [부주찬   ] - 큰 높이 */
+        .lunchbox-grid.grid-6chan {
+            grid-template-columns: 2.2fr 1fr 1fr 0.9fr;
+            grid-template-rows: 0.8fr 0.55fr 1.65fr;
+            height: 500px;  /* 높이 확대 */
+        }
+
+        /* 일품도시락 그리드 (2행 4열) */
+        /* Row 1: [주찬  ] [찬1] [찬2] [찬3(김치)] */
+        /* Row 2: [밥/메인요리 (3칸)  ] [찬4     ] */
+        .lunchbox-grid.grid-ilpum {
+            grid-template-columns: 2.2fr 1fr 1fr 0.9fr;
+            grid-template-rows: 0.8fr 1.5fr;
+            height: 400px;  /* 높이 확대 */
+        }
+
+        .lunchbox-cell {
+            background: white;
+            border: 2px solid #999;
+            border-radius: 12px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        /* 주찬 칸 (2행 span) */
+        /* 주찬 칸 (1행 span) */
+        .lunchbox-cell.main-side {
+            /* grid-row: span 2; 제거됨 */
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        /* 밥 칸 */
+        /* 밥 칸 */
+        .lunchbox-cell.rice-cell {
+            grid-row: span 2;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        /* 국 칸 (2행 2열 span) */
+        .lunchbox-cell.soup-cell {
+            grid-row: span 2;
+            grid-column: span 2;
+        }
+
+        /* 일품 - 밥/메인요리 큰 칸 (3열 span) */
+        .lunchbox-cell.main-dish {
+            grid-column: span 3;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .lunchbox-cell:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .lunchbox-cell.has-content {
+            border-style: solid;
+            border-color: #333;
+            background: white;
+        }
+
+        .lunchbox-cell.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        .lunchbox-cell.drag-over {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .cell-content {
+            font-weight: 700;
+            font-size: 2.55rem;  /* 3배 확대 */
+            word-break: keep-all;
+            line-height: 1.1;
+            user-select: none;  /* 텍스트 선택 방지 - 셀 선택 우선 */
+            pointer-events: none;  /* 클릭이 부모 셀로 전달되도록 */
+            white-space: pre-line;  /* 줄바꿈 표시 */
+        }
+
+        /* 셀 내 메뉴 아이템 (삭제 버튼 포함) */
+        .cell-menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            position: relative;
+        }
+
+        .cell-menu-item .menu-delete-btn {
+            display: none;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            pointer-events: auto;
+            line-height: 1;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .lunchbox-cell:hover .cell-menu-item .menu-delete-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cell-menu-item .menu-delete-btn:hover {
+            background: #dc2626;
+            transform: scale(1.2);
+        }
+
+        .cell-extra {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.7rem;
+            color: #e74c3c;
+            font-weight: 700;
+        }
+
+        /* 이동 가능한 텍스트 박스 */
+        .floating-textbox {
+            position: absolute;
+            min-width: 80px;
+            min-height: 30px;
+            padding: 8px 12px 8px 28px;
+            background: #fff9c4;
+            border: 2px solid #f9a825;
+            border-radius: 8px;
+            cursor: default;
+            font-size: 1.2rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 100;
+            user-select: none;
+        }
+
+        .floating-textbox:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+
+        .floating-textbox.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        .floating-textbox .textbox-drag-handle {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 24px;
+            background: linear-gradient(135deg, #f9a825, #f57f17);
+            border-radius: 6px 0 0 6px;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+
+        .floating-textbox .textbox-drag-handle:hover {
+            background: linear-gradient(135deg, #f57f17, #e65100);
+        }
+
+        .floating-textbox .textbox-content {
+            outline: none;
+            min-width: 50px;
+            display: inline-block;
+            cursor: text;
+        }
+
+        .floating-textbox .textbox-delete {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .floating-textbox:hover .textbox-delete {
+            opacity: 1;
+        }
+
+        /* 용기 타입 선택 */
+        .container-type-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-right: 1rem;
+        }
+
+        .container-type-btn {
+            padding: 0.4rem 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .container-type-btn:hover {
+            border-color: #667eea;
+        }
+
+        .container-type-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .container-type-btn.type-6chan {
+            background: #d4c4a8;
+            border-color: #5d4e37;
+            color: #5d4e37;
+        }
+
+        .container-type-btn.type-6chan.active {
+            background: #5d4e37;
+            color: white;
+        }
+
+        .container-type-btn.type-ilpum {
+            background: #636e72;
+            border-color: #2d3436;
+            color: white;
+        }
+
+        .container-type-btn.type-ilpum.active {
+            background: #2d3436;
+            color: white;
+        }
+
+        /* 스타일 편집 툴바 */
+        .style-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .style-group {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .style-group label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .style-group select,
+        .style-group input {
+            padding: 0.3rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .style-group input[type="color"] {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* 인쇄 스타일 */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 5mm;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            html, body {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .sidebar,
+            .left-panel,
+            .menu-panel,
+            .style-toolbar,
+            .layout-actions,
+            .btn,
+            .lunchbox-section-count input,
+            .floating-textbox-btn {
+                display: none !important;
+            }
+
+            .main-content,
+            .main-container,
+            .right-panel,
+            .layout-panel,
+            .lunchbox-container {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                display: block !important;
+                position: static !important;
+            }
+
+            /* 섹션 (도시락 + 주의사항) */
+            .lunchbox-section {
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: stretch !important;
+                gap: 10px !important;
+                border: 2px solid #333 !important;
+                page-break-inside: avoid !important;
+                margin: 0 0 10px 0 !important;
+                padding: 10px !important;
+                width: 200mm !important;
+                max-height: 135mm !important;
+                box-sizing: border-box !important;
+            }
+
+            /* 도시락 그리드 영역 */
+            .lunchbox-section > div:first-child {
+                flex: 1 !important;
+            }
+
+            /* 주의 사항 */
+            .notes-column {
+                width: 42mm !important;
+                min-width: 42mm !important;
+                flex-shrink: 0 !important;
+                border: 2px solid #e74c3c !important;
+                border-radius: 6px !important;
+                padding: 6px !important;
+                background: #fff5f5 !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+
+            .notes-column > div:first-child {
+                font-size: 0.85rem !important;
+                margin-bottom: 4px !important;
+                color: #e74c3c !important;
+                font-weight: 700 !important;
+            }
+
+            .notes-column textarea,
+            .section-notes {
+                border: none !important;
+                background: transparent !important;
+                font-size: 0.8rem !important;
+                flex: 1 !important;
+            }
+
+            .lunchbox-grid {
+                gap: 4px !important;
+            }
+
+            .lunchbox-cell {
+                border: 1px solid #333 !important;
+                padding: 6px !important;
+            }
+
+            /* 2개 섹션마다 페이지 나누기 */
+            .lunchbox-section:nth-child(2n) {
+                page-break-after: always !important;
+            }
+
+            .lunchbox-section:last-child {
+                page-break-after: avoid !important;
+            }
+
+            .lunchbox-section-title {
+                font-size: 1.1rem !important;
+            }
+
+            .cell-content {
+                font-size: 1.4rem !important;
+            }
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 하이라이트 스타일 */
+        .highlight-yellow {
+            background-color: #ffeaa7 !important;
+        }
+
+        .highlight-red {
+            color: #e74c3c;
+        }
+
+        /* 이력 목록 */
+        .history-list {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            background: #e8f4fd;
+        }
+
+        .history-date {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .history-actions button {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i
+                        class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i
+                        class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown open" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i
+                        class="fas fa-clipboard-list"></i><span>지시서 관리</span><i
+                        class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item active">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content">
+            <div class="main-container">
+                <!-- 좌측 패널 - 슬롯 목록 -->
+                <div class="left-panel">
+                    <div class="panel-header">
+                        <span class="panel-title"><i class="fas fa-list"></i> 슬롯 목록</span>
+                        <div id="site-selector-container" class="site-selector-compact"></div>
+                    </div>
+
+                    <div class="date-nav">
+                        <button class="date-nav-btn" onclick="changeDate(-1)"><i
+                                class="fas fa-chevron-left"></i></button>
+                        <input type="date" id="selected-date" onchange="loadSlots()">
+                        <button class="date-nav-btn" onclick="changeDate(1)"><i
+                                class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div id="date-display" style="text-align: center; font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: #333;"></div>
+
+                    <div class="slot-list" id="slot-list">
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-day"></i>
+                            <span>날짜를 선택하세요</span>
+                        </div>
+                    </div>
+
+                    <!-- 저장 이력 -->
+                    <div class="history-list" id="history-list">
+                        <div class="panel-title" style="margin-bottom: 0.5rem;"><i class="fas fa-history"></i> 최근 이력
+                            (7일)</div>
+                        <!-- 이력이 동적으로 로드됩니다 -->
+                    </div>
+                </div>
+
+                <!-- 우측 패널 -->
+                <div class="right-panel">
+                    <!-- 선택된 슬롯 식단 -->
+                    <div class="menu-panel">
+                        <div class="panel-header">
+                            <span class="panel-title"><i class="fas fa-utensils"></i> 식단 메뉴 (드래그하여 배치)</span>
+                        </div>
+                        <div class="selected-slot-tabs" id="selected-slot-tabs">
+                            <!-- 선택된 슬롯 탭이 동적으로 추가됩니다 -->
+                        </div>
+                        <div class="menu-items" id="menu-items">
+                            <div class="empty-state">
+                                <i class="fas fa-hand-pointer"></i>
+                                <span>좌측에서 슬롯을 선택하세요</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 도시락 레이아웃 편집 -->
+                    <div class="layout-panel">
+                        <div class="layout-header">
+                            <div class="layout-info">
+                                <span class="layout-date" id="layout-date">날짜 미선택</span>
+                            </div>
+                            <div class="layout-actions">
+                                <div class="container-type-selector">
+                                    <button class="container-type-btn type-6chan active"
+                                        onclick="setContainerType('6chan')" title="6찬도시락">
+                                        <i class="fas fa-th"></i> 6찬
+                                    </button>
+                                    <button class="container-type-btn type-ilpum" onclick="setContainerType('ilpum')"
+                                        title="일품도시락">
+                                        <i class="fas fa-square"></i> 일품
+                                    </button>
+                                </div>
+                                <button class="btn btn-warning" onclick="addLunchboxSection()">
+                                    <i class="fas fa-plus"></i> 섹션 추가
+                                </button>
+                                <button class="btn" onclick="addFloatingTextBox()" style="background: #f9a825; color: white;">
+                                    <i class="fas fa-font"></i> 텍스트 추가
+                                </button>
+                                <button class="btn" onclick="saveAsPDF()" style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white;">
+                                    <i class="fas fa-file-pdf"></i> PDF 저장
+                                </button>
+                                <button class="btn" onclick="saveAsImageDirect()" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+                                    <i class="fas fa-image"></i> 이미지 저장
+                                </button>
+                                <button class="btn" onclick="printInNewWindow()" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white;">
+                                    <i class="fas fa-external-link-alt"></i> 새창 인쇄
+                                </button>
+                                <button class="btn btn-primary" onclick="printLayout()">
+                                    <i class="fas fa-print"></i> 바로 인쇄
+                                </button>
+                                <button class="btn btn-success" onclick="saveLayoutToFile()">
+                                    <i class="fas fa-download"></i> 파일 저장
+                                </button>
+                                <button class="btn" onclick="document.getElementById('fileInput').click()" style="background: #8b5cf6; color: white;">
+                                    <i class="fas fa-upload"></i> 파일 불러오기
+                                </button>
+                                <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="loadLayoutFromFile(event)">
+                            </div>
+                        </div>
+
+                        <!-- 스타일 편집 툴바 -->
+                        <div class="style-toolbar">
+                            <div class="style-group">
+                                <label>폰트:</label>
+                                <select id="font-family">
+                                    <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                                    <option value="'맑은 고딕', sans-serif">맑은 고딕</option>
+                                    <option value="'나눔고딕', sans-serif">나눔고딕</option>
+                                    <option value="Arial, sans-serif">Arial</option>
+                                </select>
+                            </div>
+                            <div class="style-group">
+                                <label>크기:</label>
+                                <select id="font-size">
+                                    <option value="0.7rem">작게</option>
+                                    <option value="0.85rem" selected>보통</option>
+                                    <option value="1rem">크게</option>
+                                    <option value="1.2rem">매우 크게</option>
+                                </select>
+                            </div>
+                            <div class="style-group">
+                                <label>글자색:</label>
+                                <input type="color" id="font-color" value="#333333">
+                            </div>
+                            <div class="style-group">
+                                <label>배경색:</label>
+                                <div class="color-presets" style="display: flex; gap: 4px;">
+                                    <button type="button" class="color-btn active" data-color="#ffffff" onclick="selectBgColor('#ffffff', this)" style="width: 28px; height: 28px; border-radius: 6px; border: 2px solid #ccc; background: #ffffff; cursor: pointer;" title="흰색"></button>
+                                    <button type="button" class="color-btn" data-color="#fff3cd" onclick="selectBgColor('#fff3cd', this)" style="width: 28px; height: 28px; border-radius: 6px; border: 2px solid #ccc; background: #fff3cd; cursor: pointer;" title="노랑"></button>
+                                    <button type="button" class="color-btn" data-color="#d4edda" onclick="selectBgColor('#d4edda', this)" style="width: 28px; height: 28px; border-radius: 6px; border: 2px solid #ccc; background: #d4edda; cursor: pointer;" title="초록"></button>
+                                    <button type="button" class="color-btn" data-color="#cce5ff" onclick="selectBgColor('#cce5ff', this)" style="width: 28px; height: 28px; border-radius: 6px; border: 2px solid #ccc; background: #cce5ff; cursor: pointer;" title="파랑"></button>
+                                    <button type="button" class="color-btn" data-color="#f8d7da" onclick="selectBgColor('#f8d7da', this)" style="width: 28px; height: 28px; border-radius: 6px; border: 2px solid #ccc; background: #f8d7da; cursor: pointer;" title="분홍"></button>
+                                </div>
+                                <input type="hidden" id="bg-color" value="#ffffff">
+                            </div>
+                            <button class="btn btn-primary" onclick="applyStyleToSelected()" style="margin-left: auto;">
+                                <i class="fas fa-paint-brush"></i> 적용
+                            </button>
+                            <button class="btn" onclick="clearAllSections()"
+                                style="background: #e74c3c; color: white;">
+                                <i class="fas fa-redo"></i> 새로 시작
+                            </button>
+                        </div>
+
+                        <!-- 도시락 레이아웃 -->
+                        <div class="lunchbox-container" id="lunchbox-container">
+                            <div class="empty-state">
+                                <i class="fas fa-box-open"></i>
+                                <span>슬롯을 선택하면 레이아웃이 생성됩니다</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사업장 선택기 -->
+    <script src="static/modules/core/site-selector.js"></script>
+
+    <script>
+        // 전역 상태
+        let selectedDate = new Date().toISOString().split('T')[0];
+        let selectedSlots = [];
+        let activeSlot = null;
+        let selectedCell = null;
+        let lunchboxSections = [];
+        let currentContainerType = '6chan'; // '6chan' 또는 'ilpum'
+
+        // 메뉴 데이터 캐싱 (속도 개선)
+        let cachedMenuData = null;
+        let cachedMenuDate = null;
+        let isLoadingMenus = false;
+
+        // ★ 즐겨찾기 슬롯
+        let favoriteSlots = new Set();
+
+        // 즐겨찾기 로드
+        function loadFavoriteSlots() {
+            try {
+                const saved = localStorage.getItem('sideDishFavoriteSlots');
+                if (saved) {
+                    favoriteSlots = new Set(JSON.parse(saved));
+                }
+            } catch (e) {
+                console.error('즐겨찾기 로드 실패:', e);
+            }
+        }
+
+        // 즐겨찾기 저장
+        function saveFavoriteSlots() {
+            try {
+                localStorage.setItem('sideDishFavoriteSlots', JSON.stringify([...favoriteSlots]));
+            } catch (e) {
+                console.error('즐겨찾기 저장 실패:', e);
+            }
+        }
+
+        // 즐겨찾기 토글
+        function toggleFavoriteSlot(slotName, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (favoriteSlots.has(slotName)) {
+                favoriteSlots.delete(slotName);
+            } else {
+                favoriteSlots.add(slotName);
+            }
+            saveFavoriteSlots();
+            refreshSlotList();
+        }
+
+        // 즐겨찾기 여부 확인
+        function isFavoriteSlot(slotName) {
+            return favoriteSlots.has(slotName);
+        }
+
+        // 이동 가능한 텍스트 박스
+        let floatingTextBoxes = [];
+        let selectedTextBox = null;
+        let draggedTextBox = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        // 용기 타입 설정
+        function setContainerType(type) {
+            currentContainerType = type;
+
+            // 버튼 활성화 상태 업데이트
+            document.querySelectorAll('.container-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.container-type-btn.type-${type}`).classList.add('active');
+        }
+
+        // 스타일 미리보기 (툴바 변경 시 호출)
+        function applyStyle() {
+            // 선택된 셀이 있으면 즉시 스타일 적용
+            if (selectedCell) {
+                applyStyleToSelected();
+            }
+        }
+
+        // 배경색 선택
+        function selectBgColor(color, btn) {
+            document.getElementById('bg-color').value = color;
+            // 모든 색상 버튼에서 active 클래스 제거
+            document.querySelectorAll('.color-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.border = '2px solid #ccc';
+            });
+            // 선택된 버튼에 active 클래스 추가
+            btn.classList.add('active');
+            btn.style.border = '3px solid #667eea';
+        }
+
+        // 날짜 표시 업데이트
+        function updateDateDisplay() {
+            const date = new Date(selectedDate);
+            const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+            const formatted = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${weekdays[date.getDay()]})`;
+            const el = document.getElementById('date-display');
+            if (el) el.textContent = formatted;
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            // 고정 슬롯 로드
+            loadFavoriteSlots();
+
+            document.getElementById('selected-date').value = selectedDate;
+            updateDateDisplay();
+
+            // 사업장 선택기 초기화
+            if (window.SiteSelector) {
+                SiteSelector.init('site-selector-container');
+                SiteSelector.on('siteChange', () => {
+                    loadSlots();
+                });
+            }
+
+            // 초기 로드
+            setTimeout(() => {
+                loadSlots();
+                loadHistory();
+            }, 500);
+        });
+
+        // 날짜 변경
+        function changeDate(delta) {
+            const date = new Date(selectedDate);
+            date.setDate(date.getDate() + delta);
+            selectedDate = date.toISOString().split('T')[0];
+            document.getElementById('selected-date').value = selectedDate;
+            updateDateDisplay();
+            loadSlots();
+        }
+
+        // 슬롯 목록 로드
+        async function loadSlots() {
+            selectedDate = document.getElementById('selected-date').value;
+            updateDateDisplay();
+
+            // 날짜 변경 시 캐시 초기화
+            if (cachedMenuDate !== selectedDate) {
+                cachedMenuData = null;
+                cachedMenuDate = null;
+            }
+
+            const context = window.SiteSelector?.getCurrentContext?.();
+
+            if (!context?.site_id) {
+                document.getElementById('slot-list').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-building"></i>
+                        <span>사업장을 선택하세요</span>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                // meal_counts API 사용 (슬롯별 식수 그룹화)
+                const response = await fetch(`/api/meal-counts/${selectedDate}?site_id=${context.site_id}`);
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    // menu_name(슬롯명)으로 그룹화
+                    const slotMap = {};
+                    result.data.forEach(item => {
+                        const slotName = item.menu_name || item.slot_name || '미지정';
+                        if (!slotMap[slotName]) {
+                            slotMap[slotName] = {
+                                id: item.id,
+                                slot_name: slotName,
+                                meal_count: 0,
+                                category: item.business_type || item.category
+                            };
+                        }
+                        slotMap[slotName].meal_count += (item.meal_count || 0);
+                    });
+                    const slots = Object.values(slotMap);
+                    renderSlotList(slots);
+                } else {
+                    document.getElementById('slot-list').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <span>해당 날짜에 슬롯이 없습니다</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('슬롯 로드 실패:', error);
+                document.getElementById('slot-list').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>로드 실패</span>
+                    </div>
+                `;
+            }
+
+            // 레이아웃 날짜 업데이트
+            updateLayoutDate();
+        }
+
+        // 현재 로드된 슬롯 데이터 캐시
+        let cachedSlots = [];
+
+        // 슬롯 목록 렌더링
+        function renderSlotList(slots) {
+            // 슬롯 데이터 캐시
+            cachedSlots = slots;
+
+            // 즐겨찾기와 일반 슬롯 분리
+            const favoriteSlotsList = slots.filter(slot => isFavoriteSlot(slot.slot_name || slot.meal_slot_name));
+            const normalSlotsList = slots.filter(slot => !isFavoriteSlot(slot.slot_name || slot.meal_slot_name));
+
+            let html = '';
+
+            // 고정된 슬롯 섹션
+            if (favoriteSlotsList.length > 0) {
+                html += `<div style="margin-bottom: 10px; padding: 10px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05)); border-radius: 10px; border: 2px solid rgba(239, 68, 68, 0.4); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);">
+                    <div style="font-size: 12px; font-weight: 700; color: #ef4444; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-thumbtack"></i> 고정됨
+                    </div>`;
+                favoriteSlotsList.forEach(slot => {
+                    const slotName = slot.slot_name || slot.meal_slot_name || '미지정';
+                    const escapedSlotName = slotName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    html += `
+                        <div class="slot-item ${selectedSlots.find(s => s.id === slot.id) ? 'selected' : ''}" style="background: rgba(255,255,255,0.9); border-color: rgba(239, 68, 68, 0.5);"
+                             onclick="toggleSlotSelection(${JSON.stringify(slot).replace(/"/g, '&quot;')})">
+                            <button onclick="toggleFavoriteSlot('${escapedSlotName}', event)"
+                                style="background: linear-gradient(135deg, #ef4444, #dc2626); border: none; color: white; cursor: pointer; padding: 6px 8px; font-size: 16px; margin-right: 8px; border-radius: 6px; box-shadow: 0 2px 6px rgba(239,68,68,0.4); transition: transform 0.2s, box-shadow 0.2s;"
+                                title="고정 해제"
+                                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 12px rgba(239,68,68,0.5)';"
+                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(239,68,68,0.4)';">
+                                <i class="fas fa-thumbtack"></i>
+                            </button>
+                            <input type="checkbox" ${selectedSlots.find(s => s.id === slot.id) ? 'checked' : ''}>
+                            <span class="slot-name" style="font-weight: 600;">${slotName}</span>
+                            <span class="slot-count">${slot.meal_count || 0}명</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // 일반 슬롯
+            normalSlotsList.forEach(slot => {
+                const slotName = slot.slot_name || slot.meal_slot_name || '미지정';
+                const escapedSlotName = slotName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                html += `
+                    <div class="slot-item ${selectedSlots.find(s => s.id === slot.id) ? 'selected' : ''}"
+                         onclick="toggleSlotSelection(${JSON.stringify(slot).replace(/"/g, '&quot;')})">
+                        <button onclick="toggleFavoriteSlot('${escapedSlotName}', event)"
+                            style="background: linear-gradient(135deg, #e5e7eb, #d1d5db); border: none; color: #6b7280; cursor: pointer; padding: 6px 8px; font-size: 16px; margin-right: 8px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: all 0.2s;"
+                            title="상단에 고정"
+                            onmouseover="this.style.background='linear-gradient(135deg, #ef4444, #dc2626)'; this.style.color='white'; this.style.transform='scale(1.1)';"
+                            onmouseout="this.style.background='linear-gradient(135deg, #e5e7eb, #d1d5db)'; this.style.color='#6b7280'; this.style.transform='scale(1)';">
+                            <i class="fas fa-thumbtack"></i>
+                        </button>
+                        <input type="checkbox" ${selectedSlots.find(s => s.id === slot.id) ? 'checked' : ''}>
+                        <span class="slot-name">${slotName}</span>
+                        <span class="slot-count">${slot.meal_count || 0}명</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('slot-list').innerHTML = html;
+        }
+
+        // 슬롯 목록만 다시 그리기 (API 호출 없이)
+        function refreshSlotList() {
+            if (cachedSlots.length > 0) {
+                renderSlotList(cachedSlots);
+            }
+        }
+
+        // 슬롯 선택 토글
+        function toggleSlotSelection(slot) {
+            const index = selectedSlots.findIndex(s => s.id === slot.id);
+            const isAdding = index < 0;
+
+            if (index >= 0) {
+                selectedSlots.splice(index, 1);
+            } else {
+                selectedSlots.push(slot);
+            }
+
+            // 목록 다시 렌더링 (API 호출 없이 빠르게)
+            refreshSlotList();
+
+            // 탭 업데이트
+            renderSlotTabs();
+
+            // 슬롯 활성화 및 메뉴 로드
+            if (selectedSlots.length === 0) {
+                activeSlot = null;
+                clearMenuItems();
+            } else if (isAdding) {
+                // 새로 추가된 슬롯을 활성화
+                setActiveSlot(slot);
+            } else if (activeSlot?.id === slot.id) {
+                // 활성 슬롯이 제거된 경우, 첫 번째 슬롯 활성화
+                setActiveSlot(selectedSlots[0]);
+            }
+        }
+
+        // 슬롯 탭 렌더링
+        function renderSlotTabs() {
+            if (selectedSlots.length === 0) {
+                document.getElementById('selected-slot-tabs').innerHTML = '';
+                return;
+            }
+
+            const html = selectedSlots.map(slot => `
+                <button class="slot-tab ${activeSlot?.id === slot.id ? 'active' : ''}"
+                        onclick="setActiveSlot(${JSON.stringify(slot).replace(/"/g, '&quot;')})">
+                    ${slot.slot_name || slot.meal_slot_name || '미지정'}
+                </button>
+            `).join('');
+
+            document.getElementById('selected-slot-tabs').innerHTML = html;
+        }
+
+        // 활성 슬롯 설정
+        async function setActiveSlot(slot) {
+            activeSlot = slot;
+            renderSlotTabs();
+            await loadSlotMenu(slot);
+        }
+
+        // 슬롯 메뉴 로드 (식단 API 사용) - 캐싱 적용
+        async function loadSlotMenu(slot) {
+            const context = window.SiteSelector?.getCurrentContext?.();
+
+            // 캐시 확인 - 같은 날짜면 API 재호출 불필요
+            if (cachedMenuData && cachedMenuDate === selectedDate) {
+                processMenuData(cachedMenuData, slot);
+                return;
+            }
+
+            // 중복 로딩 방지
+            if (isLoadingMenus) {
+                return;
+            }
+
+            try {
+                isLoadingMenus = true;
+
+                // 로딩 표시
+                document.getElementById('menu-items').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i>
+                        <span>메뉴 로딩 중...</span>
+                    </div>
+                `;
+
+                // 식단 API에서 메뉴 정보 가져오기 (재료 등록 여부 무관, 모든 메뉴 포함)
+                const params = new URLSearchParams({
+                    start_date: selectedDate,
+                    end_date: selectedDate
+                });
+                if (context?.site_id) params.set('site_id', context.site_id);
+
+                const response = await fetch(`/api/meal-plans?${params.toString()}`);
+                const result = await response.json();
+
+                console.log('식단 API 응답:', result);
+
+                // 캐시에 저장
+                cachedMenuData = result;
+                cachedMenuDate = selectedDate;
+
+                processMenuData(result, slot);
+
+            } catch (error) {
+                console.error('메뉴 로드 실패:', error);
+                document.getElementById('menu-items').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>메뉴 로드 실패</span>
+                    </div>
+                `;
+            } finally {
+                isLoadingMenus = false;
+            }
+        }
+
+        // 메뉴 데이터 처리 (식단 API 응답: {data: {DATE: {SLOT_NAME: [{id, name, ...}]}}})
+        function processMenuData(result, slot) {
+            if (result.success && result.data) {
+                // 선택된 날짜 + 슬롯의 메뉴 직접 추출
+                const dateData = result.data[selectedDate] || {};
+                const slotMenus = dateData[slot.slot_name] || [];
+
+                console.log('슬롯 메뉴:', slot.slot_name, slotMenus);
+
+                const menus = slotMenus
+                    .map(m => ({ name: m.name || m.menu_name || m.recipe_name || '' }))
+                    .filter(m => m.name && m.name !== '양념' && m.name !== '양념류');
+
+                // 중복 제거
+                const seen = new Set();
+                const uniqueMenus = menus.filter(m => {
+                    if (seen.has(m.name)) return false;
+                    seen.add(m.name);
+                    return true;
+                });
+
+                if (uniqueMenus.length > 0) {
+                    renderMenuItems(uniqueMenus);
+                } else {
+                    document.getElementById('menu-items').innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-utensils"></i>
+                            <span>해당 슬롯에 메뉴가 없습니다</span>
+                        </div>
+                    `;
+                }
+
+                // 도시락 섹션 자동 생성
+                if (lunchboxSections.length === 0) {
+                    addLunchboxSection(slot.slot_name, slot.meal_count);
+                }
+            } else {
+                document.getElementById('menu-items').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-utensils"></i>
+                        <span>해당 날짜에 메뉴가 없습니다</span>
+                    </div>
+                `;
+            }
+        }
+
+        // 메뉴명 정제 (접두사/접미사 제거)
+        function cleanMenuName(name) {
+            if (!name) return '';
+            // 접두사 제거 (본사-, 지점- 등)
+            let cleaned = name.replace(/^(본사|지점|센터|공장)[-_]*/i, '');
+            // 접미사 제거 (-도, -본, -지 등)
+            cleaned = cleaned.replace(/[-_]*(도|본|지|센|공)$/i, '');
+            // 수량 표시 제거 (+숫자, (숫자), (숫자EA) 등)
+            cleaned = cleaned.replace(/[+]\d+/g, '');
+            cleaned = cleaned.replace(/\(\d+(EA)?\)/gi, '');
+            return cleaned.trim();
+        }
+
+        // 사용된 메뉴 목록 가져오기
+        function getUsedMenus() {
+            const usedMenus = new Set();
+            lunchboxSections.forEach(section => {
+                if (section.cells) {
+                    section.cells.forEach(cell => {
+                        if (cell && cell.text) {
+                            usedMenus.add(cell.text);
+                        }
+                    });
+                }
+            });
+            return usedMenus;
+        }
+
+        // 메뉴 아이템 렌더링
+        function renderMenuItems(menus) {
+            // 사용된 메뉴 목록
+            const usedMenus = getUsedMenus();
+
+            // 빈 메뉴명 필터링 및 중복 제거
+            const uniqueMenus = [];
+            const seen = new Set();
+
+            menus.forEach(menu => {
+                const cleanName = cleanMenuName(menu.menu_name || menu.name);
+                // 양념, 양념류 메뉴 필터링
+                if (cleanName && !seen.has(cleanName) && cleanName !== '양념' && cleanName !== '양념류') {
+                    seen.add(cleanName);
+                    uniqueMenus.push(cleanName);
+                }
+            });
+
+            const html = uniqueMenus.map(name => {
+                // 따옴표 이스케이프 처리
+                const escapedName = name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const isUsed = usedMenus.has(name);
+                // 사용된 메뉴도 중복 배치 가능하도록 draggable 유지
+                return `
+                    <div class="menu-item ${isUsed ? 'used' : ''}"
+                         draggable="true"
+                         ondragstart="dragStart(event, '${escapedName}')"
+                         ondragend="dragEnd(event)"
+                         ${isUsed ? 'title="이미 사용됨 (중복 배치 가능)"' : ''}>
+                        ${name}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('menu-items').innerHTML = html || `
+                <div class="empty-state">
+                    <i class="fas fa-utensils"></i>
+                    <span>메뉴가 없습니다</span>
+                </div>
+            `;
+        }
+
+        // 메뉴 아이템 지우기
+        function clearMenuItems() {
+            document.getElementById('menu-items').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-hand-pointer"></i>
+                    <span>좌측에서 슬롯을 선택하세요</span>
+                </div>
+            `;
+        }
+
+        // 레이아웃 날짜 업데이트
+        function updateLayoutDate() {
+            const date = new Date(selectedDate);
+            const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+            const formatted = `${date.getFullYear().toString().slice(2)}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} (${weekdays[date.getDay()]})`;
+            document.getElementById('layout-date').textContent = formatted;
+        }
+
+        // 도시락 섹션 추가
+        function addLunchboxSection(title = '', count = 0) {
+            const sectionId = Date.now();
+            const type = currentContainerType;
+
+            // 용기 타입에 따른 기본 설정
+            let cellCount, defaultTitle;
+            if (type === '6chan') {
+                cellCount = 8; // 밥 + 반찬4 + 큰반찬2 + 세로반찬1
+                defaultTitle = title || '6찬도시락';
+            } else {
+                cellCount = 6; // 밥 + 반찬4 + 메인요리
+                defaultTitle = title || '일품도시락';
+            }
+
+            const section = {
+                id: sectionId,
+                title: defaultTitle,
+                count: count,
+                type: type,
+                cells: Array(cellCount).fill(null)
+            };
+            // 상단에 섹션 추가
+            lunchboxSections.unshift(section);
+            renderLunchboxContainer();
+        }
+
+        // 도시락 컨테이너 렌더링
+        function renderLunchboxContainer() {
+            if (lunchboxSections.length === 0) {
+                document.getElementById('lunchbox-container').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <span>슬롯을 선택하면 레이아웃이 생성됩니다</span>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = lunchboxSections.map((section, sIdx) => {
+                const sectionType = section.type || '6chan';
+                const gridClass = sectionType === 'ilpum' ? 'grid-ilpum' : 'grid-6chan';
+                const typeClass = sectionType === 'ilpum' ? 'type-ilpum' : 'type-6chan';
+
+                return `
+                <div class="lunchbox-section ${typeClass}" data-section-id="${section.id}" style="display: flex; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <div class="lunchbox-section-header">
+                            <input type="text" class="lunchbox-section-title"
+                                   value="${section.title}"
+                                   onchange="updateSectionTitle(${section.id}, this.value)"
+                                   style="border: none; background: transparent; font-weight: 700; font-size: 1.9rem; width: 300px;">
+                            <div class="lunchbox-section-count">
+                                <input type="number" value="${section.count}"
+                                       onchange="updateSectionCount(${section.id}, this.value)"
+                                       placeholder="수량">
+                                <span>개</span>
+                                <button class="btn" onclick="moveSectionUp(${sIdx})" title="위로 이동"
+                                        style="background: #3b82f6; color: white; padding: 0.2rem 0.5rem; margin-left: 0.5rem; ${sIdx === 0 ? 'opacity: 0.4; cursor: not-allowed;' : ''}">
+                                    <i class="fas fa-arrow-up"></i>
+                                </button>
+                                <button class="btn" onclick="moveSectionDown(${sIdx})" title="아래로 이동"
+                                        style="background: #3b82f6; color: white; padding: 0.2rem 0.5rem; ${sIdx === lunchboxSections.length - 1 ? 'opacity: 0.4; cursor: not-allowed;' : ''}">
+                                    <i class="fas fa-arrow-down"></i>
+                                </button>
+                                <button class="btn" onclick="removeSection(${section.id})"
+                                        style="background: #e74c3c; color: white; padding: 0.2rem 0.5rem; margin-left: 0.5rem;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="lunchbox-grid ${gridClass}">
+                            ${renderLunchboxCells(section, sIdx)}
+                        </div>
+                    </div>
+                    <div class="notes-column" style="width: 200px; display: flex; flex-direction: column;">
+                        <div style="font-weight: 700; font-size: 1.2rem; margin-bottom: 0.5rem; color: #e74c3c;">
+                            <i class="fas fa-exclamation-triangle"></i> 주의 사항
+                        </div>
+                        <textarea class="section-notes"
+                                  placeholder="주의 사항을 입력하세요..."
+                                  onchange="updateSectionNotes(${section.id}, this.value)"
+                                  style="flex: 1; border: 2px solid #e74c3c; border-radius: 8px; padding: 0.5rem; font-size: 1rem; resize: none; background: #fff5f5;">${section.notes || ''}</textarea>
+                    </div>
+                </div>
+            `}).join('');
+
+            document.getElementById('lunchbox-container').innerHTML = html;
+
+            // 텍스트 박스도 다시 렌더링 (컨테이너 innerHTML 변경 후)
+            if (floatingTextBoxes && floatingTextBoxes.length > 0) {
+                setTimeout(() => renderFloatingTextBoxes(), 0);
+            }
+        }
+
+        // 도시락 셀 렌더링
+        function renderLunchboxCells(section, sIdx) {
+            const sectionType = section.type || '6chan';
+            let cellConfigs;
+
+            if (sectionType === '6chan') {
+                // 6찬도시락 레이아웃 (3행 4열)
+                // Row 1: [주찬(2행)] [찬1] [찬2] [찬3(김치)]
+                // Row 2: [주찬계속 ] [국(2행2열)] [찬4     ]
+                // Row 3: [밥      ] [국 계속   ] [부주찬   ]
+                cellConfigs = [
+                    { idx: 0, class: 'main-side', placeholder: '주찬' },
+                    { idx: 1, class: '', placeholder: '찬1' },
+                    { idx: 2, class: '', placeholder: '찬2' },
+                    { idx: 3, class: '', placeholder: '찬3(김치)' },
+                    { idx: 6, class: 'rice-cell', placeholder: '밥' },
+                    { idx: 4, class: 'soup-cell', placeholder: '국' },
+                    { idx: 5, class: '', placeholder: '찬4' },
+                    { idx: 7, class: '', placeholder: '부주찬' },
+                ];
+            } else {
+                // 일품도시락 레이아웃 (2행 4열)
+                // Row 1: [주찬] [찬1] [찬2] [찬3(김치)]
+                // Row 2: [밥/메인요리 (3칸)]  [찬4     ]
+                cellConfigs = [
+                    { idx: 0, class: '', placeholder: '주찬' },
+                    { idx: 1, class: '', placeholder: '찬1' },
+                    { idx: 2, class: '', placeholder: '찬2' },
+                    { idx: 3, class: '', placeholder: '찬3(김치)' },
+                    { idx: 4, class: 'main-dish', placeholder: '밥/메인' },
+                    { idx: 5, class: '', placeholder: '찬4' },
+                ];
+            }
+
+            return cellConfigs.map(config => {
+                const content = section.cells[config.idx];
+                const hasContent = content && content.text;
+                const style = content?.style || {};
+                const hasStyle = style.backgroundColor || style.color || style.fontFamily || style.fontSize;
+
+                // 메뉴 아이템들을 개별적으로 렌더링 (삭제 버튼 포함)
+                let cellContentHtml = config.placeholder;
+                if (hasContent) {
+                    const menuItems = content.text.split('\n');
+                    if (menuItems.length === 1) {
+                        // 단일 메뉴: 삭제 버튼 표시
+                        const escapedMenu = menuItems[0].replace(/'/g, "\\'");
+                        cellContentHtml = `<div class="cell-menu-item">
+                            <span>${menuItems[0]}</span>
+                            <button class="menu-delete-btn" onclick="removeMenuFromCell(${section.id}, ${config.idx}, '${escapedMenu}', event)" title="삭제">×</button>
+                        </div>`;
+                    } else {
+                        // 다중 메뉴: 각각 삭제 버튼 표시
+                        cellContentHtml = menuItems.map(menu => {
+                            const escapedMenu = menu.replace(/'/g, "\\'");
+                            return `<div class="cell-menu-item">
+                                <span>${menu}</span>
+                                <button class="menu-delete-btn" onclick="removeMenuFromCell(${section.id}, ${config.idx}, '${escapedMenu}', event)" title="삭제">×</button>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+
+                return `
+                    <div class="lunchbox-cell ${config.class} ${hasContent ? 'has-content' : ''} ${selectedCell?.sectionId === section.id && selectedCell?.cellIdx === config.idx ? 'selected' : ''}"
+                         onclick="selectCell(${section.id}, ${config.idx})"
+                         ondragover="dragOver(event)"
+                         ondragleave="dragLeave(event)"
+                         ondrop="drop(event, ${section.id}, ${config.idx})"
+                         style="${(hasContent || hasStyle) ? `font-family: ${style.fontFamily || "'Segoe UI', sans-serif"}; font-size: ${style.fontSize || '2.55rem'}; color: ${style.color || '#333'}; background-color: ${style.backgroundColor || '#fff'};` : ''}">
+                        <span class="cell-content">${cellContentHtml}</span>
+                        ${content?.extra ? `<span class="cell-extra">${content.extra}</span>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 셀 선택
+        function selectCell(sectionId, cellIdx) {
+            selectedCell = { sectionId, cellIdx };
+            renderLunchboxContainer();
+        }
+
+        // 셀에서 특정 메뉴 삭제
+        function removeMenuFromCell(sectionId, cellIdx, menuName, event) {
+            event.stopPropagation();  // 셀 클릭 이벤트 방지
+
+            const section = lunchboxSections.find(s => s.id === sectionId);
+            if (section && section.cells[cellIdx]) {
+                const currentText = section.cells[cellIdx].text;
+                const menuItems = currentText.split('\n');
+
+                // 해당 메뉴 제거
+                const newItems = menuItems.filter(item => item !== menuName);
+
+                if (newItems.length === 0) {
+                    // 모든 메뉴가 삭제되면 셀 비우기
+                    section.cells[cellIdx] = null;
+                } else {
+                    // 남은 메뉴들로 업데이트
+                    section.cells[cellIdx].text = newItems.join('\n');
+                }
+
+                renderLunchboxContainer();
+                refreshMenuItems();
+            }
+        }
+
+        // 드래그 앤 드롭
+        function dragStart(event, menuName) {
+            event.dataTransfer.setData('text/plain', menuName);
+            event.target.classList.add('dragging');
+        }
+
+        function dragEnd(event) {
+            event.target.classList.remove('dragging');
+        }
+
+        function dragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function dragLeave(event) {
+            event.currentTarget.classList.remove('drag-over');
+        }
+
+        function drop(event, sectionId, cellIdx) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+
+            const menuName = event.dataTransfer.getData('text/plain');
+            if (menuName) {
+                const section = lunchboxSections.find(s => s.id === sectionId);
+                if (section) {
+                    const existingCell = section.cells[cellIdx];
+                    let newText = menuName;
+
+                    // 기존 내용이 있으면 추가 (중복 배치)
+                    if (existingCell && existingCell.text) {
+                        newText = existingCell.text + '\n' + menuName;
+                    }
+
+                    section.cells[cellIdx] = {
+                        text: newText,
+                        style: existingCell?.style || {
+                            fontFamily: document.getElementById('font-family').value,
+                            fontSize: document.getElementById('font-size').value,
+                            color: document.getElementById('font-color').value,
+                            backgroundColor: document.getElementById('bg-color').value
+                        }
+                    };
+                    renderLunchboxContainer();
+                    // 메뉴 아이템 비활성화 업데이트
+                    refreshMenuItems();
+                }
+            }
+        }
+
+        // 스타일 적용
+        function applyStyleToSelected() {
+            // 텍스트 박스가 선택된 경우
+            if (selectedTextBox !== null) {
+                applyStyleToTextBox();
+                return;
+            }
+
+            // 셀이 선택된 경우
+            if (!selectedCell) {
+                alert('셀 또는 텍스트 박스를 먼저 선택하세요.');
+                return;
+            }
+
+            const section = lunchboxSections.find(s => s.id === selectedCell.sectionId);
+            if (section) {
+                // 셀이 없으면 빈 셀 객체 생성
+                if (!section.cells[selectedCell.cellIdx]) {
+                    section.cells[selectedCell.cellIdx] = { text: '', style: {} };
+                }
+                section.cells[selectedCell.cellIdx].style = {
+                    fontFamily: document.getElementById('font-family').value,
+                    fontSize: document.getElementById('font-size').value,
+                    color: document.getElementById('font-color').value,
+                    backgroundColor: document.getElementById('bg-color').value
+                };
+                renderLunchboxContainer();
+            }
+        }
+
+        // 선택된 셀 지우기
+        function clearSelectedCell() {
+            if (!selectedCell) {
+                alert('셀을 먼저 선택하세요.');
+                return;
+            }
+
+            const section = lunchboxSections.find(s => s.id === selectedCell.sectionId);
+            if (section) {
+                section.cells[selectedCell.cellIdx] = null;
+                renderLunchboxContainer();
+                // 메뉴 아이템 비활성화 업데이트
+                refreshMenuItems();
+            }
+        }
+
+        // 전체 섹션 초기화 (새로 시작)
+        function clearAllSections() {
+            if (lunchboxSections.length === 0) {
+                alert('초기화할 섹션이 없습니다.');
+                return;
+            }
+
+            if (!confirm('모든 섹션을 삭제하고 새로 시작하시겠습니까?')) {
+                return;
+            }
+
+            lunchboxSections = [];
+            floatingTextBoxes = [];
+            selectedCell = null;
+            selectedTextBox = null;
+            renderLunchboxContainer();
+            refreshMenuItems();
+        }
+
+        // 메뉴 아이템 비활성화 상태 갱신
+        function refreshMenuItems() {
+            if (cachedMenuData && activeSlot) {
+                processMenuData(cachedMenuData, activeSlot);
+            }
+        }
+
+        // 섹션 타이틀 업데이트
+        function updateSectionTitle(sectionId, title) {
+            const section = lunchboxSections.find(s => s.id === sectionId);
+            if (section) {
+                section.title = title;
+            }
+        }
+
+        // 섹션 수량 업데이트
+        function updateSectionCount(sectionId, count) {
+            const section = lunchboxSections.find(s => s.id === sectionId);
+            if (section) {
+                section.count = parseInt(count) || 0;
+            }
+        }
+
+        // 섹션 주의사항 업데이트
+        function updateSectionNotes(sectionId, notes) {
+            const section = lunchboxSections.find(s => s.id === sectionId);
+            if (section) {
+                section.notes = notes;
+            }
+        }
+
+        // 섹션 삭제
+        function removeSection(sectionId) {
+            if (confirm('이 섹션을 삭제하시겠습니까?')) {
+                lunchboxSections = lunchboxSections.filter(s => s.id !== sectionId);
+                renderLunchboxContainer();
+                // 메뉴 아이템 비활성화 업데이트
+                refreshMenuItems();
+            }
+        }
+
+        // 섹션 위로 이동
+        function moveSectionUp(index) {
+            if (index <= 0 || index >= lunchboxSections.length) return;
+
+            // 배열에서 위치 교환
+            const temp = lunchboxSections[index];
+            lunchboxSections[index] = lunchboxSections[index - 1];
+            lunchboxSections[index - 1] = temp;
+
+            renderLunchboxContainer();
+        }
+
+        // 섹션 아래로 이동
+        function moveSectionDown(index) {
+            if (index < 0 || index >= lunchboxSections.length - 1) return;
+
+            // 배열에서 위치 교환
+            const temp = lunchboxSections[index];
+            lunchboxSections[index] = lunchboxSections[index + 1];
+            lunchboxSections[index + 1] = temp;
+
+            renderLunchboxContainer();
+        }
+
+        // ============================================
+        // 이동 가능한 텍스트 박스 기능
+        // ============================================
+
+        // 텍스트 박스 추가
+        function addFloatingTextBox() {
+            const container = document.getElementById('lunchbox-container');
+            if (!container) {
+                alert('먼저 도시락 섹션을 추가해주세요.');
+                return;
+            }
+
+            const id = Date.now();
+            const textBox = {
+                id: id,
+                text: '텍스트 입력',
+                x: 50,
+                y: 50,
+                style: {
+                    fontSize: '1.2rem',
+                    fontWeight: '600',
+                    color: '#333',
+                    backgroundColor: '#fff9c4'
+                }
+            };
+
+            floatingTextBoxes.push(textBox);
+            renderFloatingTextBoxes();
+        }
+
+        // 텍스트 박스 렌더링
+        function renderFloatingTextBoxes() {
+            const container = document.getElementById('lunchbox-container');
+            if (!container) return;
+
+            // 기존 텍스트 박스 제거
+            container.querySelectorAll('.floating-textbox').forEach(el => el.remove());
+
+            // 컨테이너에 position: relative 확인
+            if (getComputedStyle(container).position === 'static') {
+                container.style.position = 'relative';
+            }
+
+            floatingTextBoxes.forEach(box => {
+                const div = document.createElement('div');
+                div.className = `floating-textbox ${selectedTextBox === box.id ? 'selected' : ''}`;
+                div.id = `textbox-${box.id}`;
+                div.style.left = `${box.x}px`;
+                div.style.top = `${box.y}px`;
+                div.style.fontSize = box.style.fontSize || '1.2rem';
+                div.style.fontWeight = box.style.fontWeight || '600';
+                div.style.color = box.style.color || '#333';
+                div.style.backgroundColor = box.style.backgroundColor || '#fff9c4';
+
+                div.innerHTML = `
+                    <div class="textbox-drag-handle" title="드래그하여 이동">⋮⋮</div>
+                    <span class="textbox-content" contenteditable="true"
+                          onblur="updateTextBoxContent(${box.id}, this.textContent)"
+                          onclick="event.stopPropagation();"
+                          onfocus="selectedTextBox = ${box.id};">${box.text}</span>
+                    <button class="textbox-delete" onclick="event.stopPropagation(); deleteTextBox(${box.id})" title="삭제">×</button>
+                `;
+
+                // 드래그 핸들에만 드래그 이벤트 연결
+                const dragHandle = div.querySelector('.textbox-drag-handle');
+                dragHandle.addEventListener('mousedown', (e) => startDragTextBox(e, box.id));
+                div.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectTextBox(box.id);
+                });
+
+                container.appendChild(div);
+            });
+        }
+
+        // 텍스트 박스 선택
+        function selectTextBox(id) {
+            selectedTextBox = id;
+            selectedCell = null; // 셀 선택 해제
+            // 선택 상태만 업데이트 (전체 리렌더링 하지 않음)
+            document.querySelectorAll('.floating-textbox').forEach(el => {
+                el.classList.remove('selected');
+            });
+            const selectedEl = document.getElementById(`textbox-${id}`);
+            if (selectedEl) {
+                selectedEl.classList.add('selected');
+            }
+        }
+
+        // 텍스트 박스 내용 업데이트
+        function updateTextBoxContent(id, text) {
+            const box = floatingTextBoxes.find(b => b.id === id);
+            if (box) {
+                box.text = text || '텍스트 입력';
+            }
+        }
+
+        // 텍스트 박스 삭제
+        function deleteTextBox(id) {
+            floatingTextBoxes = floatingTextBoxes.filter(b => b.id !== id);
+            if (selectedTextBox === id) {
+                selectedTextBox = null;
+            }
+            renderFloatingTextBoxes();
+        }
+
+        // 드래그 시작 (드래그 핸들에서만 호출됨)
+        function startDragTextBox(e, id) {
+            e.preventDefault();
+            e.stopPropagation();
+            draggedTextBox = id;
+            selectTextBox(id);
+
+            const el = document.getElementById(`textbox-${id}`);
+            if (el) {
+                const elRect = el.getBoundingClientRect();
+                dragOffset.x = e.clientX - elRect.left;
+                dragOffset.y = e.clientY - elRect.top;
+            }
+
+            document.addEventListener('mousemove', dragTextBox);
+            document.addEventListener('mouseup', stopDragTextBox);
+        }
+
+        // 드래그 중
+        function dragTextBox(e) {
+            if (draggedTextBox === null) return;
+
+            const box = floatingTextBoxes.find(b => b.id === draggedTextBox);
+            if (box) {
+                const container = document.getElementById('lunchbox-container');
+                const rect = container.getBoundingClientRect();
+
+                // 마우스 위치에서 컨테이너 기준 좌표 계산
+                let newX = e.clientX - rect.left - dragOffset.x + container.scrollLeft;
+                let newY = e.clientY - rect.top - dragOffset.y + container.scrollTop;
+
+                // 경계 제한
+                newX = Math.max(0, newX);
+                newY = Math.max(0, newY);
+
+                box.x = newX;
+                box.y = newY;
+
+                const el = document.getElementById(`textbox-${box.id}`);
+                if (el) {
+                    el.style.left = `${box.x}px`;
+                    el.style.top = `${box.y}px`;
+                }
+            }
+        }
+
+        // 드래그 종료
+        function stopDragTextBox() {
+            draggedTextBox = null;
+            document.removeEventListener('mousemove', dragTextBox);
+            document.removeEventListener('mouseup', stopDragTextBox);
+        }
+
+        // 선택된 텍스트 박스에 스타일 적용
+        function applyStyleToTextBox() {
+            if (selectedTextBox === null) return;
+
+            const box = floatingTextBoxes.find(b => b.id === selectedTextBox);
+            if (box) {
+                box.style = {
+                    fontSize: document.getElementById('font-size').value,
+                    fontWeight: '600',
+                    color: document.getElementById('font-color').value,
+                    backgroundColor: document.getElementById('bg-color').value
+                };
+                renderFloatingTextBoxes();
+            }
+        }
+
+        // PDF로 저장 - 전체 컨테이너 직접 캡처
+        async function saveAsPDF() {
+            const container = document.getElementById('lunchbox-container');
+            if (!container || lunchboxSections.length === 0) {
+                alert('저장할 내용이 없습니다.');
+                return;
+            }
+
+            try {
+                // 로딩 표시
+                const btn = event.target.closest('button') || event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> PDF 생성 중...';
+                btn.disabled = true;
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = 210;
+                const pageHeight = 297;
+
+                const dateObj = new Date(selectedDate);
+                const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                const dateStr = `${selectedDate.replace(/-/g, '.')} (${dayNames[dateObj.getDay()]})`;
+                const context = window.SiteSelector?.getCurrentContext?.();
+                const siteName = context?.site_name || '반찬위치지정서';
+
+                // 버튼들 임시 숨기기
+                const buttons = container.querySelectorAll('button');
+                const deleteButtons = container.querySelectorAll('.menu-delete-btn, .textbox-delete, .textbox-drag-handle');
+                buttons.forEach(b => b.style.display = 'none');
+                deleteButtons.forEach(b => b.style.display = 'none');
+
+                // 날짜 헤더 추가
+                const dateHeader = document.createElement('div');
+                dateHeader.id = 'temp-date-header';
+                dateHeader.style.cssText = 'font-size: 28px; font-weight: bold; margin-bottom: 20px; text-align: center; color: #333;';
+                dateHeader.textContent = dateStr;
+                container.insertBefore(dateHeader, container.firstChild);
+
+                // 전체 컨테이너 캡처
+                const canvas = await html2canvas(container, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+
+                // 임시 요소 복원
+                dateHeader.remove();
+                buttons.forEach(b => b.style.display = '');
+                deleteButtons.forEach(b => b.style.display = '');
+
+                // PDF에 이미지 추가 (페이지 분할)
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const imgWidth = pageWidth - 20;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+                // 한 페이지에 맞으면 그대로, 아니면 분할
+                if (imgHeight <= pageHeight - 20) {
+                    pdf.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
+                } else {
+                    // 여러 페이지로 분할
+                    const pageImgHeight = pageHeight - 20;
+                    let position = 0;
+                    let pageNum = 0;
+
+                    while (position < imgHeight) {
+                        if (pageNum > 0) {
+                            pdf.addPage();
+                        }
+
+                        // 캔버스에서 해당 부분만 잘라서 추가
+                        const srcY = (position / imgHeight) * canvas.height;
+                        const srcHeight = Math.min((pageImgHeight / imgHeight) * canvas.height, canvas.height - srcY);
+
+                        const pageCanvas = document.createElement('canvas');
+                        pageCanvas.width = canvas.width;
+                        pageCanvas.height = srcHeight;
+                        const ctx = pageCanvas.getContext('2d');
+                        ctx.drawImage(canvas, 0, srcY, canvas.width, srcHeight, 0, 0, canvas.width, srcHeight);
+
+                        const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+                        const actualHeight = (srcHeight * imgWidth) / canvas.width;
+                        pdf.addImage(pageImgData, 'JPEG', 10, 10, imgWidth, actualHeight);
+
+                        position += pageImgHeight;
+                        pageNum++;
+                    }
+                }
+
+                // PDF 다운로드
+                pdf.save(`반찬위치지정서_${siteName}_${selectedDate}.pdf`);
+
+                // 버튼 복원
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+
+            } catch (error) {
+                console.error('PDF 저장 실패:', error);
+                alert('PDF 저장에 실패했습니다.');
+                // 버튼들 복원 시도
+                const container = document.getElementById('lunchbox-container');
+                if (container) {
+                    container.querySelectorAll('button').forEach(b => b.style.display = '');
+                    const tempHeader = document.getElementById('temp-date-header');
+                    if (tempHeader) tempHeader.remove();
+                }
+            }
+        }
+
+        // 이미지로 저장 - 전체 컨테이너 직접 캡처
+        async function saveAsImageDirect() {
+            const container = document.getElementById('lunchbox-container');
+            if (!container || lunchboxSections.length === 0) {
+                alert('저장할 내용이 없습니다.');
+                return;
+            }
+
+            try {
+                const btn = event.target.closest('button') || event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
+                btn.disabled = true;
+
+                const dateObj = new Date(selectedDate);
+                const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                const dateStr = `${selectedDate.replace(/-/g, '.')} (${dayNames[dateObj.getDay()]})`;
+                const context = window.SiteSelector?.getCurrentContext?.();
+                const siteName = context?.site_name || '반찬위치지정서';
+
+                // 버튼들 임시 숨기기
+                const buttons = container.querySelectorAll('button');
+                const deleteButtons = container.querySelectorAll('.menu-delete-btn, .textbox-delete, .textbox-drag-handle');
+                buttons.forEach(b => b.style.display = 'none');
+                deleteButtons.forEach(b => b.style.display = 'none');
+
+                // 날짜 헤더 추가
+                const dateHeader = document.createElement('div');
+                dateHeader.id = 'temp-date-header';
+                dateHeader.style.cssText = 'font-size: 28px; font-weight: bold; margin-bottom: 20px; text-align: center; color: #333;';
+                dateHeader.textContent = dateStr;
+                container.insertBefore(dateHeader, container.firstChild);
+
+                // 전체 컨테이너 캡처
+                const canvas = await html2canvas(container, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false
+                });
+
+                // 임시 요소 복원
+                dateHeader.remove();
+                buttons.forEach(b => b.style.display = '');
+                deleteButtons.forEach(b => b.style.display = '');
+
+                // 다운로드
+                const link = document.createElement('a');
+                link.download = `반찬위치지정서_${siteName}_${selectedDate}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+
+            } catch (error) {
+                console.error('이미지 저장 실패:', error);
+                alert('이미지 저장에 실패했습니다.');
+            }
+        }
+
+        // 새 창에서 인쇄 - 실제 화면 레이아웃 그대로
+        function printInNewWindow() {
+            const container = document.getElementById('lunchbox-container');
+            if (!container || lunchboxSections.length === 0) {
+                alert('인쇄할 내용이 없습니다.');
+                return;
+            }
+
+            const dateObj = new Date(selectedDate);
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+            const dateStr = `${selectedDate.replace(/-/g, '.')} (${dayNames[dateObj.getDay()]})`;
+
+            // 실제 섹션 DOM 복제
+            const sectionElements = container.querySelectorAll('.lunchbox-section');
+
+            let sectionsHtml = '';
+            sectionElements.forEach(sectionEl => {
+                const clonedSection = sectionEl.cloneNode(true);
+
+                // 불필요한 버튼들 제거
+                clonedSection.querySelectorAll('button').forEach(btn => btn.remove());
+                clonedSection.querySelectorAll('.menu-delete-btn').forEach(btn => btn.remove());
+
+                // input을 텍스트로 변환
+                clonedSection.querySelectorAll('input').forEach(input => {
+                    const span = document.createElement('span');
+                    span.textContent = input.value;
+                    span.style.cssText = 'font-weight: bold; font-size: 1.5rem;';
+                    input.parentNode.replaceChild(span, input);
+                });
+
+                // textarea를 div로 변환
+                clonedSection.querySelectorAll('textarea').forEach(textarea => {
+                    const div = document.createElement('div');
+                    div.textContent = textarea.value;
+                    div.style.cssText = 'white-space: pre-line; font-size: 0.9rem;';
+                    textarea.parentNode.replaceChild(div, textarea);
+                });
+
+                sectionsHtml += clonedSection.outerHTML;
+            });
+
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>반찬위치지정서 - ${dateStr}</title>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body { font-family: 'Malgun Gothic', sans-serif; padding: 15mm; background: white; }
+                        .date-header { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; }
+
+                        .lunchbox-section {
+                            display: flex;
+                            gap: 1rem;
+                            border: 2px solid #333;
+                            border-radius: 8px;
+                            padding: 15px;
+                            margin-bottom: 20px;
+                            page-break-inside: avoid;
+                            background: white;
+                        }
+
+                        .lunchbox-section-header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 10px;
+                        }
+
+                        .lunchbox-section-count span { font-weight: bold; margin-left: 5px; }
+
+                        .lunchbox-grid {
+                            display: grid;
+                            gap: 5px;
+                        }
+
+                        .lunchbox-grid.grid-6chan {
+                            grid-template-columns: 2.2fr 1fr 1fr 0.9fr;
+                            grid-template-rows: 0.8fr 0.55fr 1.65fr;
+                            height: 300px;
+                        }
+
+                        .lunchbox-grid.grid-ilpum {
+                            grid-template-columns: 2.2fr 1fr 1fr 0.9fr;
+                            grid-template-rows: 0.8fr 1.5fr;
+                            height: 200px;
+                        }
+
+                        .lunchbox-cell {
+                            background: white;
+                            border: 2px solid #999;
+                            border-radius: 8px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                            padding: 5px;
+                            font-weight: bold;
+                            font-size: 14px;
+                            white-space: pre-line;
+                        }
+
+                        .lunchbox-cell.rice-cell { grid-column: 1; grid-row: 3; }
+                        .lunchbox-cell.soup-cell { grid-column: 2 / span 2; grid-row: 2 / span 2; }
+                        .lunchbox-cell.main-side { grid-row: 1; }
+
+                        .grid-ilpum .lunchbox-cell.main-dish { grid-column: 1 / span 3; grid-row: 2; }
+
+                        .notes-column {
+                            width: 150px;
+                            flex-shrink: 0;
+                        }
+
+                        .section-notes, .notes-column > div:last-child {
+                            border: 2px solid #e74c3c;
+                            border-radius: 6px;
+                            padding: 8px;
+                            background: #fff5f5;
+                            font-size: 12px;
+                            white-space: pre-line;
+                        }
+
+                        @media print {
+                            body { padding: 10mm; }
+                            .lunchbox-section { margin-bottom: 15px; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="date-header">${dateStr}</div>
+                    ${sectionsHtml}
+</body>
+                </html>
+            `;
+
+            const printWindow = window.open('', '_blank', 'width=900,height=700');
+            printWindow.document.write(html);
+            printWindow.document.close();
+
+            // 로딩 후 인쇄
+            printWindow.onload = function() {
+                setTimeout(() => {
+                    printWindow.print();
+                }, 300);
+            };
+        }
+
+        // 바로 인쇄
+        function printLayout() {
+            window.print();
+        }
+
+        // 파일로 저장 (개인 폴더에 다운로드)
+        function saveLayoutToFile() {
+            if (lunchboxSections.length === 0) {
+                alert('저장할 내용이 없습니다. 먼저 도시락 레이아웃을 만들어주세요.');
+                return;
+            }
+
+            const context = window.SiteSelector?.getCurrentContext?.();
+            const siteName = context?.name || '사업장';
+
+            const data = {
+                version: '1.0',
+                date: selectedDate,
+                site_id: context?.site_id,
+                site_name: siteName,
+                sections: lunchboxSections,
+                textBoxes: floatingTextBoxes,
+                created_at: new Date().toISOString()
+            };
+
+            // JSON 파일로 다운로드
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            // 파일명: 반찬위치지정서_사업장명_날짜.json
+            const filename = `반찬위치지정서_${siteName}_${selectedDate}.json`;
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+
+            URL.revokeObjectURL(url);
+
+            // 로컬 스토리지에도 백업 저장
+            const key = `lunchbox_layout_${selectedDate}`;
+            localStorage.setItem(key, JSON.stringify(data));
+            cleanupOldHistory();
+            loadHistory();
+
+            alert(`파일이 저장되었습니다.\n파일명: ${filename}`);
+        }
+
+        // 파일에서 불러오기
+        function loadLayoutFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    // 데이터 유효성 검사
+                    if (!data.sections || !Array.isArray(data.sections)) {
+                        throw new Error('잘못된 파일 형식입니다.');
+                    }
+
+                    // 데이터 적용
+                    if (data.date) {
+                        selectedDate = data.date;
+                        document.getElementById('selected-date').value = selectedDate;
+                    }
+
+                    lunchboxSections = data.sections || [];
+                    floatingTextBoxes = data.textBoxes || [];
+
+                    updateLayoutDate();
+                    renderLunchboxContainer();
+                    renderFloatingTextBoxes();
+
+                    const info = data.site_name ? `사업장: ${data.site_name}\n` : '';
+                    alert(`파일을 불러왔습니다.\n${info}날짜: ${data.date}\n섹션 수: ${lunchboxSections.length}개`);
+
+                } catch (error) {
+                    console.error('파일 로드 오류:', error);
+                    alert('파일을 불러오는데 실패했습니다.\n올바른 반찬위치지정서 파일인지 확인해주세요.');
+                }
+            };
+
+            reader.readAsText(file);
+
+            // 파일 입력 초기화 (같은 파일 다시 선택 가능하도록)
+            event.target.value = '';
+        }
+
+        // 로컬 스토리지 저장 (자동 백업용)
+        function saveLayout() {
+            const data = {
+                date: selectedDate,
+                site_id: window.SiteSelector?.getCurrentContext?.()?.site_id,
+                sections: lunchboxSections,
+                textBoxes: floatingTextBoxes,
+                created_at: new Date().toISOString()
+            };
+
+            const key = `lunchbox_layout_${selectedDate}`;
+            localStorage.setItem(key, JSON.stringify(data));
+            cleanupOldHistory();
+        }
+
+        // 이력 로드
+        function loadHistory() {
+            const historyList = document.getElementById('history-list');
+            const keys = Object.keys(localStorage).filter(k => k.startsWith('lunchbox_layout_'));
+
+            // 날짜순 정렬 (최신순)
+            keys.sort().reverse();
+
+            if (keys.length === 0) {
+                historyList.innerHTML = `
+                    <div class="panel-title" style="margin-bottom: 0.5rem;"><i class="fas fa-history"></i> 최근 이력 (7일)</div>
+                    <div class="empty-state" style="padding: 1rem;">
+                        <span>저장된 이력이 없습니다</span>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = keys.slice(0, 7).map(key => {
+                const date = key.replace('lunchbox_layout_', '');
+                return `
+                    <div class="history-item" onclick="loadFromHistory('${key}')">
+                        <span class="history-date">${date}</span>
+                        <div class="history-actions">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); loadFromHistory('${key}')">
+                                <i class="fas fa-folder-open"></i>
+                            </button>
+                            <button class="btn" style="background: #e74c3c; color: white;"
+                                    onclick="event.stopPropagation(); deleteHistory('${key}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            historyList.innerHTML = `
+                <div class="panel-title" style="margin-bottom: 0.5rem;"><i class="fas fa-history"></i> 최근 이력 (7일)</div>
+                ${html}
+            `;
+        }
+
+        // 이력에서 불러오기
+        function loadFromHistory(key) {
+            const data = JSON.parse(localStorage.getItem(key));
+            if (data) {
+                selectedDate = data.date;
+                document.getElementById('selected-date').value = selectedDate;
+                lunchboxSections = data.sections || [];
+                floatingTextBoxes = data.textBoxes || [];  // 텍스트 박스도 복원
+                updateLayoutDate();
+                renderLunchboxContainer();
+                renderFloatingTextBoxes();  // 텍스트 박스 렌더링
+                loadSlots();
+            }
+        }
+
+        // 이력 삭제
+        function deleteHistory(key) {
+            if (confirm('이 이력을 삭제하시겠습니까?')) {
+                localStorage.removeItem(key);
+                loadHistory();
+            }
+        }
+
+        // 오래된 이력 정리 (7일 초과)
+        function cleanupOldHistory() {
+            const keys = Object.keys(localStorage).filter(k => k.startsWith('lunchbox_layout_'));
+            keys.sort().reverse();
+
+            // 7일 초과분 삭제
+            if (keys.length > 7) {
+                keys.slice(7).forEach(key => {
+                    localStorage.removeItem(key);
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>

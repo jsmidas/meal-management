@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>행사 발주 관리</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251027">
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <script src="/static/js/sidebar-dropdown.js"></script>
+    <script src="/static/js/auth-check.js"></script>
+    <script src="/static/js/custom-alert.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f7fa;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 180px;
+            padding: 15px 20px;
+            background: #f5f7fa;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .content-left {
+            min-width: 0;
+        }
+
+        .content-right {
+            min-width: 0;
+            position: sticky;
+            top: 15px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .page-title i {
+            color: #6366f1;
+            margin-right: 10px;
+        }
+
+        /* 단계 표시 */
+        .step-indicator {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: #64748b;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .step.active {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+
+        .step.completed {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .step.active .step-number {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .step.completed .step-number {
+            background: #16a34a;
+            color: white;
+        }
+
+        .step-arrow {
+            color: #cbd5e1;
+            font-size: 1.2rem;
+        }
+
+        /* 섹션 스타일 */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            color: #6366f1;
+        }
+
+        /* 입력 필드 */
+        .form-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 150px;
+            flex: 1;
+        }
+
+        .form-group label {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* 버튼 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 테이블 */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.85rem;
+        }
+
+        td {
+            font-size: 0.9rem;
+            color: #1f2937;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* 수량 입력 */
+        .qty-input {
+            width: 80px;
+            padding: 6px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            text-align: right;
+            font-size: 0.9rem;
+        }
+
+        .qty-input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        /* 메뉴 그룹 */
+        .menu-group {
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .menu-group-header {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu-group-total {
+            color: #6366f1;
+            font-weight: 600;
+        }
+
+        /* 합계 영역 */
+        .summary-section {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid #0ea5e9;
+            padding-top: 15px;
+            margin-top: 10px;
+        }
+
+        .summary-label {
+            color: #0369a1;
+            font-weight: 500;
+        }
+
+        .summary-value {
+            font-weight: 700;
+            color: #0c4a6e;
+        }
+
+        .summary-value.total {
+            font-size: 1.3rem;
+            color: #0369a1;
+        }
+
+        /* 협력업체별 합산 */
+        .supplier-summary {
+            margin-top: 20px;
+        }
+
+        .supplier-card {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .supplier-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .supplier-total {
+            color: #6366f1;
+            font-weight: 600;
+        }
+
+        /* 경고 메시지 */
+        .warning-box {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #92400e;
+        }
+
+        .warning-box i {
+            color: #f59e0b;
+        }
+
+        /* 숨김 요소 */
+        .hidden {
+            display: none !important;
+        }
+
+        /* 버튼 그룹 */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+
+        /* 품목 추가 버튼 */
+        .add-item-btn {
+            background: #dbeafe;
+            color: #2563eb;
+            border: 1px dashed #60a5fa;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .add-item-btn:hover {
+            background: #bfdbfe;
+        }
+
+        /* 삭제 버튼 */
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .delete-btn:hover {
+            background: #fee2e2;
+        }
+
+        /* 모달 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 검색 입력 */
+        .search-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-input-group input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        /* 검색 결과 */
+        .search-results {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: #f8fafc;
+        }
+
+        .search-result-item.selected {
+            background: #ede9fe;
+        }
+
+        .result-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .result-info {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* 발주 내역 테이블 */
+        .order-history-table {
+            margin-top: 10px;
+        }
+
+        .order-history-table table {
+            font-size: 0.82rem;
+        }
+
+        .order-history-table th {
+            font-size: 0.78rem;
+            padding: 8px 6px;
+        }
+
+        .order-history-table td {
+            padding: 8px 6px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.confirmed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.cancelled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* 관리 버튼 그룹 */
+        .action-btns {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            background: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .action-btn.edit {
+            color: #2563eb;
+            border-color: #bfdbfe;
+        }
+
+        .action-btn.edit:hover {
+            background: #dbeafe;
+        }
+
+        .action-btn.confirm {
+            color: #16a34a;
+            border-color: #bbf7d0;
+        }
+
+        .action-btn.confirm:hover {
+            background: #dcfce7;
+        }
+
+        .action-btn.revert {
+            color: #f59e0b;
+            border-color: #fde68a;
+        }
+
+        .action-btn.revert:hover {
+            background: #fef3c7;
+        }
+
+        .action-btn.delete {
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+
+        .action-btn.delete:hover {
+            background: #fee2e2;
+        }
+
+        /* 수정 모달 */
+        .edit-modal {
+            max-width: 1000px;
+            width: 95%;
+        }
+
+        .edit-form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .edit-form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .edit-form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #475569;
+            margin-bottom: 5px;
+        }
+
+        .edit-form-group input,
+        .edit-form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .edit-menu-group {
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .edit-menu-header {
+            background: #f8fafc;
+            padding: 10px 15px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #1f2937;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .edit-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .edit-table th {
+            font-size: 0.78rem;
+            padding: 8px 10px;
+        }
+
+        .edit-table td {
+            font-size: 0.85rem;
+            padding: 6px 10px;
+        }
+
+        .edit-qty-input {
+            width: 70px;
+            padding: 4px 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            text-align: right;
+            font-size: 0.85rem;
+        }
+
+        .edit-qty-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+        }
+
+        .edit-summary {
+            background: #f0f9ff;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+
+        /* 경과된 발주서 (행사일 지남) */
+        tr.order-past {
+            background: #f8f9fa !important;
+            color: #9ca3af;
+        }
+
+        tr.order-past td {
+            color: #9ca3af;
+        }
+
+        tr.order-past .status-badge {
+            opacity: 0.6;
+        }
+
+        /* 반응형 */
+        @media (max-width: 1200px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content-right {
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .step-indicator {
+                flex-wrap: wrap;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .form-group {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 사이드바 네비게이션 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item active">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item" id="admin-link" style="display:none;"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title"><i class="fas fa-clipboard-list"></i>행사 발주 관리</h1>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <i class="fas fa-building" style="color:#6366f1;"></i>
+                    <select id="event-site-select" style="padding:8px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;font-weight:500;min-width:160px;cursor:pointer;">
+                        <option value="">사업장 선택</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="content-grid">
+            <div class="content-left">
+            <!-- 단계 표시 -->
+            <div class="step-indicator">
+                <div class="step active" id="step1-indicator">
+                    <span class="step-number">1</span>
+                    <span>템플릿 선택</span>
+                </div>
+                <i class="fas fa-chevron-right step-arrow"></i>
+                <div class="step" id="step2-indicator">
+                    <span class="step-number">2</span>
+                    <span>레시피 수정</span>
+                </div>
+                <i class="fas fa-chevron-right step-arrow"></i>
+                <div class="step" id="step3-indicator">
+                    <span class="step-number">3</span>
+                    <span>발주서 생성</span>
+                </div>
+            </div>
+
+            <!-- Step 1: 템플릿 선택 -->
+            <div class="section" id="step1-section">
+                <h2 class="section-title"><i class="fas fa-file-alt"></i>템플릿 및 행사 정보</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>카테고리</label>
+                        <select id="category-select">
+                            <option value="">전체</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>템플릿 선택</label>
+                        <select id="template-select">
+                            <option value="">템플릿을 선택하세요</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>행사일(식단표 날짜) <span style="color: #ef4444;">*</span></label>
+                        <input type="date" id="usage-date">
+                    </div>
+                    <div class="form-group">
+                        <label>인원수 <span style="color: #ef4444;">*</span></label>
+                        <input type="number" id="attendees" min="1" placeholder="예: 100">
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="calculate-btn">
+                        <i class="fas fa-calculator"></i>발주량 계산
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: 레시피 수정 -->
+            <div class="section hidden" id="step2-section">
+                <h2 class="section-title"><i class="fas fa-edit"></i>식자재 목록 수정</h2>
+
+                <div id="template-info-display" style="margin-bottom: 15px; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                    <strong id="display-template-name"></strong> |
+                    행사일: <span id="display-usage-date"></span> |
+                    인원수: <span id="display-attendees"></span>명
+                </div>
+
+                <div id="menus-container">
+                    <!-- 메뉴별 식자재 목록이 동적으로 생성됨 -->
+                </div>
+
+                <div class="summary-section">
+                    <div class="summary-row total">
+                        <span class="summary-label">총 발주 금액</span>
+                        <span class="summary-value total" id="total-amount">0원</span>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" id="back-to-step1-btn">
+                        <i class="fas fa-arrow-left"></i>이전
+                    </button>
+                    <button class="btn btn-primary" id="go-to-step3-btn">
+                        <i class="fas fa-arrow-right"></i>다음
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: 발주서 생성 -->
+            <div class="section hidden" id="step3-section">
+                <h2 class="section-title"><i class="fas fa-file-invoice"></i>발주서 생성</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>입고일 <span style="color: #ef4444;">*</span></label>
+                        <input type="date" id="order-date">
+                    </div>
+                    <div class="form-group">
+                        <label>비고</label>
+                        <input type="text" id="order-notes" placeholder="발주 관련 메모">
+                    </div>
+                </div>
+
+                <div id="lead-time-warning" class="warning-box hidden">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>일부 식자재의 리드타임을 고려하면 입고일이 너무 늦을 수 있습니다.</span>
+                </div>
+
+                <!-- 협력업체별 합산 -->
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1rem; color: #1f2937;">
+                    <i class="fas fa-building" style="color: #6366f1;"></i> 협력업체별 발주 요약
+                </h3>
+                <div id="supplier-summary-container">
+                    <!-- 협력업체별 합산 정보가 동적으로 생성됨 -->
+                </div>
+
+                <div class="summary-section">
+                    <div class="summary-row total">
+                        <span class="summary-label">총 발주 금액</span>
+                        <span class="summary-value total" id="final-total-amount">0원</span>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" id="back-to-step2-btn">
+                        <i class="fas fa-arrow-left"></i>이전
+                    </button>
+                    <button class="btn btn-outline" id="reset-btn">
+                        <i class="fas fa-redo"></i>초기화
+                    </button>
+                    <button class="btn btn-outline" id="export-excel-btn">
+                        <i class="fas fa-file-excel"></i>엑셀
+                    </button>
+                    <button class="btn btn-success" id="save-order-btn">
+                        <i class="fas fa-save"></i>발주서 저장
+                    </button>
+                </div>
+            </div>
+
+            </div><!-- content-left 끝 -->
+
+            <!-- 오른쪽: 발주 내역 -->
+            <div class="content-right">
+            <div class="section">
+                <h2 class="section-title"><i class="fas fa-history"></i>행사 발주 내역</h2>
+                <div class="table-container order-history-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>발주번호</th>
+                                <th>사업장</th>
+                                <th>템플릿</th>
+                                <th>인원수</th>
+                                <th>입고일</th>
+                                <th>행사일</th>
+                                <th>총액</th>
+                                <th>상태</th>
+                                <th class="text-center">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="order-history-tbody">
+                            <!-- 발주 내역이 동적으로 생성됨 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            </div><!-- content-right 끝 -->
+            </div><!-- content-grid 끝 -->
+        </main>
+    </div>
+
+    <!-- 식자재 검색 모달 -->
+    <div class="modal-overlay" id="ingredient-search-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-search"></i> 식자재 검색</h3>
+                <button class="modal-close" onclick="closeIngredientModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-input-group">
+                    <input type="text" id="ingredient-search-input" placeholder="식자재명을 입력하세요...">
+                    <button class="btn btn-primary" onclick="searchIngredients()">
+                        <i class="fas fa-search"></i>검색
+                    </button>
+                </div>
+                <div class="search-results" id="ingredient-search-results">
+                    <!-- 검색 결과가 동적으로 생성됨 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeIngredientModal()">취소</button>
+                <button class="btn btn-primary" id="add-ingredient-btn" onclick="addSelectedIngredient()">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 발주서 수정 모달 -->
+    <div class="modal-overlay" id="edit-order-modal">
+        <div class="modal edit-modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> 발주서 수정 <span id="edit-order-number" style="color: #6366f1;"></span></h3>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="edit-form-row">
+                    <div class="edit-form-group">
+                        <label>사업장</label>
+                        <div id="edit-site-name" style="padding:8px 0;font-weight:600;color:#6366f1;">-</div>
+                    </div>
+                    <div class="edit-form-group">
+                        <label>인원수</label>
+                        <input type="number" id="edit-attendees" min="1">
+                    </div>
+                    <div class="edit-form-group">
+                        <label>행사일 (식단표 날짜)</label>
+                        <input type="date" id="edit-usage-date">
+                    </div>
+                    <div class="edit-form-group">
+                        <label>입고일</label>
+                        <input type="date" id="edit-order-date">
+                    </div>
+                    <div class="edit-form-group" style="flex: 2;">
+                        <label>비고</label>
+                        <input type="text" id="edit-notes" placeholder="메모">
+                    </div>
+                </div>
+
+                <div id="edit-menus-container">
+                    <!-- 메뉴별 식자재 목록이 동적으로 생성됨 -->
+                </div>
+
+                <div class="edit-summary">
+                    <span>총 발주 금액</span>
+                    <span id="edit-total-amount" style="color: #0369a1;">0원</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditModal()">취소</button>
+                <button class="btn btn-success" onclick="saveEditOrder()">
+                    <i class="fas fa-save"></i> 수정 저장
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 상태
+        let currentStep = 1;
+        let categories = [];
+        let templates = [];
+        let calculatedData = null;
+        let currentMenuIndex = null;
+        let selectedIngredient = null;
+        let editingOrderId = null;
+        let editingOrderData = null;
+
+        // 현재 선택된 사업장 ID 반환
+        function getSelectedSiteId() {
+            return document.getElementById('event-site-select').value || null;
+        }
+
+        // 사업장 목록 로드 (optgroup 계층 구조)
+        async function loadSiteSelector() {
+            try {
+                const res = await fetch('/api/admin/structure/tree');
+                const data = await res.json();
+                const select = document.getElementById('event-site-select');
+
+                // 본사, 영남지사 + 위탁사업장 개별 사이트
+                if (data.success && data.data) {
+                    let html = '<option value="">사업장 선택</option>';
+                    data.data.forEach(group => {
+                        if (group.code === 'Meal' || group.name === '위탁사업장') {
+                            // 위탁사업장: 개별 사이트만 표시
+                            if (group.categories) {
+                                group.categories.forEach(cat => {
+                                    const siteId = cat.sites?.[0]?.id || group.id;
+                                    html += `<option value="${siteId}">${cat.name}</option>`;
+                                });
+                            }
+                        } else {
+                            html += `<option value="${group.id}">${group.name}</option>`;
+                        }
+                    });
+                    select.innerHTML = html;
+                } else {
+                    const res2 = await fetch('/api/site-groups');
+                    const data2 = await res2.json();
+                    if (data2.success) {
+                        let html = '<option value="">사업장 선택</option>';
+                        data2.groups.forEach(g => { html += `<option value="${g.id}">${g.name}</option>`; });
+                        select.innerHTML = html;
+                    }
+                }
+
+                // localStorage에서 이전 선택 복원
+                const saved = localStorage.getItem('event_ordering_site_id');
+                if (saved) select.value = saved;
+
+                // 변경 시 저장
+                select.addEventListener('change', function() {
+                    localStorage.setItem('event_ordering_site_id', this.value);
+                });
+            } catch (e) {
+                console.error('사업장 로드 오류:', e);
+            }
+        }
+
+        // 페이지 로드 시
+        document.addEventListener('DOMContentLoaded', function () {
+            loadSiteSelector();
+            loadCategories();
+            loadTemplates();
+            loadOrderHistory();
+            setupEventListeners();
+
+            // 오늘 날짜 기본값
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('usage-date').value = today;
+            document.getElementById('order-date').value = today;
+
+            // 사이드바 드롭다운 열기
+            const eventDropdown = document.getElementById('event-dropdown');
+            if (eventDropdown) {
+                eventDropdown.classList.add('open');
+            }
+        });
+
+        // 이벤트 리스너 설정
+        function setupEventListeners() {
+            // 카테고리 변경 시 템플릿 필터링
+            document.getElementById('category-select').addEventListener('change', function () {
+                filterTemplates(this.value);
+            });
+
+            // 발주량 계산 버튼
+            document.getElementById('calculate-btn').addEventListener('click', calculateOrder);
+
+            // 이전/다음 버튼
+            document.getElementById('back-to-step1-btn').addEventListener('click', () => goToStep(1));
+            document.getElementById('go-to-step3-btn').addEventListener('click', () => goToStep(3));
+            document.getElementById('back-to-step2-btn').addEventListener('click', () => goToStep(2));
+
+            // 초기화 버튼
+            document.getElementById('reset-btn').addEventListener('click', resetAll);
+
+            // 발주서 저장 버튼
+            document.getElementById('save-order-btn').addEventListener('click', saveOrder);
+
+            // 엑셀 내보내기
+            document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
+
+            // 식자재 검색 엔터키
+            document.getElementById('ingredient-search-input').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    searchIngredients();
+                }
+            });
+        }
+
+        // 카테고리 로드
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/event/categories');
+                const data = await response.json();
+                if (data.success) {
+                    categories = data.categories;
+                    const select = document.getElementById('category-select');
+                    select.innerHTML = '<option value="">전체</option>';
+                    categories.forEach(cat => {
+                        select.innerHTML += `<option value="${cat.code}">${cat.name}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('카테고리 로드 오류:', error);
+            }
+        }
+
+        // 템플릿 로드
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/event/templates?is_active=true');
+                const data = await response.json();
+                if (data.success) {
+                    templates = data.templates;
+                    renderTemplateOptions(templates);
+                }
+            } catch (error) {
+                console.error('템플릿 로드 오류:', error);
+            }
+        }
+
+        // 템플릿 옵션 렌더링
+        function renderTemplateOptions(filteredTemplates) {
+            const select = document.getElementById('template-select');
+            select.innerHTML = '<option value="">템플릿을 선택하세요</option>';
+            filteredTemplates.forEach(t => {
+                select.innerHTML += `<option value="${t.id}">${t.name} (${t.category_name || t.category})</option>`;
+            });
+        }
+
+        // 카테고리별 템플릿 필터링
+        function filterTemplates(categoryCode) {
+            if (!categoryCode) {
+                renderTemplateOptions(templates);
+            } else {
+                const filtered = templates.filter(t => t.category === categoryCode);
+                renderTemplateOptions(filtered);
+            }
+        }
+
+        // 발주량 계산
+        async function calculateOrder() {
+            const templateId = document.getElementById('template-select').value;
+            const usageDate = document.getElementById('usage-date').value;
+            const attendees = document.getElementById('attendees').value;
+
+            if (!getSelectedSiteId()) {
+                showCustomAlert('사업장을 먼저 선택하세요.', 'warning');
+                return;
+            }
+            if (!templateId) {
+                showCustomAlert('템플릿을 선택하세요.', 'warning');
+                return;
+            }
+            if (!usageDate) {
+                showCustomAlert('행사일(식단표 날짜)을 입력하세요.', 'warning');
+                return;
+            }
+            if (!attendees || attendees <= 0) {
+                showCustomAlert('인원수를 입력하세요.', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/event-orders/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        template_id: parseInt(templateId),
+                        usage_date: usageDate,
+                        attendees: parseInt(attendees)
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    calculatedData = data;
+                    renderMenus(data.menus);
+                    updateTotalAmount();
+
+                    // 정보 표시
+                    document.getElementById('display-template-name').textContent = data.template_name;
+                    document.getElementById('display-usage-date').textContent = data.usage_date;
+                    document.getElementById('display-attendees').textContent = data.attendees;
+
+                    goToStep(2);
+                } else {
+                    showCustomAlert(data.error || '발주량 계산 실패', 'error');
+                }
+            } catch (error) {
+                console.error('발주량 계산 오류:', error);
+                showCustomAlert('발주량 계산 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        // 메뉴별 식자재 렌더링
+        function renderMenus(menus) {
+            const container = document.getElementById('menus-container');
+            container.innerHTML = '';
+
+            menus.forEach((menu, menuIdx) => {
+                const menuHtml = `
+                    <div class="menu-group" data-menu-index="${menuIdx}">
+                        <div class="menu-group-header">
+                            <span>${menu.menu_name}</span>
+                            <span class="menu-group-total" id="menu-total-${menuIdx}">${formatCurrency(menu.menu_total)}원</span>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;"></th>
+                                        <th>식자재명</th>
+                                        <th>규격</th>
+                                        <th>단위</th>
+                                        <th class="text-right">단가</th>
+                                        <th class="text-right">1인분</th>
+                                        <th class="text-right" style="width: 100px;">필요량</th>
+                                        <th class="text-right">금액</th>
+                                        <th>협력업체</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ingredients-tbody-${menuIdx}">
+                                    ${menu.ingredients.map((ing, ingIdx) => renderIngredientRow(menuIdx, ingIdx, ing)).join('')}
+                                </tbody>
+                            </table>
+                            <button class="add-item-btn" onclick="openIngredientModal(${menuIdx})" style="margin: 10px;">
+                                <i class="fas fa-plus"></i> 품목 추가
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += menuHtml;
+            });
+        }
+
+        // 식자재 행 렌더링
+        function renderIngredientRow(menuIdx, ingIdx, ing) {
+            return `
+                <tr data-menu-index="${menuIdx}" data-ing-index="${ingIdx}">
+                    <td>
+                        <button class="delete-btn" onclick="deleteIngredient(${menuIdx}, ${ingIdx})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                    <td>${ing.ingredient_name}</td>
+                    <td>${ing.specification || '-'}</td>
+                    <td>${ing.unit || '-'}</td>
+                    <td class="text-right">${formatCurrency(ing.unit_price)}</td>
+                    <td class="text-right">${ing.base_qty}</td>
+                    <td class="text-right">
+                        <input type="number" class="qty-input"
+                            value="${ing.required_qty}"
+                            step="0.01" min="0"
+                            onchange="updateQuantity(${menuIdx}, ${ingIdx}, this.value)">
+                    </td>
+                    <td class="text-right ingredient-total">${formatCurrency(ing.total_price)}원</td>
+                    <td>${ing.supplier_name || '-'}</td>
+                </tr>
+            `;
+        }
+
+        // 수량 업데이트
+        function updateQuantity(menuIdx, ingIdx, newQty) {
+            const qty = parseFloat(newQty) || 0;
+            calculatedData.menus[menuIdx].ingredients[ingIdx].required_qty = qty;
+
+            const unitPrice = calculatedData.menus[menuIdx].ingredients[ingIdx].unit_price || 0;
+            const totalPrice = qty * unitPrice;
+            calculatedData.menus[menuIdx].ingredients[ingIdx].total_price = totalPrice;
+
+            // 해당 행의 금액 업데이트
+            const row = document.querySelector(`tr[data-menu-index="${menuIdx}"][data-ing-index="${ingIdx}"]`);
+            if (row) {
+                row.querySelector('.ingredient-total').textContent = formatCurrency(totalPrice) + '원';
+            }
+
+            updateMenuTotal(menuIdx);
+            updateTotalAmount();
+        }
+
+        // 메뉴 합계 업데이트
+        function updateMenuTotal(menuIdx) {
+            const menu = calculatedData.menus[menuIdx];
+            let menuTotal = 0;
+            menu.ingredients.forEach(ing => {
+                menuTotal += ing.total_price || 0;
+            });
+            menu.menu_total = menuTotal;
+
+            const totalEl = document.getElementById(`menu-total-${menuIdx}`);
+            if (totalEl) {
+                totalEl.textContent = formatCurrency(menuTotal) + '원';
+            }
+        }
+
+        // 총액 업데이트
+        function updateTotalAmount() {
+            let total = 0;
+            calculatedData.menus.forEach(menu => {
+                total += menu.menu_total || 0;
+            });
+            calculatedData.total_amount = total;
+
+            document.getElementById('total-amount').textContent = formatCurrency(total) + '원';
+            document.getElementById('final-total-amount').textContent = formatCurrency(total) + '원';
+        }
+
+        // 식자재 삭제
+        function deleteIngredient(menuIdx, ingIdx) {
+            if (!confirm('이 식자재를 삭제하시겠습니까?')) return;
+
+            calculatedData.menus[menuIdx].ingredients.splice(ingIdx, 1);
+
+            // 다시 렌더링
+            const tbody = document.getElementById(`ingredients-tbody-${menuIdx}`);
+            tbody.innerHTML = calculatedData.menus[menuIdx].ingredients.map((ing, idx) =>
+                renderIngredientRow(menuIdx, idx, ing)
+            ).join('');
+
+            updateMenuTotal(menuIdx);
+            updateTotalAmount();
+        }
+
+        // 식자재 검색 모달 열기
+        function openIngredientModal(menuIdx) {
+            currentMenuIndex = menuIdx;
+            selectedIngredient = null;
+            document.getElementById('ingredient-search-input').value = '';
+            document.getElementById('ingredient-search-results').innerHTML = '';
+            document.getElementById('ingredient-search-modal').classList.add('active');
+        }
+
+        // 식자재 검색 모달 닫기
+        function closeIngredientModal() {
+            document.getElementById('ingredient-search-modal').classList.remove('active');
+            currentMenuIndex = null;
+            selectedIngredient = null;
+        }
+
+        // 식자재 검색
+        async function searchIngredients() {
+            const query = document.getElementById('ingredient-search-input').value.trim();
+            if (!query) return;
+
+            try {
+                const response = await fetch(`/api/event/search-ingredients?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const container = document.getElementById('ingredient-search-results');
+                    if (data.ingredients.length === 0) {
+                        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">검색 결과가 없습니다.</div>';
+                    } else {
+                        container.innerHTML = data.ingredients.map(ing => `
+                            <div class="search-result-item" onclick="selectIngredient(this, ${JSON.stringify(ing).replace(/"/g, '&quot;')})">
+                                <div class="result-name">${ing.name}</div>
+                                <div class="result-info">
+                                    ${ing.specification || '-'} | ${ing.unit || '-'} |
+                                    ${formatCurrency(ing.selling_price)}원 | ${ing.supplier_name || '-'}
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('식자재 검색 오류:', error);
+            }
+        }
+
+        // 식자재 선택
+        function selectIngredient(element, ingredient) {
+            document.querySelectorAll('.search-result-item').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedIngredient = ingredient;
+        }
+
+        // 선택한 식자재 추가
+        function addSelectedIngredient() {
+            if (!selectedIngredient || currentMenuIndex === null) return;
+
+            const attendees = calculatedData.attendees || 0;
+            const newIngredient = {
+                id: null,
+                ingredient_code: selectedIngredient.code,
+                ingredient_name: selectedIngredient.name,
+                specification: selectedIngredient.specification || '',
+                unit: selectedIngredient.unit || '',
+                unit_price: selectedIngredient.selling_price || 0,
+                base_qty: 0.1,  // 기본값
+                required_qty: 0.1 * attendees,
+                total_price: (selectedIngredient.selling_price || 0) * 0.1 * attendees,
+                supplier_name: selectedIngredient.supplier_name || '',
+                can_edit: true
+            };
+
+            calculatedData.menus[currentMenuIndex].ingredients.push(newIngredient);
+
+            // 다시 렌더링
+            const menu = calculatedData.menus[currentMenuIndex];
+            const tbody = document.getElementById(`ingredients-tbody-${currentMenuIndex}`);
+            tbody.innerHTML = menu.ingredients.map((ing, idx) =>
+                renderIngredientRow(currentMenuIndex, idx, ing)
+            ).join('');
+
+            updateMenuTotal(currentMenuIndex);
+            updateTotalAmount();
+            closeIngredientModal();
+        }
+
+        // 단계 이동
+        function goToStep(step) {
+            currentStep = step;
+
+            // 모든 섹션 숨기기
+            document.getElementById('step1-section').classList.toggle('hidden', step !== 1);
+            document.getElementById('step2-section').classList.toggle('hidden', step !== 2);
+            document.getElementById('step3-section').classList.toggle('hidden', step !== 3);
+
+            // 단계 표시 업데이트
+            for (let i = 1; i <= 3; i++) {
+                const indicator = document.getElementById(`step${i}-indicator`);
+                indicator.classList.remove('active', 'completed');
+                if (i < step) {
+                    indicator.classList.add('completed');
+                } else if (i === step) {
+                    indicator.classList.add('active');
+                }
+            }
+
+            // Step 3으로 이동 시 협력업체별 합산 표시
+            if (step === 3) {
+                renderSupplierSummary();
+            }
+        }
+
+        // 협력업체별 합산 렌더링
+        async function renderSupplierSummary() {
+            try {
+                const response = await fetch('/api/event-orders/summary-by-supplier', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ menus: calculatedData.menus })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    const container = document.getElementById('supplier-summary-container');
+                    container.innerHTML = data.suppliers.map(s => `
+                        <div class="supplier-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="supplier-name">${s.supplier_name}</span>
+                                <span class="supplier-total">${formatCurrency(s.total_amount)}원</span>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 0.85rem; color: #64748b;">
+                                ${s.items.length}개 품목
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('협력업체별 합산 오류:', error);
+            }
+        }
+
+        // 발주서 저장
+        async function saveOrder() {
+            const orderDate = document.getElementById('order-date').value;
+            const notes = document.getElementById('order-notes').value;
+            const siteId = getSelectedSiteId();
+
+            if (!orderDate) {
+                showCustomAlert('입고일을 입력하세요.', 'warning');
+                return;
+            }
+            if (!siteId) {
+                showCustomAlert('사업장을 선택하세요.', 'warning');
+                return;
+            }
+
+            if (!confirm('발주서를 저장하시겠습니까?')) return;
+
+            try {
+                const response = await fetch('/api/event-orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        template_id: calculatedData.template_id,
+                        attendees: calculatedData.attendees,
+                        usage_date: calculatedData.usage_date,
+                        order_date: orderDate,
+                        menus: calculatedData.menus,
+                        notes: notes,
+                        site_id: siteId
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    loadOrderHistory();
+                    resetAll();
+                    // 합산 안내 팝업
+                    showMergeGuidePopup(data.order_number || '');
+                } else {
+                    showCustomAlert(data.error || '발주서 저장 실패', 'error');
+                }
+            } catch (error) {
+                console.error('발주서 저장 오류:', error);
+                showCustomAlert('발주서 저장 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        // 초기화
+        function resetAll() {
+            calculatedData = null;
+            document.getElementById('template-select').value = '';
+            document.getElementById('attendees').value = '';
+            document.getElementById('order-notes').value = '';
+            document.getElementById('menus-container').innerHTML = '';
+            document.getElementById('supplier-summary-container').innerHTML = '';
+            goToStep(1);
+        }
+
+        // 발주 내역 로드
+        async function loadOrderHistory() {
+            try {
+                const response = await fetch('/api/event-orders?limit=20');
+                const data = await response.json();
+
+                if (data.success) {
+                    const tbody = document.getElementById('order-history-tbody');
+                    if (data.orders.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #64748b;">발주 내역이 없습니다.</td></tr>';
+                    } else {
+                        const today = new Date().toISOString().split('T')[0];
+                        tbody.innerHTML = data.orders.map(order => `
+                            <tr class="${order.usage_date && order.usage_date < today ? 'order-past' : ''}">
+                                <td>${order.order_number}</td>
+                                <td>${order.site_name || '-'}</td>
+                                <td>${order.template_name || '-'}</td>
+                                <td>${order.attendees || '-'}명</td>
+                                <td>${order.order_date || '-'}</td>
+                                <td>${order.usage_date || '-'}</td>
+                                <td class="text-right">${formatCurrency(order.total_amount)}원</td>
+                                <td><span class="status-badge ${order.status}">${getStatusText(order.status)}</span></td>
+                                <td class="text-center">
+                                    <div class="action-btns" style="flex-wrap:wrap;">
+                                        ${order.merged_into ?
+                                            `<span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap;" title="합산 완료">
+                                                <i class="fas fa-link" style="margin-right:2px;"></i>${order.merged_into}
+                                            </span>` : ''
+                                        }
+                                        <button class="action-btn edit" onclick="openEditModal(${order.id})" title="수정">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        ${order.status === 'pending' ?
+                                            `<button class="action-btn confirm" onclick="changeOrderStatus(${order.id}, 'confirmed')" title="확정">
+                                                <i class="fas fa-check"></i>
+                                            </button>` :
+                                            order.status === 'confirmed' ?
+                                            `<button class="action-btn revert" onclick="changeOrderStatus(${order.id}, 'pending')" title="확정 취소">
+                                                <i class="fas fa-undo"></i>
+                                            </button>` : ''
+                                        }
+                                        <button class="action-btn delete" onclick="deleteOrder(${order.id})" title="삭제">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('발주 내역 로드 오류:', error);
+            }
+        }
+
+        // 발주서 삭제
+        async function deleteOrder(orderId) {
+            if (!confirm('이 발주서를 삭제하시겠습니까?')) return;
+
+            try {
+                const response = await fetch(`/api/event-orders/${orderId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showCustomAlert(data.message, 'success');
+                    loadOrderHistory();
+                } else {
+                    showCustomAlert(data.error || '삭제 실패', 'error');
+                }
+            } catch (error) {
+                console.error('발주서 삭제 오류:', error);
+                showCustomAlert('삭제 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        // 엑셀 내보내기
+        function exportToExcel() {
+            if (!calculatedData) {
+                showCustomAlert('먼저 발주량을 계산하세요.', 'warning');
+                return;
+            }
+
+            let csvContent = '\uFEFF';  // UTF-8 BOM
+            csvContent += '식자재코드,식자재명,규격,단위,단가,필요량,금액,협력업체,메뉴\n';
+
+            calculatedData.menus.forEach(menu => {
+                menu.ingredients.forEach(ing => {
+                    csvContent += `${ing.ingredient_code || ''},${ing.ingredient_name},${ing.specification || ''},${ing.unit || ''},${ing.unit_price},${ing.required_qty},${ing.total_price},${ing.supplier_name || ''},${menu.menu_name}\n`;
+                });
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `행사발주_${calculatedData.template_name}_${calculatedData.usage_date}.csv`;
+            link.click();
+        }
+
+        // 유틸리티 함수
+        function formatCurrency(value) {
+            return Math.round(value || 0).toLocaleString('ko-KR');
+        }
+
+        // 발주서 저장 후 합산 안내 팝업
+        function showMergeGuidePopup(orderNumber) {
+            const popup = document.createElement('div');
+            popup.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;';
+            popup.innerHTML = `
+                <div style="background:white;border-radius:16px;width:90%;max-width:500px;overflow:hidden;">
+                    <div style="padding:20px;background:linear-gradient(135deg,#10b981,#059669);color:white;text-align:center;">
+                        <i class="fas fa-check-circle" style="font-size:2rem;margin-bottom:8px;"></i>
+                        <h3 style="margin:0;">행사 발주서 저장 완료</h3>
+                        ${orderNumber ? `<div style="margin-top:6px;opacity:0.9;font-size:0.9rem;">${orderNumber}</div>` : ''}
+                    </div>
+                    <div style="padding:20px;">
+                        <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px;color:#92400e;margin-bottom:15px;">
+                            <i class="fas fa-info-circle" style="margin-right:5px;"></i>
+                            같은 입고일에 일반 발주서가 있다면,<br>
+                            <strong>발주 관리</strong> 페이지에서 합산하여 최종 발주서를 완성하세요.
+                        </div>
+                        <div style="display:flex;gap:10px;justify-content:center;">
+                            <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-secondary" style="padding:10px 20px;">
+                                <i class="fas fa-check"></i> 확인
+                            </button>
+                            <a href="/ordering_management.html" class="btn btn-primary" style="padding:10px 20px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                                <i class="fas fa-shopping-cart"></i> 발주 관리로 이동
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(popup);
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': '대기',
+                'confirmed': '확정',
+                'cancelled': '취소'
+            };
+            return statusMap[status] || status;
+        }
+
+        // =====================
+        // 발주서 수정 모달
+        // =====================
+
+        async function openEditModal(orderId) {
+            try {
+                const response = await fetch(`/api/event-orders/${orderId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    showCustomAlert(data.error || '발주서 조회 실패', 'error');
+                    return;
+                }
+
+                editingOrderId = orderId;
+                editingOrderData = data.order;
+
+                // 기본 정보 채우기
+                document.getElementById('edit-order-number').textContent = data.order.order_number;
+                document.getElementById('edit-site-name').textContent = data.order.site_name || '-';
+                document.getElementById('edit-attendees').value = data.order.attendees || '';
+                document.getElementById('edit-usage-date').value = data.order.usage_date || '';
+                document.getElementById('edit-order-date').value = data.order.order_date || '';
+                document.getElementById('edit-notes').value = data.order.notes || '';
+
+                // 식자재를 메뉴별로 그룹화
+                const menuMap = {};
+                data.order.items.forEach(item => {
+                    const menuName = item.menu_name || '(메뉴 미지정)';
+                    if (!menuMap[menuName]) {
+                        menuMap[menuName] = [];
+                    }
+                    menuMap[menuName].push(item);
+                });
+
+                // 메뉴별 식자재 렌더링
+                const container = document.getElementById('edit-menus-container');
+                container.innerHTML = '';
+
+                Object.entries(menuMap).forEach(([menuName, items]) => {
+                    const menuTotal = items.reduce((sum, item) => sum + (item.total_amount || 0), 0);
+                    const menuHtml = `
+                        <div class="edit-menu-group">
+                            <div class="edit-menu-header">
+                                <span><i class="fas fa-utensils" style="color: #6366f1; margin-right: 6px;"></i>${menuName}</span>
+                                <span class="menu-subtotal" style="color: #6366f1;">${formatCurrency(menuTotal)}원</span>
+                            </div>
+                            <table class="edit-table">
+                                <thead>
+                                    <tr>
+                                        <th>식자재명</th>
+                                        <th>규격</th>
+                                        <th>단위</th>
+                                        <th>단가</th>
+                                        <th>수량</th>
+                                        <th>금액</th>
+                                        <th>협력업체</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${items.map((item, idx) => `
+                                        <tr data-menu="${menuName}" data-idx="${idx}">
+                                            <td>${item.ingredient_name}</td>
+                                            <td>${item.specification || '-'}</td>
+                                            <td>${item.unit || '-'}</td>
+                                            <td class="text-right">${formatCurrency(item.unit_price)}</td>
+                                            <td>
+                                                <input type="number" class="edit-qty-input"
+                                                    value="${item.required_qty}"
+                                                    data-menu="${menuName}" data-idx="${idx}"
+                                                    data-unit-price="${item.unit_price}"
+                                                    onchange="updateEditItemTotal(this)"
+                                                    step="0.01" min="0">
+                                            </td>
+                                            <td class="text-right edit-item-total">${formatCurrency(item.total_amount)}</td>
+                                            <td>${item.supplier_name || '-'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    container.innerHTML += menuHtml;
+                });
+
+                updateEditTotalAmount();
+
+                // 모달 열기
+                document.getElementById('edit-order-modal').classList.add('active');
+
+            } catch (error) {
+                console.error('발주서 조회 오류:', error);
+                showCustomAlert('발주서 조회 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        function updateEditItemTotal(input) {
+            const qty = parseFloat(input.value) || 0;
+            const unitPrice = parseFloat(input.dataset.unitPrice) || 0;
+            const total = qty * unitPrice;
+
+            // 해당 행의 금액 업데이트
+            const row = input.closest('tr');
+            row.querySelector('.edit-item-total').textContent = formatCurrency(total);
+
+            // 메뉴 소계 업데이트
+            const menuGroup = input.closest('.edit-menu-group');
+            let menuTotal = 0;
+            menuGroup.querySelectorAll('.edit-qty-input').forEach(inp => {
+                const q = parseFloat(inp.value) || 0;
+                const p = parseFloat(inp.dataset.unitPrice) || 0;
+                menuTotal += q * p;
+            });
+            menuGroup.querySelector('.menu-subtotal').textContent = formatCurrency(menuTotal) + '원';
+
+            updateEditTotalAmount();
+        }
+
+        function updateEditTotalAmount() {
+            let total = 0;
+            document.querySelectorAll('#edit-menus-container .edit-qty-input').forEach(input => {
+                const qty = parseFloat(input.value) || 0;
+                const unitPrice = parseFloat(input.dataset.unitPrice) || 0;
+                total += qty * unitPrice;
+            });
+            document.getElementById('edit-total-amount').textContent = formatCurrency(total) + '원';
+        }
+
+        async function saveEditOrder() {
+            if (!editingOrderId || !editingOrderData) return;
+
+            const attendees = parseInt(document.getElementById('edit-attendees').value);
+            const usageDate = document.getElementById('edit-usage-date').value;
+            const orderDate = document.getElementById('edit-order-date').value;
+            const notes = document.getElementById('edit-notes').value;
+
+            if (!orderDate) {
+                showCustomAlert('입고일을 입력하세요.', 'warning');
+                return;
+            }
+
+            // 메뉴별 식자재 재구성
+            const menus = [];
+            const menuMap = {};
+
+            // 기존 items에서 메뉴 구조 복원
+            editingOrderData.items.forEach(item => {
+                const menuName = item.menu_name || '(메뉴 미지정)';
+                if (!menuMap[menuName]) {
+                    menuMap[menuName] = { menu_name: menuName, ingredients: [] };
+                    menus.push(menuMap[menuName]);
+                }
+            });
+
+            // 수정된 수량 반영
+            document.querySelectorAll('#edit-menus-container .edit-qty-input').forEach(input => {
+                const menuName = input.dataset.menu;
+                const idx = parseInt(input.dataset.idx);
+                const qty = parseFloat(input.value) || 0;
+                const unitPrice = parseFloat(input.dataset.unitPrice) || 0;
+
+                // 원본 아이템에서 정보 가져오기
+                const originalItems = editingOrderData.items.filter(i => (i.menu_name || '(메뉴 미지정)') === menuName);
+                if (originalItems[idx]) {
+                    const orig = originalItems[idx];
+                    menuMap[menuName].ingredients.push({
+                        ingredient_code: orig.ingredient_code,
+                        ingredient_name: orig.ingredient_name,
+                        specification: orig.specification,
+                        unit: orig.unit,
+                        unit_price: unitPrice,
+                        required_qty: qty,
+                        total_price: Math.round(qty * unitPrice),
+                        supplier_name: orig.supplier_name
+                    });
+                }
+            });
+
+            if (!confirm('발주서를 수정하시겠습니까?')) return;
+
+            try {
+                const response = await fetch(`/api/event-orders/${editingOrderId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        attendees,
+                        usage_date: usageDate,
+                        order_date: orderDate,
+                        notes,
+                        menus
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showCustomAlert(data.message, 'success');
+                    closeEditModal();
+                    loadOrderHistory();
+                } else {
+                    showCustomAlert(data.error || '수정 실패', 'error');
+                }
+            } catch (error) {
+                console.error('발주서 수정 오류:', error);
+                showCustomAlert('수정 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-order-modal').classList.remove('active');
+            editingOrderId = null;
+            editingOrderData = null;
+        }
+
+        // =====================
+        // 상태 변경
+        // =====================
+
+        async function changeOrderStatus(orderId, newStatus) {
+            const statusText = { 'confirmed': '확정', 'pending': '대기', 'cancelled': '취소' };
+            if (!confirm(`발주서를 '${statusText[newStatus]}'(으)로 변경하시겠습니까?`)) return;
+
+            try {
+                const response = await fetch(`/api/event-orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showCustomAlert(data.message, 'success');
+                    loadOrderHistory();
+                } else {
+                    showCustomAlert(data.error || '상태 변경 실패', 'error');
+                }
+            } catch (error) {
+                console.error('상태 변경 오류:', error);
+                showCustomAlert('상태 변경 중 오류가 발생했습니다.', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

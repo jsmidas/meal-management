@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>식단가 관리</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .controls h3 {
+            color: #444;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .form-group select, .form-group input {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group select:focus, .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+        }
+
+        .btn-add {
+            background: #48bb78;
+            margin-left: 10px;
+        }
+
+        .btn-add:hover {
+            background: #38a169;
+        }
+
+        .meal-pricing-table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .table-header {
+            background: #667eea;
+            color: white;
+            padding: 20px 25px;
+        }
+
+        .table-header h3 {
+            font-size: 18px;
+        }
+
+        .table-content {
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .meal-pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 1000px;
+        }
+
+        .meal-pricing-table th {
+            background: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            white-space: nowrap;
+            font-size: 12px;
+        }
+
+        .meal-pricing-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            vertical-align: middle;
+        }
+
+        .meal-pricing-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .meal-pricing-table tbody tr:hover {
+            background-color: #e3f2fd;
+        }
+
+        .meal-pricing-table input, .meal-pricing-table select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .meal-pricing-table input:focus, .meal-pricing-table select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+        }
+
+        .table-actions {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 11px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-edit {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #138496;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .cost-ratio {
+            font-weight: bold;
+        }
+
+        .cost-ratio.good {
+            color: #28a745;
+        }
+
+        .cost-ratio.warning {
+            color: #ffc107;
+        }
+
+        .cost-ratio.danger {
+            color: #dc3545;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 40px;
+        }
+
+        /* 컬럼 너비 최적화 */
+        .col-location { width: 12%; }
+        .col-meal-time { width: 10%; }
+        .col-plan-name { width: 18%; }
+        .col-price { width: 12%; }
+        .col-cost { width: 12%; }
+        .col-ratio { width: 8%; }
+        .col-actions { width: 16%; }
+        .col-dates { width: 12%; }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .meal-pricing-table {
+                font-size: 11px;
+            }
+            
+            .meal-pricing-table th, .meal-pricing-table td {
+                padding: 6px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 식단가 관리</h1>
+            <p>사업장별 세부 식단가를 효율적으로 관리하세요</p>
+        </div>
+
+        <div class="controls">
+            <h3>사업장 선택</h3>
+            <div class="form-group">
+                <label for="businessLocationSelect">사업장을 선택하세요</label>
+                <select id="businessLocationSelect" onchange="loadMealPlansForLocation()">
+                    <option value="">-- 사업장 선택 --</option>
+                </select>
+                <button class="btn btn-add" onclick="addNewMealPlan()" id="addMealPlanBtn" style="display: none;">+ 새 식단가 추가</button>
+                <button class="btn" onclick="saveMealPlans()" id="saveMealPlansBtn" style="display: none;">💾 저장</button>
+            </div>
+        </div>
+
+        <div class="meal-pricing-table-container">
+            <div class="table-header">
+                <h3 id="tableTitle">식단가 관리 테이블</h3>
+            </div>
+            <div class="table-content">
+                <div id="mealPlansTableContainer">
+                    <div class="no-data">
+                        사업장을 선택하면 해당 사업장의 식단가 정보가 표시됩니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let businessLocations = [];
+        let currentLocationId = null;
+        let mealPlans = [];
+        let nextTempId = -1;
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🍽️ 새로운 식단가 관리 시스템 초기화');
+            loadBusinessLocations();
+        });
+
+        // 사업장 목록 로드
+        async function loadBusinessLocations() {
+            try {
+                const response = await fetch('/api/admin/sites');
+                const data = await response.json();
+                
+                if (data.success && data.sites) {
+                    businessLocations = data.sites;
+                    
+                    const select = document.getElementById('businessLocationSelect');
+                    select.innerHTML = '<option value="">-- 사업장 선택 --</option>';
+                    
+                    businessLocations.forEach(location => {
+                        const option = document.createElement('option');
+                        option.value = location.id;
+                        option.textContent = location.name;  // API에서 name 필드 사용
+                        select.appendChild(option);
+                    });
+                    
+                    console.log('사업장 목록 로드 완료:', businessLocations);
+                } else {
+                    console.error('사업장 데이터 로드 실패:', data);
+                }
+            } catch (error) {
+                console.error('사업장 로드 오류:', error);
+            }
+        }
+
+        // 선택된 사업장의 식단가 로드
+        async function loadMealPlansForLocation() {
+            const select = document.getElementById('businessLocationSelect');
+            const locationId = select.value;
+            
+            if (!locationId) {
+                showNoData();
+                hideControls();
+                return;
+            }
+
+            currentLocationId = locationId;
+            const selectedLocation = businessLocations.find(loc => loc.id == locationId);
+            const locationName = selectedLocation ? selectedLocation.name : '알 수 없음';
+            
+            document.getElementById('tableTitle').textContent = `${locationName} - 식단가 관리`;
+            
+            try {
+                const response = await fetch(`/api/admin/meal-pricing/by-location/${locationId}`);
+                const data = await response.json();
+                
+                console.log('식단가 데이터:', data);
+                
+                if (data.success && data.mealPlans && data.mealPlans.length > 0) {
+                    mealPlans = data.mealPlans.map(plan => ({
+                        id: plan.id,
+                        location_name: locationName,
+                        meal_time: plan.meal_time,
+                        plan_name: plan.name,
+                        selling_price: plan.selling_price,
+                        target_material_cost: plan.target_material_cost,
+                        cost_ratio: plan.cost_ratio,
+                        apply_date_start: plan.apply_date_start || new Date().toISOString().split('T')[0],
+                        apply_date_end: plan.apply_date_end || '2025-12-31'
+                    }));
+                } else {
+                    // 데이터가 없으면 기본 식단표 1개 생성
+                    mealPlans = [{
+                        id: nextTempId--,
+                        location_name: locationName,
+                        meal_time: 'lunch',
+                        plan_name: '기본 식단표',
+                        selling_price: 5000,
+                        target_material_cost: 2500,
+                        cost_ratio: 50,
+                        apply_date_start: new Date().toISOString().split('T')[0],
+                        apply_date_end: '2025-12-31',
+                        isNew: true
+                    }];
+                }
+                
+                displayMealPlans();
+                showControls();
+                
+            } catch (error) {
+                console.error('식단가 로드 실패:', error);
+                showError('식단가 데이터를 불러오는데 실패했습니다.');
+            }
+        }
+
+        // 식단가 테이블 표시
+        function displayMealPlans() {
+            const container = document.getElementById('mealPlansTableContainer');
+            
+            if (!mealPlans || mealPlans.length === 0) {
+                showNoData();
+                return;
+            }
+
+            const tableHTML = `
+                <table class="meal-pricing-table">
+                    <thead>
+                        <tr>
+                            <th class="col-location">사업장</th>
+                            <th class="col-meal-time">식사시간</th>
+                            <th class="col-plan-name">세부식단표</th>
+                            <th class="col-price">판매가(원)</th>
+                            <th class="col-cost">목표재료비(원)</th>
+                            <th class="col-ratio">달성율(%)</th>
+                            <th class="col-dates">적용기간</th>
+                            <th class="col-actions">작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${mealPlans.map(plan => createMealPlanRow(plan)).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = tableHTML;
+        }
+
+        // 식단가 행 생성
+        function createMealPlanRow(plan) {
+            const ratio = plan.selling_price > 0 ? ((plan.target_material_cost / plan.selling_price) * 100) : 0;
+            const ratioClass = ratio <= 50 ? 'good' : ratio <= 60 ? 'warning' : 'danger';
+            
+            return `
+                <tr data-id="${plan.id}">
+                    <td>${plan.location_name}</td>
+                    <td>
+                        <select onchange="updateMealTime(${plan.id}, this.value)">
+                            <option value="breakfast" ${plan.meal_time === 'breakfast' ? 'selected' : ''}>조식</option>
+                            <option value="lunch" ${plan.meal_time === 'lunch' ? 'selected' : ''}>중식</option>
+                            <option value="dinner" ${plan.meal_time === 'dinner' ? 'selected' : ''}>석식</option>
+                            <option value="night" ${plan.meal_time === 'night' ? 'selected' : ''}>야식</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" value="${plan.plan_name}" 
+                               onchange="updatePlanName(${plan.id}, this.value)"
+                               placeholder="식단표명 입력">
+                    </td>
+                    <td>
+                        <input type="text" value="${plan.selling_price.toLocaleString()}" 
+                               onchange="updatePrice(${plan.id}, 'selling_price', this.value)"
+                               onkeyup="formatNumber(this)"
+                               style="text-align: right;">
+                    </td>
+                    <td>
+                        <input type="text" value="${plan.target_material_cost.toLocaleString()}" 
+                               onchange="updatePrice(${plan.id}, 'target_material_cost', this.value)"
+                               onkeyup="formatNumber(this)"
+                               style="text-align: right;">
+                    </td>
+                    <td>
+                        <span class="cost-ratio ${ratioClass}" id="ratio-${plan.id}">
+                            ${ratio.toFixed(1)}%
+                        </span>
+                    </td>
+                    <td style="font-size: 11px;">
+                        ${plan.apply_date_start}<br>~<br>${plan.apply_date_end}
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button class="btn-sm btn-edit" onclick="editDates(${plan.id})">기간수정</button>
+                            <button class="btn-sm btn-delete" onclick="deleteMealPlan(${plan.id})">삭제</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // 새 식단가 추가
+        function addNewMealPlan() {
+            if (!currentLocationId) {
+                alert('먼저 사업장을 선택해주세요.');
+                return;
+            }
+
+            const selectedLocation = businessLocations.find(loc => loc.id == currentLocationId);
+            const locationName = selectedLocation ? selectedLocation.name : '알 수 없음';
+
+            const newPlan = {
+                id: nextTempId--,
+                location_name: locationName,
+                meal_time: 'lunch',
+                plan_name: '새 식단표',
+                selling_price: 5000,
+                target_material_cost: 2500,
+                cost_ratio: 50,
+                apply_date_start: new Date().toISOString().split('T')[0],
+                apply_date_end: '2025-12-31',
+                isNew: true
+            };
+
+            mealPlans.push(newPlan);
+            displayMealPlans();
+        }
+
+        // 식사시간 업데이트
+        function updateMealTime(planId, mealTime) {
+            const plan = mealPlans.find(p => p.id == planId);
+            if (plan) {
+                plan.meal_time = mealTime;
+                console.log(`식단표 ${planId} 식사시간 변경: ${mealTime}`);
+            }
+        }
+
+        // 식단표명 업데이트
+        function updatePlanName(planId, planName) {
+            const plan = mealPlans.find(p => p.id == planId);
+            if (plan) {
+                plan.plan_name = planName;
+                console.log(`식단표 ${planId} 이름 변경: ${planName}`);
+            }
+        }
+
+        // 가격 업데이트
+        function updatePrice(planId, field, value) {
+            const plan = mealPlans.find(p => p.id == planId);
+            if (!plan) return;
+
+            const numValue = parseInt(value.replace(/,/g, '')) || 0;
+            plan[field] = numValue;
+
+            // 달성율 재계산
+            const ratio = plan.selling_price > 0 ? ((plan.target_material_cost / plan.selling_price) * 100) : 0;
+            plan.cost_ratio = ratio;
+
+            // 달성율 표시 업데이트
+            const ratioElement = document.getElementById(`ratio-${planId}`);
+            if (ratioElement) {
+                const ratioClass = ratio <= 50 ? 'good' : ratio <= 60 ? 'warning' : 'danger';
+                ratioElement.textContent = ratio.toFixed(1) + '%';
+                ratioElement.className = `cost-ratio ${ratioClass}`;
+            }
+
+            console.log(`식단표 ${planId} ${field} 변경: ${numValue}`);
+        }
+
+        // 기간 수정
+        function editDates(planId) {
+            const plan = mealPlans.find(p => p.id == planId);
+            if (!plan) return;
+
+            const startDate = prompt('시작일을 입력하세요 (YYYY-MM-DD):', plan.apply_date_start);
+            if (startDate && startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                const endDate = prompt('종료일을 입력하세요 (YYYY-MM-DD):', plan.apply_date_end);
+                if (endDate && endDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    plan.apply_date_start = startDate;
+                    plan.apply_date_end = endDate;
+                    displayMealPlans();
+                }
+            }
+        }
+
+        // 식단가 삭제
+        function deleteMealPlan(planId) {
+            if (confirm('이 식단가를 삭제하시겠습니까?')) {
+                mealPlans = mealPlans.filter(p => p.id != planId);
+                displayMealPlans();
+            }
+        }
+
+        // 숫자 포맷팅
+        function formatNumber(input) {
+            let value = input.value.replace(/,/g, '');
+            if (!isNaN(value) && value !== '') {
+                input.value = parseInt(value).toLocaleString();
+            }
+        }
+
+        // 식단가 저장
+        async function saveMealPlans() {
+            if (!currentLocationId || !mealPlans.length) {
+                alert('저장할 데이터가 없습니다.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/meal-pricing/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        location_id: currentLocationId,
+                        meal_plans: mealPlans
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('식단가가 성공적으로 저장되었습니다.');
+                    loadMealPlansForLocation(); // 다시 로드하여 최신 데이터 표시
+                } else {
+                    alert('저장 실패: ' + (result.error || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('저장 오류:', error);
+                alert('저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        // UI 도우미 함수들
+        function showNoData() {
+            document.getElementById('mealPlansTableContainer').innerHTML = 
+                '<div class="no-data">선택된 사업장에 등록된 식단가가 없습니다.</div>';
+        }
+
+        function showError(message) {
+            document.getElementById('mealPlansTableContainer').innerHTML = 
+                `<div class="no-data" style="color: #dc3545;">${message}</div>`;
+        }
+
+        function showControls() {
+            document.getElementById('addMealPlanBtn').style.display = 'inline-block';
+            document.getElementById('saveMealPlansBtn').style.display = 'inline-block';
+        }
+
+        function hideControls() {
+            document.getElementById('addMealPlanBtn').style.display = 'none';
+            document.getElementById('saveMealPlansBtn').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

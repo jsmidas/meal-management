@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title>시스템 요청 - 급식관리 시스템</title>
+    <link rel="icon" type="image/x-icon" href="static/favicon.ico">
+
+    <!-- 외부 라이브러리 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- 공통 CSS -->
+    <link rel="stylesheet" href="static/css/common-sidebar.css">
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <link rel="stylesheet" href="static/css/site-selector.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f8f9fa;
+            overflow-x: hidden;
+        }
+
+        .main-content {
+            margin-left: 180px;
+            padding: 20px;
+            min-height: 100vh;
+            transition: margin-left 0.3s;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #9b59b6;
+        }
+
+        .btn-primary:hover {
+            background: #f5eef8;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        /* 필터 */
+        .filter-bar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        /* 요청 목록 */
+        .request-list {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .request-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .request-item:hover {
+            background: #f8f9fa;
+        }
+
+        .request-item:last-child {
+            border-bottom: none;
+        }
+
+        .request-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            color: white;
+        }
+
+        .request-icon.bug { background: #e74c3c; }
+        .request-icon.feature { background: #3498db; }
+        .request-icon.question { background: #f39c12; }
+
+        .request-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .request-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .request-preview {
+            font-size: 13px;
+            color: #7f8c8d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .request-meta {
+            text-align: right;
+            font-size: 12px;
+            color: #95a5a6;
+            flex-shrink: 0;
+        }
+
+        .request-meta .date {
+            margin-bottom: 3px;
+        }
+
+        /* 상태 배지 */
+        .status-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending { background: #ffeaa7; color: #856404; }
+        .status-in_progress { background: #81ecec; color: #0c5460; }
+        .status-resolved { background: #55efc4; color: #155724; }
+        .status-closed { background: #dfe6e9; color: #636e72; }
+
+        .type-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .type-bug { background: #ffebee; color: #c62828; }
+        .type-feature { background: #e3f2fd; color: #1565c0; }
+        .type-question { background: #fff8e1; color: #f57f17; }
+
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 폼 스타일 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        /* 첨부파일 */
+        .file-upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-upload-area:hover {
+            border-color: #9b59b6;
+            background: #f5eef8;
+        }
+
+        .file-upload-area i {
+            font-size: 40px;
+            color: #bdc3c7;
+            margin-bottom: 10px;
+        }
+
+        .uploaded-files {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .uploaded-file {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .uploaded-file .remove {
+            cursor: pointer;
+            color: #e74c3c;
+        }
+
+        /* 상세보기 */
+        .request-detail-header {
+            margin-bottom: 20px;
+        }
+
+        .request-detail-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .request-detail-meta {
+            font-size: 13px;
+            color: #7f8c8d;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .request-detail-content {
+            line-height: 1.8;
+            color: #2c3e50;
+            white-space: pre-wrap;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .request-attachments {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .request-attachments h4 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .attachment-item {
+            margin-bottom: 12px;
+            background: none;
+            padding: 0;
+        }
+
+        .attachment-item img {
+            width: 100%;
+            max-width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .attachment-item img:hover {
+            opacity: 0.85;
+        }
+
+        .attachment-item .att-filename {
+            font-size: 12px;
+            color: #95a5a6;
+            margin-top: 4px;
+        }
+
+        /* 이미지 라이트박스 */
+        .image-lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .image-lightbox.active {
+            display: flex;
+        }
+
+        .image-lightbox img {
+            max-width: 95%;
+            max-height: 95vh;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 36px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            z-index: 10000;
+        }
+
+        /* 답변/조치 섹션 */
+        .response-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #9b59b6;
+        }
+
+        .response-section h4 {
+            color: #9b59b6;
+            margin-bottom: 15px;
+        }
+
+        .response-content {
+            background: #f5eef8;
+            padding: 15px;
+            border-radius: 8px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .response-meta {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .response-empty {
+            color: #95a5a6;
+            font-style: italic;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: #bdc3c7;
+        }
+
+        /* 페이지네이션 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pagination button.active {
+            background: #9b59b6;
+            color: white;
+            border-color: #9b59b6;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .filter-bar {
+                flex-direction: column;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 사이드바 -->
+    <nav class="sidebar" id="sidebar">
+        <div class="logo">
+            <img src="static/images/logo.png" alt="다함푸드 로고">
+        </div>
+        <div class="nav-menu" id="nav-menu"></div>
+    </nav>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-tools"></i> 시스템 요청</h1>
+                <p style="margin-top: 5px; opacity: 0.9;">버그 리포트, 기능 요청, 문의사항</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openEditModal()">
+                    <i class="fas fa-plus"></i> 새 요청
+                </button>
+            </div>
+        </div>
+
+        <!-- 필터 -->
+        <div class="filter-bar">
+            <div>
+                <label style="margin-right: 8px;">유형:</label>
+                <select id="filterType" onchange="loadRequests()">
+                    <option value="">전체</option>
+                    <option value="bug">버그 리포트</option>
+                    <option value="feature">기능 요청</option>
+                    <option value="question">문의사항</option>
+                </select>
+            </div>
+            <div>
+                <label style="margin-right: 8px;">상태:</label>
+                <select id="filterStatus" onchange="loadRequests()">
+                    <option value="">전체</option>
+                    <option value="pending">대기중</option>
+                    <option value="in_progress">처리중</option>
+                    <option value="resolved">해결됨</option>
+                    <option value="closed">종료</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 요청 목록 -->
+        <div class="request-list" id="requestList">
+            <div class="empty-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>요청 목록을 불러오는 중...</p>
+            </div>
+        </div>
+
+        <!-- 페이지네이션 -->
+        <div class="pagination" id="pagination"></div>
+    </main>
+
+    <!-- 상세 모달 -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>요청 상세</h2>
+                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="detailBody">
+                <!-- 동적으로 채워짐 -->
+            </div>
+            <div class="modal-footer" id="detailFooter">
+                <button class="btn btn-secondary" onclick="closeDetailModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 작성/수정 모달 -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="editModalTitle">새 요청</h2>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="requestForm">
+                    <input type="hidden" id="requestId">
+
+                    <div class="form-group">
+                        <label>요청 유형 *</label>
+                        <select id="requestType" required>
+                            <option value="bug">버그 리포트</option>
+                            <option value="feature">기능 요청</option>
+                            <option value="question">문의사항</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>제목 *</label>
+                        <input type="text" id="requestTitle" required placeholder="요청 제목을 입력하세요">
+                    </div>
+
+                    <div class="form-group">
+                        <label>내용</label>
+                        <textarea id="requestContent" placeholder="상세 내용을 입력하세요. 버그의 경우 재현 방법을 포함해주세요."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>첨부파일 (스크린샷 등)</label>
+                        <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>클릭하여 파일 선택 (이미지만 가능, 최대 10MB)</p>
+                        </div>
+                        <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFileSelect(event)">
+                        <div class="uploaded-files" id="uploadedFiles"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditModal()">취소</button>
+                <button class="btn" onclick="saveRequest()" style="background: #9b59b6; color: white;">
+                    <i class="fas fa-paper-plane"></i> 제출
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 답변 모달 (관리자용) -->
+    <div class="modal" id="responseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>답변 작성</h2>
+                <button class="modal-close" onclick="closeResponseModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>상태 변경</label>
+                    <select id="responseStatus">
+                        <option value="in_progress">처리중</option>
+                        <option value="resolved">해결됨</option>
+                        <option value="closed">종료</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>답변</label>
+                    <textarea id="responseContent" placeholder="답변 내용을 입력하세요"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeResponseModal()">취소</button>
+                <button class="btn btn-success" onclick="saveResponse()">
+                    <i class="fas fa-reply"></i> 답변 등록
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 이미지 라이트박스 -->
+    <div class="image-lightbox" id="imageLightbox" onclick="closeLightbox()">
+        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+        <img id="lightboxImage" src="" alt="확대 이미지">
+    </div>
+
+    <!-- 공통 사이드바 -->
+    <script src="static/js/common-sidebar.js"></script>
+
+    <script>
+        // 상태 변수
+        let currentUser = null;
+        let requests = [];
+        let currentPage = 1;
+        let totalPages = 1;
+        let uploadedFiles = [];
+        let currentRequestId = null;
+        const ITEMS_PER_PAGE = 15;
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadUserInfo();
+            await loadRequests();
+        });
+
+        // 사용자 정보 로드
+        async function loadUserInfo() {
+            try {
+                const userStr = localStorage.getItem('user_info') || localStorage.getItem('user');
+                if (userStr) {
+                    currentUser = JSON.parse(userStr);
+                }
+            } catch (error) {
+                console.error('사용자 정보 로드 실패:', error);
+            }
+        }
+
+        // 요청 목록 로드
+        async function loadRequests() {
+            try {
+                const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+                const requestType = document.getElementById('filterType').value;
+                const status = document.getElementById('filterStatus').value;
+
+                let url = `/api/system-requests?limit=${ITEMS_PER_PAGE}&offset=${offset}`;
+                if (requestType) url += `&request_type=${requestType}`;
+                if (status) url += `&status=${status}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    requests = result.data.requests;
+                    totalPages = Math.ceil(result.data.total / ITEMS_PER_PAGE);
+                    renderRequests();
+                    renderPagination();
+                } else {
+                    showError('요청 목록을 불러오지 못했습니다.');
+                }
+            } catch (error) {
+                console.error('요청 로드 실패:', error);
+                showError('서버 연결에 실패했습니다.');
+            }
+        }
+
+        // 요청 목록 렌더링
+        function renderRequests() {
+            const container = document.getElementById('requestList');
+
+            if (requests.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>등록된 요청이 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = requests.map(req => `
+                <div class="request-item" onclick="openDetailModal(${req.id})">
+                    <div class="request-icon ${req.request_type}">
+                        <i class="fas ${getTypeIcon(req.request_type)}"></i>
+                    </div>
+                    <div class="request-info">
+                        <div class="request-title">
+                            <span class="type-badge type-${req.request_type}">${getTypeText(req.request_type)}</span>
+                            ${req.title}
+                        </div>
+                        <div class="request-preview">${req.content || '(내용 없음)'}</div>
+                    </div>
+                    <div class="request-meta">
+                        <div class="date">${formatDate(req.created_at)}</div>
+                        <div style="margin-bottom: 3px; font-weight: 500; color: #555;">${req.author_name || '작성자 미상'}</div>
+                        <span class="status-badge status-${req.status}">${getStatusText(req.status)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 페이지네이션 렌더링
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = `<button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>이전</button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += `<button disabled>...</button>`;
+                }
+            }
+
+            html += `<button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>다음</button>`;
+
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            loadRequests();
+        }
+
+        // 상세 모달 열기
+        async function openDetailModal(requestId) {
+            currentRequestId = requestId;
+
+            try {
+                const response = await fetch(`/api/system-requests/${requestId}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert('요청을 불러오지 못했습니다.');
+                    return;
+                }
+
+                const req = result.data;
+
+                // 첨부파일 - 인라인 이미지로 표시
+                let attachmentsHtml = '';
+                if (req.attachments && req.attachments.length > 0) {
+                    attachmentsHtml = `
+                        <div class="request-attachments">
+                            <h4><i class="fas fa-paperclip"></i> 첨부파일</h4>
+                            ${req.attachments.map(att => `
+                                <div class="attachment-item">
+                                    <img src="${att.file_path}" alt="${att.file_name}" onclick="openLightbox(event, this.src)" title="클릭하여 크게 보기">
+                                    <div class="att-filename">${att.file_name}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                // 조치 내역 - 항상 표시
+                let responseHtml = `
+                    <div class="response-section">
+                        <h4><i class="fas fa-clipboard-check"></i> 조치 내역</h4>
+                `;
+                if (req.response) {
+                    responseHtml += `
+                        <div class="response-content">${req.response}</div>
+                        <div class="response-meta">
+                            <span><i class="fas fa-user"></i> ${req.responder_name || '관리자'}</span>
+                            <span><i class="fas fa-clock"></i> ${formatDateTime(req.responded_at)}</span>
+                        </div>
+                    `;
+                } else {
+                    responseHtml += `<div class="response-empty">아직 조치 내역이 없습니다.</div>`;
+                }
+                responseHtml += `</div>`;
+
+                document.getElementById('detailBody').innerHTML = `
+                    <div class="request-detail-header">
+                        <div class="request-detail-title">
+                            <span class="type-badge type-${req.request_type}">${getTypeText(req.request_type)}</span>
+                            ${req.title}
+                            <span class="status-badge status-${req.status}">${getStatusText(req.status)}</span>
+                        </div>
+                        <div class="request-detail-meta">
+                            <span><i class="fas fa-user"></i> ${req.author_name || '작성자 미상'}</span>
+                            <span><i class="fas fa-building"></i> ${req.site_name || '미지정'}</span>
+                            <span><i class="fas fa-clock"></i> ${formatDateTime(req.created_at)}</span>
+                        </div>
+                    </div>
+                    <div class="request-detail-content">${req.content || '(내용 없음)'}</div>
+                    ${attachmentsHtml}
+                    ${responseHtml}
+                `;
+
+                // 관리자인 경우 답변 버튼 표시
+                let footerHtml = '';
+                if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'headquarters')) {
+                    footerHtml = `
+                        <button class="btn btn-danger" onclick="deleteRequest(${req.id})">
+                            <i class="fas fa-trash"></i> 삭제
+                        </button>
+                        <button class="btn btn-success" onclick="openResponseModal()">
+                            <i class="fas fa-reply"></i> 답변하기
+                        </button>
+                    `;
+                }
+                footerHtml += `<button class="btn btn-secondary" onclick="closeDetailModal()">닫기</button>`;
+
+                document.getElementById('detailFooter').innerHTML = footerHtml;
+
+                document.getElementById('detailModal').classList.add('active');
+
+            } catch (error) {
+                console.error('상세 조회 실패:', error);
+                alert('요청을 불러오지 못했습니다.');
+            }
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+            currentRequestId = null;
+        }
+
+        // 작성 모달 열기
+        function openEditModal() {
+            document.getElementById('editModalTitle').textContent = '새 요청';
+            document.getElementById('requestId').value = '';
+            document.getElementById('requestType').value = 'bug';
+            document.getElementById('requestTitle').value = '';
+            document.getElementById('requestContent').value = '';
+            uploadedFiles = [];
+            renderUploadedFiles();
+
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        // 파일 선택 처리
+        async function handleFileSelect(event) {
+            const files = event.target.files;
+
+            for (const file of files) {
+                if (!file.type.startsWith('image/')) {
+                    alert('이미지 파일만 업로드 가능합니다.');
+                    continue;
+                }
+
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('파일 크기는 10MB 이하여야 합니다.');
+                    continue;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch('/api/upload/image', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        uploadedFiles.push(result.data);
+                        renderUploadedFiles();
+                    } else {
+                        alert('파일 업로드 실패: ' + result.detail);
+                    }
+                } catch (error) {
+                    console.error('파일 업로드 실패:', error);
+                    alert('파일 업로드에 실패했습니다.');
+                }
+            }
+
+            event.target.value = '';
+        }
+
+        function renderUploadedFiles() {
+            const container = document.getElementById('uploadedFiles');
+            container.innerHTML = uploadedFiles.map((file, idx) => `
+                <div class="uploaded-file">
+                    <i class="fas fa-image"></i>
+                    <span>${file.filename || file.original_filename}</span>
+                    <i class="fas fa-times remove" onclick="removeFile(${idx})"></i>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            renderUploadedFiles();
+        }
+
+        // 요청 저장
+        async function saveRequest() {
+            const requestType = document.getElementById('requestType').value;
+            const title = document.getElementById('requestTitle').value.trim();
+            const content = document.getElementById('requestContent').value.trim();
+
+            if (!title) {
+                alert('제목을 입력하세요.');
+                return;
+            }
+
+            const data = {
+                request_type: requestType,
+                title,
+                content,
+                author_id: currentUser?.id,
+                site_id: currentUser?.site_id,
+                attachments: uploadedFiles
+            };
+
+            try {
+                const response = await fetch('/api/system-requests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('요청이 등록되었습니다.');
+                    closeEditModal();
+                    loadRequests();
+                } else {
+                    alert('등록 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('저장 실패:', error);
+                alert('등록에 실패했습니다.');
+            }
+        }
+
+        // 답변 모달
+        function openResponseModal() {
+            document.getElementById('responseStatus').value = 'in_progress';
+            document.getElementById('responseContent').value = '';
+            document.getElementById('responseModal').classList.add('active');
+        }
+
+        function closeResponseModal() {
+            document.getElementById('responseModal').classList.remove('active');
+        }
+
+        async function saveResponse() {
+            const status = document.getElementById('responseStatus').value;
+            const response = document.getElementById('responseContent').value.trim();
+
+            if (!response) {
+                alert('답변 내용을 입력하세요.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/system-requests/${currentRequestId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status,
+                        response,
+                        responded_by: currentUser?.id
+                    })
+                });
+
+                const result = await res.json();
+
+                if (result.success) {
+                    alert('답변이 등록되었습니다.');
+                    closeResponseModal();
+                    closeDetailModal();
+                    loadRequests();
+                } else {
+                    alert('답변 등록 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('답변 등록 실패:', error);
+                alert('답변 등록에 실패했습니다.');
+            }
+        }
+
+        // 요청 삭제
+        async function deleteRequest(requestId) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+
+            try {
+                const response = await fetch(`/api/system-requests/${requestId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('삭제되었습니다.');
+                    closeDetailModal();
+                    loadRequests();
+                } else {
+                    alert('삭제 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('삭제 실패:', error);
+                alert('삭제에 실패했습니다.');
+            }
+        }
+
+        // 유틸리티 함수
+        function getTypeIcon(type) {
+            switch (type) {
+                case 'bug': return 'fa-bug';
+                case 'feature': return 'fa-lightbulb';
+                case 'question': return 'fa-question-circle';
+                default: return 'fa-question';
+            }
+        }
+
+        function getTypeText(type) {
+            switch (type) {
+                case 'bug': return '버그';
+                case 'feature': return '기능요청';
+                case 'question': return '문의';
+                default: return type;
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'pending': return '대기중';
+                case 'in_progress': return '처리중';
+                case 'resolved': return '해결됨';
+                case 'closed': return '종료';
+                default: return status;
+            }
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) {
+                return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            } else if (diffDays < 7) {
+                return `${diffDays}일 전`;
+            } else {
+                return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+            }
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '';
+            return new Date(dateStr).toLocaleString('ko-KR', {
+                year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        // 이미지 라이트박스
+        function openLightbox(e, imageSrc) {
+            e.stopPropagation();
+            document.getElementById('lightboxImage').src = imageSrc;
+            document.getElementById('imageLightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('imageLightbox').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // ESC 키로 라이트박스 닫기
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLightbox();
+            }
+        });
+
+        function showError(message) {
+            document.getElementById('requestList').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>

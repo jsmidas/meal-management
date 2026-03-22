@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/static/js/auth-check.js"></script>
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title>전처리 지시서 관리 - 급식관리 시스템</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251027">
+    <script src="/static/js/sidebar-dropdown.js"></script>
+    <link rel="stylesheet" href="/static/css/site-selector.css">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; color: #333; line-height: 1.4; }
+        .container { display: flex; min-height: 100vh; }
+
+        .main-content { flex: 1; padding: 15px; overflow-y: auto; }
+
+        /* 헤더 */
+        .header-section {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .page-title { font-size: 1.5rem; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 8px; }
+        .filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .filter-row label { font-weight: 600; font-size: 13px; white-space: nowrap; }
+        .filter-input { padding: 5px 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 13px; }
+
+        .btn { padding: 6px 14px; border: none; border-radius: 5px; font-weight: 600; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s; }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-sm { padding: 3px 8px; font-size: 12px; }
+
+        /* 통계 바 */
+        .stats-bar {
+            display: flex; gap: 20px; margin-top: 10px; padding: 8px 15px;
+            background: #f8f9fa; border-radius: 6px;
+        }
+        .stat-item { text-align: center; padding: 0 12px; border-right: 1px solid #dee2e6; }
+        .stat-item:last-child { border-right: none; }
+        .stat-number { font-size: 1.3rem; font-weight: 700; color: #667eea; }
+        .stat-label { font-size: 0.8rem; color: #666; }
+
+        /* 경고 배너 */
+        .draft-banner {
+            display: none; background: #fff3cd; border: 1px solid #ffc107;
+            border-radius: 6px; padding: 8px 15px; margin-top: 10px; color: #856404; font-size: 13px;
+        }
+
+        /* 끼니 탭 */
+        .meal-tabs { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
+        .meal-tab {
+            padding: 5px 12px; border: none; border-radius: 5px; font-weight: 600; cursor: pointer;
+            background: white; color: #666; font-size: 13px; display: flex; align-items: center; gap: 5px;
+            border: 1px solid #dee2e6; transition: all 0.2s;
+        }
+        .meal-tab:hover { background: #e9ecef; }
+        .meal-tab.active { background: #667eea; color: white; border-color: #667eea; }
+        .meal-tab .badge { background: rgba(0,0,0,0.1); padding: 1px 6px; border-radius: 8px; font-size: 10px; }
+        .meal-tab.active .badge { background: rgba(255,255,255,0.3); }
+        .meal-tab.estimated { background: #fff3cd; color: #856404; border-color: #ffc107; }
+        .meal-tab.estimated.active { background: #f0ad4e; color: white; border-color: #f0ad4e; }
+
+        /* ============ 상단: 식자재 편집 테이블 ============ */
+        .edit-section {
+            background: white; border-radius: 10px; padding: 12px 15px;
+            margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .section-title {
+            font-size: 1rem; font-weight: 700; color: #2c3e50; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 8px;
+            padding-bottom: 6px; border-bottom: 2px solid #e9ecef;
+        }
+        .section-title .count { color: #667eea; }
+
+        .edit-table-wrap { max-height: 60vh; overflow-y: auto; border: 1px solid #e9ecef; border-radius: 6px; }
+        .edit-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .edit-table thead th {
+            background: #495057; color: white; padding: 7px 6px; text-align: center;
+            font-weight: 600; font-size: 11px; position: sticky; top: 0; z-index: 10; white-space: nowrap;
+        }
+        .edit-table tbody td { padding: 5px 6px; border-bottom: 1px solid #f1f3f4; text-align: center; vertical-align: middle; }
+        .edit-table tbody tr:hover { background: #f0f7ff; }
+        .edit-table tbody tr.not-required { opacity: 0.5; }
+        .edit-table tbody tr.not-required:hover { opacity: 0.8; }
+
+        /* 끼니 그룹 헤더 행 */
+        .meal-group-header td {
+            background: #e3f2fd !important; font-weight: 700; color: #1565c0;
+            padding: 6px 10px !important; font-size: 13px; text-align: left !important;
+        }
+
+        .yield-input { width: 50px; padding: 3px; border: 1px solid #dee2e6; border-radius: 3px; text-align: center; font-size: 12px; }
+        .yield-input:focus { outline: none; border-color: #667eea; }
+        .cut-type-select { width: 80px; padding: 3px; border: 1px solid #dee2e6; border-radius: 3px; font-size: 11px; }
+        .instructions-input { width: 100%; min-width: 100px; padding: 3px 5px; border: 1px solid #dee2e6; border-radius: 3px; font-size: 11px; }
+
+        .toggle-cb { width: 16px; height: 16px; cursor: pointer; accent-color: #28a745; }
+        .estimated-badge { background: #ffc107; color: #856404; font-size: 9px; font-weight: 600; padding: 1px 4px; border-radius: 3px; margin-left: 3px; }
+
+        /* 카테고리 필터 */
+        .category-filter-bar {
+            display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+            background: #f8f9fa; border-bottom: 1px solid #dee2e6; flex-wrap: wrap;
+        }
+        .category-filter-label { font-size: 12px; font-weight: 600; color: #495057; white-space: nowrap; }
+        .category-chip {
+            display: inline-block; padding: 3px 10px; font-size: 11px; font-weight: 500;
+            border: 1.5px solid #adb5bd; border-radius: 15px; cursor: pointer;
+            background: white; color: #495057; transition: all 0.15s; user-select: none;
+        }
+        .category-chip:hover { border-color: #495057; }
+        .category-chip.active { background: #28a745; color: white; border-color: #28a745; }
+        .category-filter-count { font-size: 11px; color: #888; margin-left: 8px; }
+
+        /* 펼침 버튼 */
+        .expand-btn {
+            background: transparent; border: 1px solid #dee2e6; border-radius: 3px;
+            cursor: pointer; padding: 1px 4px; font-size: 10px; color: #667eea; transition: all 0.2s;
+        }
+        .expand-btn:hover, .expand-btn.expanded { background: #667eea; color: white; }
+
+        /* 메뉴 상세 펼침 행 */
+        .menu-detail-row td { background: #f0f4ff !important; padding: 0 !important; }
+        .menu-detail-table {
+            width: 100%; font-size: 11px; border-collapse: collapse; margin: 0;
+        }
+        .menu-detail-table th {
+            background: #e0e7f5 !important; color: #555; padding: 3px 6px;
+            font-weight: 600; font-size: 10px; position: static; text-align: center;
+        }
+        .menu-detail-table td {
+            padding: 3px 6px !important; border-bottom: 1px solid #e3e8f0 !important;
+            font-size: 11px; text-align: center;
+        }
+
+        /* 메뉴 상세 서브행 */
+        .menu-sub td { background: #f8f9ff !important; padding: 2px 6px 2px 30px !important; font-size: 11px; color: #666; }
+        .menu-sub td .menu-tag { background: #e8ecf5; padding: 1px 5px; border-radius: 3px; margin-right: 6px; font-size: 10px; }
+
+        /* ============ 하단: 지시서 미리보기 ============ */
+        .preview-section {
+            background: white; border-radius: 10px; padding: 12px 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .preview-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px; padding-bottom: 6px; border-bottom: 2px solid #e9ecef;
+        }
+        .preview-actions { display: flex; gap: 8px; align-items: center; }
+
+        .preview-content {
+            border: 2px solid #333; border-radius: 4px; padding: 15px 20px;
+            background: white; min-height: 200px;
+            font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+        }
+        .preview-content h2 { text-align: center; font-size: 20px; margin-bottom: 5px; }
+        .preview-content .info-line { text-align: center; font-size: 12px; color: #666; margin-bottom: 10px; }
+        .print-date-highlight {
+            display: inline-block; background: #333; color: white; font-size: 15px;
+            font-weight: 800; padding: 2px 12px; border-radius: 4px; letter-spacing: 1px;
+        }
+
+        /* 2단 레이아웃 */
+        .two-column-wrap { display: flex; gap: 8px; align-items: flex-start; }
+        .two-column-left, .two-column-right { flex: 1; min-width: 0; }
+
+        .preview-table { width: 100%; border-collapse: collapse; font-size: 10px; line-height: 1.2; }
+        .preview-table th {
+            background: #4CAF50; color: white; padding: 2px 3px; text-align: center;
+            font-weight: 600; font-size: 9px; border: 1px solid #333;
+        }
+        .preview-table td { padding: 1px 3px; border: 1px solid #999; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .preview-table td.name-cell { white-space: normal; word-break: break-all; max-width: 140px; }
+        .preview-table .name-cell { text-align: left; font-weight: 600; font-size: 10px; }
+        .preview-table .qty-cell { font-weight: 700; color: #28a745; font-size: 11px; }
+        .preview-table .meal-header td {
+            background: #e3f2fd; font-weight: 700; color: #1565c0;
+            padding: 3px 6px; font-size: 10px; text-align: left;
+        }
+        .preview-table .menu-info { font-size: 8px; color: #888; font-weight: normal; }
+        .preview-table .cb-cell { width: 18px; }
+        .preview-table .cb-box { display: inline-block; width: 12px; height: 12px; border: 1.5px solid #333; }
+        .preview-table tr.estimated-row { background: #fffde7; }
+
+        /* 끼니별/메뉴별 전처리 지시서 */
+        .meal-section { margin-bottom: 10px; }
+        .meal-section-header {
+            background: #495057; color: white; padding: 5px 10px; font-size: 14px;
+            font-weight: 700; border-radius: 4px 4px 0 0; margin-top: 8px;
+        }
+        .cat-col-header {
+            background: #667eea !important; color: white !important;
+            font-size: 9px !important; font-weight: 700 !important; padding: 3px 4px !important;
+            border: 1px solid #333; text-align: center; min-width: 45px;
+        }
+        .slot-header {
+            background: #e3f2fd; color: #1565c0; padding: 3px 10px; font-size: 12px;
+            font-weight: 700; border-bottom: 1px solid #90caf9;
+        }
+        .menu-block { margin: 4px 0; }
+        .menu-block-header {
+            background: #f8f9fa; padding: 3px 10px; font-size: 12px;
+            font-weight: 700; color: #333; border-left: 3px solid #667eea;
+        }
+        .detail-table { margin-bottom: 2px; }
+        .detail-table th { background: #78909c !important; font-size: 10px !important; padding: 2px 4px !important; }
+        .detail-table td { padding: 2px 4px !important; font-size: 11px; }
+        .detail-cut { width: 100%; padding: 2px; border: 1px solid #dee2e6; border-radius: 3px; font-size: 11px; }
+        .detail-inst { width: 100%; padding: 2px 4px; border: 1px solid #dee2e6; border-radius: 3px; font-size: 11px; }
+
+
+        /* 모달 */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 20px; border-radius: 10px; width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e9ecef; }
+        .close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666; }
+
+        .empty-state { text-align: center; padding: 2rem; color: #999; }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+        /* 로딩 애니메이션 */
+        .loading-wrap { text-align: center; padding: 3rem 1rem; }
+        .loading-chef { font-size: 3rem; display: inline-block; animation: chefBounce 0.6s ease-in-out infinite alternate; }
+        .loading-items { display: flex; justify-content: center; gap: 12px; margin-top: 10px; font-size: 1.8rem; }
+        .loading-items span { display: inline-block; opacity: 0; animation: itemPop 1.6s ease-in-out infinite; }
+        .loading-items span:nth-child(1) { animation-delay: 0s; }
+        .loading-items span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-items span:nth-child(3) { animation-delay: 0.4s; }
+        .loading-items span:nth-child(4) { animation-delay: 0.6s; }
+        .loading-items span:nth-child(5) { animation-delay: 0.8s; }
+        .loading-items span:nth-child(6) { animation-delay: 1.0s; }
+        .loading-msg { margin-top: 12px; font-size: 14px; color: #667eea; font-weight: 600; }
+        .loading-dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
+        @keyframes chefBounce { 0% { transform: translateY(0) rotate(0deg); } 100% { transform: translateY(-10px) rotate(5deg); } }
+        @keyframes itemPop { 0%,100% { opacity: 0; transform: translateY(8px) scale(0.5); } 20%,80% { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
+        /* 미리보기 탭 */
+        .preview-tab-bar {
+            display: flex; gap: 4px; align-items: center; margin-bottom: 8px;
+            padding-bottom: 6px; border-bottom: 2px solid #e9ecef;
+        }
+        .preview-tab {
+            padding: 6px 14px; border: 1px solid #dee2e6; border-radius: 5px 5px 0 0;
+            background: #f8f9fa; color: #666; cursor: pointer; font-weight: 600; font-size: 13px;
+            display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;
+        }
+        .preview-tab:hover { background: #e9ecef; }
+        .preview-tab.active { background: #667eea; color: white; border-color: #667eea; }
+        .preview-tab-content { display: none; }
+        .preview-tab-content.active { display: block; }
+
+        /* page-break */
+        .page-break { height: 0; page-break-after: always; break-after: page; }
+
+        /* 인쇄 */
+        @media print {
+            body { margin: 0; padding: 0; }
+            .sidebar, .header-section, .edit-section, .preview-header, .preview-actions, .preview-tab-bar, .category-filter-bar { display: none !important; }
+            .main-content { padding: 0; }
+            .preview-section { box-shadow: none; padding: 0; border-radius: 0; }
+            .preview-content { border: none; padding: 0; }
+            .preview-content h2 { font-size: 18pt; margin-bottom: 4px; }
+            .preview-content .info-line { font-size: 11pt; margin-bottom: 6px; }
+            .print-date-highlight { font-size: 16pt !important; padding: 3px 15px !important; }
+            .two-column-wrap { display: flex; gap: 10px; }
+            .two-column-left, .two-column-right { flex: 1; min-width: 0; }
+            .preview-table { font-size: 8pt; line-height: 1.15; }
+            .preview-table th { font-size: 7.5pt; padding: 2px 3px; }
+            .preview-table td { padding: 1px 3px; }
+            .preview-table .name-cell { font-size: 8.5pt; }
+            .preview-table .qty-cell { font-size: 9pt; }
+            .page-break { height: 0; page-break-after: always; break-after: page; }
+            .meal-section-header { font-size: 13pt; padding: 5px 8px; margin-top: 6px; }
+            .slot-header { font-size: 11pt; padding: 3px 8px; }
+            .menu-block-header { font-size: 12pt; padding: 4px 10px; }
+            .detail-table th { font-size: 9pt !important; padding: 3px 5px !important; }
+            .detail-table td { font-size: 10pt !important; padding: 3px 5px !important; }
+            @page { size: A3 landscape; margin: 3mm; }
+            * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        }
+    </style>
+    <script src="config.js"></script>
+    <script src="static/js/branding.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo"><img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고"></div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown open" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item active">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content">
+
+            <!-- 헤더 -->
+            <div class="header-section">
+                <div class="header-top">
+                    <h1 class="page-title"><i class="fas fa-cut"></i> 전처리 지시서</h1>
+                    <div id="preprocessing-site-selector" class="site-selector-standard"></div>
+                </div>
+                <div class="filter-row">
+                    <label>조리일자:</label>
+                    <button class="btn btn-sm" onclick="changeCookingDate(-1)">◀</button>
+                    <input type="date" id="cookingDate" class="filter-input">
+                    <button class="btn btn-sm" onclick="changeCookingDate(1)">▶</button>
+                    <button class="btn btn-primary" onclick="loadPreprocessingData()"><i class="fas fa-search"></i> 조회</button>
+                    <div style="border-left: 1px solid #ddd; height: 24px; margin: 0 5px;"></div>
+                    <button class="btn btn-warning" onclick="savePreprocessingInstruction()"><i class="fas fa-save"></i> 저장</button>
+                    <button class="btn btn-success" onclick="openLoadInstructionModal()"><i class="fas fa-folder-open"></i> 불러오기</button>
+                    <div style="border-left: 1px solid #ddd; height: 24px; margin: 0 5px;"></div>
+                    <button class="btn btn-info" onclick="printCurrentTab()"><i class="fas fa-print"></i> A3 인쇄</button>
+                </div>
+
+                <!-- 경고 배너 -->
+                <div id="draftWarningBanner" class="draft-banner">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>주의:</strong> <span id="draftWarningText"></span>
+                    <a href="ordering_management.html" style="margin-left: 10px; color: #0056b3;">발주 관리로 이동</a>
+                </div>
+
+                <!-- 통계 + 끼니탭 -->
+                <div class="stats-bar" id="statsBar" style="display:none;">
+                    <div class="stat-item"><div class="stat-number" id="totalItems">0</div><div class="stat-label">총 품목</div></div>
+                    <div class="stat-item"><div class="stat-number" id="preprocessingCount">0</div><div class="stat-label">전처리 필요</div></div>
+                    <div class="stat-item"><div class="stat-number" id="noPreprocessingCount">0</div><div class="stat-label">전처리 불필요</div></div>
+                </div>
+                <div class="meal-tabs" id="mealTabs" style="display:none;"></div>
+            </div>
+
+            <!-- ============ 상단: 식자재 편집 테이블 ============ -->
+            <div class="edit-section" id="editSection">
+                <div class="section-title">
+                    <i class="fas fa-list"></i> 식자재 목록
+                    <span class="count" id="editItemCount"></span>
+                    <span style="flex:1;"></span>
+                    <span style="font-size:11px; color:#888;">식자재를 클릭하면 메뉴별 상세를 볼 수 있습니다</span>
+                </div>
+                <div id="editTableContainer">
+                    <div class="empty-state"><div class="icon">🔪</div><h3>조리일자를 선택하여 조회하세요</h3></div>
+                </div>
+            </div>
+
+            <!-- ============ 하단: 미리보기 탭 ============ -->
+            <div class="preview-section" id="previewSection">
+                <div class="preview-tab-bar">
+                    <button class="preview-tab active" data-tab="list" onclick="switchPreviewTab('list')"><i class="fas fa-list"></i> 식자재 준비 목록</button>
+                    <button class="preview-tab" data-tab="detail" onclick="switchPreviewTab('detail')"><i class="fas fa-tasks"></i> 전처리 지시서 (끼니/메뉴별)</button>
+                    <div style="flex:1;"></div>
+                    <button class="btn btn-info btn-sm" onclick="printCurrentTab()"><i class="fas fa-print"></i> 현재 탭 인쇄</button>
+                </div>
+                <!-- 카테고리 필터 -->
+                <div id="categoryFilterBar" class="category-filter-bar" style="display:none;">
+                    <span class="category-filter-label"><i class="fas fa-filter"></i> 카테고리:</span>
+                    <button class="category-chip active" onclick="toggleAllCategories()">전체</button>
+                    <span id="categoryChips"></span>
+                    <span class="category-filter-count" id="categoryFilterCount"></span>
+                </div>
+                <!-- 탭1: 식자재 준비 목록 -->
+                <div class="preview-tab-content active" id="tabList">
+                    <div class="preview-content" id="previewContent">
+                        <div class="empty-state"><div class="icon">📄</div><h3>조회 후 미리보기가 표시됩니다</h3></div>
+                    </div>
+                </div>
+                <!-- 탭2: 전처리 지시서 (끼니/메뉴별) -->
+                <div class="preview-tab-content" id="tabDetail" style="display:none;">
+                    <div class="preview-content" id="detailPreviewContent">
+                        <div class="empty-state"><div class="icon">📄</div><h3>조회 후 미리보기가 표시됩니다</h3></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 행사/특별식 전처리지시서 -->
+            <div id="event-instruction-container" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- 수율 이력 모달 -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-history"></i> 수율 변경 이력</h3>
+                <button class="close-btn" onclick="document.getElementById('historyModal').style.display='none'">&times;</button>
+            </div>
+            <div id="historyContent"></div>
+        </div>
+    </div>
+
+    <!-- 저장된 지시서 불러오기 모달 -->
+    <div id="loadInstructionModal" class="modal">
+        <div class="modal-content" style="max-width:850px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-folder-open"></i> 저장된 전처리 지시서</h3>
+                <button class="close-btn" onclick="document.getElementById('loadInstructionModal').style.display='none'">&times;</button>
+            </div>
+            <div style="padding:10px;">
+                <div style="display:flex; gap:8px; margin-bottom:10px; align-items:center;">
+                    <label>기간:</label>
+                    <input type="date" id="loadInstructionDateFrom" class="filter-input" style="width:130px;">
+                    <span>~</span>
+                    <input type="date" id="loadInstructionDateTo" class="filter-input" style="width:130px;">
+                    <button class="btn btn-primary btn-sm" onclick="searchSavedInstructions()"><i class="fas fa-search"></i> 검색</button>
+                </div>
+                <div id="savedInstructionsList" style="max-height:400px; overflow-y:auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ 전역 변수 ============
+        let currentData = null;
+        let pendingYieldChanges = new Map();
+        let currentOrderId = null;
+        let currentFilterMealType = null; // null = 전체
+
+        const mealTypeConfig = {
+            '조식': { icon: '🌅', label: '조식' },
+            '중식': { icon: '☀️', label: '중식' },
+            '석식': { icon: '🌙', label: '석식' },
+            '야식': { icon: '🌃', label: '야식' },
+            '행사': { icon: '🎉', label: '행사' },
+            '기타': { icon: '📦', label: '기타' }
+        };
+
+        const cutTypeOptions = ['', '어슷썰기', '채썰기', '깍둑썰기', '다지기', '반달썰기', '나박썰기', '은행잎썰기', '돌려깎기', '막썰기', '잘게썰기', '슬라이스', '길이썰기', '세절', '손질만'];
+
+        // ============ 초기화 ============
+        function getLocalDateString(d) {
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        function getDayName(dateStr) {
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            const d = new Date(dateStr + 'T00:00:00');
+            return days[d.getDay()];
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            const urlOrderId = params.get('order_id');
+            const urlDate = params.get('date') || params.get('cooking_date');
+            if (urlOrderId) currentOrderId = parseInt(urlOrderId);
+
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('cookingDate').value = urlDate || getLocalDateString(tomorrow);
+        });
+
+        function changeCookingDate(days) {
+            const input = document.getElementById('cookingDate');
+            if (!input.value) {
+                const t = new Date(); t.setDate(t.getDate()+1); input.value = getLocalDateString(t);
+            }
+            const d = new Date(input.value);
+            d.setDate(d.getDate() + days);
+            input.value = getLocalDateString(d);
+            // 행사 지시서 모듈 초기화
+            if (typeof EventInstruction !== 'undefined') {
+                EventInstruction.init('event-instruction-container', 'preprocessing');
+            }
+            loadPreprocessingData();
+        }
+
+        // ============ 데이터 조회 ============
+        async function loadPreprocessingData() {
+            const cookingDate = document.getElementById('cookingDate').value;
+            if (!cookingDate) { alert('조리일자를 선택하세요.'); return; }
+
+            document.getElementById('editTableContainer').innerHTML = `<div class="loading-wrap">
+                <div class="loading-chef">👨‍🍳</div>
+                <div class="loading-items">
+                    <span>🥕</span><span>🥬</span><span>🧅</span><span>🥩</span><span>🍄</span><span>🫑</span>
+                </div>
+                <div class="loading-msg">식자재를 준비하고 있습니다<span class="loading-dots"></span></div>
+            </div>`;
+
+            try {
+                const siteId = getCurrentSiteId();
+                let url = `/api/preprocessing?cooking_date=${cookingDate}`;
+                if (currentOrderId) url += `&order_id=${currentOrderId}`;
+                if (siteId) url += `&site_id=${siteId}`;
+
+                const resp = await fetch(url);
+                const result = await resp.json();
+
+                if (result.success) {
+                    currentData = result;
+                    currentFilterMealType = null;
+                    document.getElementById('statsBar').style.display = 'flex';
+                    document.getElementById('mealTabs').style.display = 'flex';
+                    updateStats(result.summary);
+                    renderMealTabs();
+                    buildCategoryFilter();
+                    renderAll();
+                    handleDraftWarning(result);
+                    // 행사 지시서 로드
+                    if (typeof EventInstruction !== 'undefined') {
+                        EventInstruction.load(cookingDate, siteId);
+                    }
+                } else {
+                    document.getElementById('editTableContainer').innerHTML = `<div class="empty-state"><div class="icon">❌</div><h3>조회 실패: ${result.error || ''}</h3></div>`;
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('editTableContainer').innerHTML = '<div class="empty-state"><div class="icon">🔌</div><h3>서버 연결 오류</h3></div>';
+            }
+        }
+
+        function handleDraftWarning(result) {
+            const banner = document.getElementById('draftWarningBanner');
+            const text = document.getElementById('draftWarningText');
+            if (result.order_id && result.current_order_is_draft) {
+                text.innerHTML = `발주서 #${result.order_id}은 임시(draft) 상태입니다.`;
+                banner.style.display = 'block';
+            } else if (result.has_draft_orders) {
+                text.textContent = `임시 발주서 ${result.draft_order_count}건이 있습니다.`;
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
+        // ============ 통계/탭 ============
+        function updateStats(s) {
+            document.getElementById('totalItems').textContent = s.total_items;
+            document.getElementById('preprocessingCount').textContent = s.preprocessing_count;
+            document.getElementById('noPreprocessingCount').textContent = s.no_preprocessing_count;
+        }
+
+        function renderMealTabs() {
+            if (!currentData?.meal_types) return;
+            const total = currentData.summary.total_items;
+            let html = `<button class="meal-tab ${!currentFilterMealType ? 'active' : ''}" onclick="filterMealType(null)">전체 <span class="badge">${total}</span></button>`;
+            currentData.meal_types.forEach(mt => {
+                const cfg = mealTypeConfig[mt] || mealTypeConfig['기타'];
+                const d = currentData.by_meal_type[mt];
+                const cnt = d.summary.total_items;
+                const est = d.source === 'meal_plan';
+                const cls = currentFilterMealType === mt ? ' active' : '';
+                const estCls = est ? ' estimated' : '';
+                html += `<button class="meal-tab${cls}${estCls}" onclick="filterMealType('${mt}')">${cfg.icon} ${cfg.label}${est?' (예상)':''} <span class="badge">${cnt}</span></button>`;
+            });
+            document.getElementById('mealTabs').innerHTML = html;
+        }
+
+        function filterMealType(mt) {
+            currentFilterMealType = mt;
+            renderMealTabs();
+            renderAll();
+        }
+
+        // ============ 카테고리 필터 ============
+        let allCategories = [];       // 전체 카테고리 목록
+        let selectedCategories = new Set(); // 선택된 카테고리
+
+        function buildCategoryFilter() {
+            if (!currentData) return;
+            // 모든 끼니의 모든 아이템에서 slot_name 수집
+            const catSet = new Set();
+            (currentData.meal_types || []).forEach(mt => {
+                const d = currentData.by_meal_type[mt];
+                if (!d) return;
+                [...d.preprocessing_required, ...d.preprocessing_not_required].forEach(it => {
+                    if (it.menu_details) {
+                        it.menu_details.forEach(md => {
+                            const cat = md.category_name || md.slot_name;
+                            if (cat) catSet.add(cat);
+                        });
+                    }
+                });
+            });
+            allCategories = [...catSet].sort((a, b) => {
+                const order = ['도시락', '운반', '학교', '요양원'];
+                const ai = order.indexOf(a), bi = order.indexOf(b);
+                return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+            });
+            selectedCategories = new Set(allCategories); // 기본: 전체 선택
+
+            renderCategoryChips();
+            document.getElementById('categoryFilterBar').style.display = allCategories.length > 1 ? 'flex' : 'none';
+        }
+
+        function renderCategoryChips() {
+            const allSelected = selectedCategories.size === allCategories.length;
+            // 전체 버튼
+            const allBtn = document.querySelector('#categoryFilterBar > .category-chip');
+            if (allBtn) allBtn.className = 'category-chip' + (allSelected ? ' active' : '');
+
+            let html = '';
+            allCategories.forEach(cat => {
+                const active = selectedCategories.has(cat) ? ' active' : '';
+                html += `<button class="category-chip${active}" onclick="toggleCategory('${cat.replace(/'/g, "\\'")}')">${cat}</button>`;
+            });
+            document.getElementById('categoryChips').innerHTML = html;
+
+            const totalItems = getAggregatedItems().length;
+            document.getElementById('categoryFilterCount').textContent = allSelected ? '' : `(${totalItems}건 선택됨)`;
+        }
+
+        function toggleCategory(cat) {
+            if (selectedCategories.has(cat)) {
+                // 최소 1개는 선택 유지
+                if (selectedCategories.size <= 1) return;
+                selectedCategories.delete(cat);
+            } else {
+                selectedCategories.add(cat);
+            }
+            renderCategoryChips();
+            renderAll();
+        }
+
+        function toggleAllCategories() {
+            const allSelected = selectedCategories.size === allCategories.length;
+            if (allSelected) return; // 이미 전체 선택이면 무시
+            selectedCategories = new Set(allCategories);
+            renderCategoryChips();
+            renderAll();
+        }
+
+        // ============ 전체 렌더 ============
+        function renderAll() {
+            if (!currentData) return;
+            renderEditTable();
+            renderPreview();
+        }
+
+        // ============ 상단: 편집 테이블 ============
+        // 식자재 기준으로 끼니 관계없이 합산
+        function getAggregatedItems() {
+            if (!currentData) return [];
+            const map = {}; // ingredient_id → merged item
+            const mealTypes = currentFilterMealType ? [currentFilterMealType] : (currentData.meal_types || []);
+
+            mealTypes.forEach(mt => {
+                const d = currentData.by_meal_type[mt];
+                if (!d) return;
+                const cfg = mealTypeConfig[mt] || mealTypeConfig['기타'];
+
+                [...d.preprocessing_required, ...d.preprocessing_not_required].forEach(it => {
+                    const isReq = d.preprocessing_required.includes(it);
+                    const key = it.ingredient_id;
+
+                    // 카테고리 필터: menu_details에서 선택된 카테고리만 추출
+                    let filteredDetails = [];
+                    let filteredReqQty = 0;
+                    const hasCategoryFilter = selectedCategories.size > 0 && selectedCategories.size < allCategories.length;
+
+                    if (it.menu_details && it.menu_details.length > 0) {
+                        filteredDetails = hasCategoryFilter
+                            ? it.menu_details.filter(md => selectedCategories.has(md.category_name || md.slot_name || ''))
+                            : it.menu_details;
+                        filteredReqQty = filteredDetails.reduce((sum, md) => sum + (md.required_qty || 0), 0);
+                    } else {
+                        filteredReqQty = it.required_qty || 0;
+                    }
+
+                    // 필터링 후 해당 끼니에 포함될 항목이 없으면 스킵
+                    if (hasCategoryFilter && filteredDetails.length === 0 && it.menu_details && it.menu_details.length > 0) return;
+
+                    if (!map[key]) {
+                        map[key] = {
+                            ...it,
+                            _required: isReq,
+                            _mealTypes: [mt],
+                            _totalReqQty: filteredReqQty,
+                            _menuBreakdown: [],
+                            _source: d.source
+                        };
+                    } else {
+                        map[key]._totalReqQty += filteredReqQty;
+                        if (!map[key]._mealTypes.includes(mt)) map[key]._mealTypes.push(mt);
+                        if (isReq) map[key]._required = true;
+                    }
+
+                    // 메뉴별 상세 수집 (필터링된 것만)
+                    if (filteredDetails.length > 0) {
+                        filteredDetails.forEach(md => {
+                            map[key]._menuBreakdown.push({
+                                menu_name: md.menu_name,
+                                meal_type: md.meal_type || mt,
+                                slot_name: md.slot_name || '',
+                                category_name: md.category_name || md.slot_name || '',
+                                meal_icon: cfg.icon,
+                                meal_count: md.meal_count || 0,
+                                per_person_qty_g: md.per_person_qty_g || 0,
+                                required_qty: md.required_qty || 0,
+                                cut_type: md.cut_type || it.cut_type || ''
+                            });
+                        });
+                    } else if (it.menu_names && it.menu_names.length > 0) {
+                        it.menu_names.forEach(mn => {
+                            if (!map[key]._menuBreakdown.find(b => b.menu_name === mn && b.meal_type === mt)) {
+                                map[key]._menuBreakdown.push({
+                                    menu_name: mn,
+                                    meal_type: mt,
+                                    meal_icon: cfg.icon,
+                                    meal_count: it.meal_count || 0,
+                                    per_person_qty_g: it.per_person_qty_g || 0,
+                                    required_qty: it.required_qty || 0
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+            // 배열 변환 후 정렬: 전처리 필요 먼저, 이름순
+            return Object.values(map).sort((a, b) => {
+                if (a._required !== b._required) return b._required ? 1 : -1;
+                return (a.ingredient_name || '').localeCompare(b.ingredient_name || '');
+            });
+        }
+
+        // 펼침 상태 관리
+        let expandedIngredients = new Set();
+
+        function toggleIngredientDetail(ingredientId) {
+            if (expandedIngredients.has(ingredientId)) {
+                expandedIngredients.delete(ingredientId);
+            } else {
+                expandedIngredients.add(ingredientId);
+            }
+            // 해당 행만 토글
+            const detailRow = document.getElementById(`detail-${ingredientId}`);
+            if (detailRow) {
+                const isVisible = detailRow.style.display !== 'none';
+                detailRow.style.display = isVisible ? 'none' : 'table-row';
+                const btn = document.querySelector(`[data-expand-id="${ingredientId}"]`);
+                if (btn) {
+                    btn.classList.toggle('expanded', !isVisible);
+                    btn.querySelector('i').className = isVisible ? 'fas fa-chevron-right' : 'fas fa-chevron-down';
+                }
+            }
+        }
+
+        function buildEditColumnRows(items, startIdx) {
+            let rows = '';
+            items.forEach((item, i) => {
+                const idx = startIdx + i;
+                const req = item._required;
+                const rowCls = req ? '' : ' class="not-required"';
+                const yieldRate = item.yield_rate || 100;
+                const reqQty = item._totalReqQty || 0;
+                const finalQty = reqQty * (yieldRate / 100);
+                const escName = (item.ingredient_name || '').replace(/'/g, "\\'");
+                const estBadge = item._source === 'meal_plan' ? '<span class="estimated-badge">예상</span>' : '';
+                const hasDetail = item._menuBreakdown.length > 0;
+                const isExpanded = expandedIngredients.has(item.ingredient_id);
+                const firstMt = item._mealTypes[0] || '기타';
+                rows += `<tr${rowCls} data-ingredient-id="${item.ingredient_id}" data-meal-type="${firstMt}" style="cursor:${hasDetail?'pointer':'default'};" ${hasDetail ? `onclick="toggleIngredientDetail(${item.ingredient_id})"` : ''}>
+                    <td onclick="event.stopPropagation();"><input type="checkbox" class="toggle-cb" ${req?'checked':''} onchange="togglePreprocessingAll(${item.ingredient_id}, '${item.ingredient_code||''}', '${escName}', this.checked, ${JSON.stringify(item._mealTypes).replace(/"/g,'&quot;')})"></td>
+                    <td>${idx + 1}</td>
+                    <td style="font-size:10px; text-align:left;">${item.supplier_name || '-'}</td>
+                    <td style="text-align:left; ${req?'font-weight:600;':''}">${item.ingredient_name || '-'}${estBadge}</td>
+                    <td style="font-size:10px;">${item.specification || '-'}</td>
+                    <td>${reqQty.toFixed(2)}</td>
+                    <td>${item.unit || '-'}</td>
+                    <td onclick="event.stopPropagation();">${req ? `<input type="number" class="yield-input" value="${yieldRate}" min="1" max="100" step="1" data-ingredient-id="${item.ingredient_id}" onchange="updateYield(this, ${item.ingredient_id}, '${item.ingredient_code||''}', '${escName}')">` : `<span style="color:#aaa;">${yieldRate}%</span>`}</td>
+                    <td style="${req?'font-weight:700;color:#28a745;':''}" id="final-agg-${item.ingredient_id}">${finalQty.toFixed(2)}</td>
+                    <td onclick="event.stopPropagation();">${req ? `<input type="text" class="instructions-input" value="${item.preprocessing_instructions||''}" placeholder="전처리 방법" data-ingredient-id="${item.ingredient_id}" onchange="updateInstructions(${item.ingredient_id}, this.value)">` : ''}</td>
+                </tr>`;
+
+                if (hasDetail) {
+                    rows += `<tr id="detail-${item.ingredient_id}" class="menu-detail-row" style="display:${isExpanded?'table-row':'none'};">
+                        <td colspan="10" style="padding: 0 8px 6px 40px !important; background: #f0f4ff;">
+                            <table class="menu-detail-table">
+                                <thead><tr><th style="width:25px">끼니</th><th>메뉴명</th><th style="width:55px">식수</th><th style="width:60px">1인량(g)</th><th style="width:65px">소요량(kg)</th></tr></thead>
+                                <tbody>
+                                    ${item._menuBreakdown.map(md => `<tr>
+                                        <td>${md.meal_icon || ''}</td>
+                                        <td style="text-align:left; font-weight:500;">${md.menu_name || '-'}</td>
+                                        <td>${md.meal_count || '-'}명</td>
+                                        <td>${md.per_person_qty_g ? md.per_person_qty_g.toFixed(1) : '-'}</td>
+                                        <td style="font-weight:600;">${md.required_qty ? md.required_qty.toFixed(3) : '-'}</td>
+                                    </tr>`).join('')}
+                                    <tr style="background:#e3e8f0; font-weight:700;">
+                                        <td colspan="4" style="text-align:right;">합계</td>
+                                        <td>${reqQty.toFixed(3)} kg</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>`;
+                }
+            });
+            return rows;
+        }
+
+        function buildEditColumn(items, startIdx) {
+            return `<table class="edit-table"><thead><tr>
+                <th style="width:24px">전처리</th>
+                <th style="width:24px">NO</th>
+                <th style="width:60px">업체명</th>
+                <th>식자재명</th>
+                <th style="width:55px">규격</th>
+                <th style="width:48px">소요량</th>
+                <th style="width:30px">단위</th>
+                <th style="width:52px">수율(%)</th>
+                <th style="width:48px">최종량</th>
+                <th>전처리 지시사항</th>
+            </tr></thead><tbody>${buildEditColumnRows(items, startIdx)}</tbody></table>`;
+        }
+
+        function renderEditTable() {
+            const items = getAggregatedItems();
+            if (items.length === 0) {
+                document.getElementById('editTableContainer').innerHTML = '<div class="empty-state"><div class="icon">📦</div><h3>데이터가 없습니다</h3></div>';
+                document.getElementById('editItemCount').textContent = '';
+                return;
+            }
+
+            document.getElementById('editItemCount').textContent = `(${items.length}건)`;
+
+            const mid = Math.ceil(items.length / 2);
+            const leftItems = items.slice(0, mid);
+            const rightItems = items.slice(mid);
+
+            let html = `<div class="edit-table-wrap"><div class="two-column-wrap">
+                <div class="two-column-left">${buildEditColumn(leftItems, 0)}</div>
+                <div class="two-column-right">${buildEditColumn(rightItems, mid)}</div>
+            </div></div>`;
+
+            document.getElementById('editTableContainer').innerHTML = html;
+        }
+
+        // 전처리 토글 - 모든 끼니에 걸쳐 적용
+        async function togglePreprocessingAll(ingredientId, ingredientCode, ingredientName, requiresPreprocessing, mealTypes) {
+            for (const mt of mealTypes) {
+                const mealData = currentData?.by_meal_type?.[mt];
+                if (!mealData) continue;
+                const srcList = requiresPreprocessing ? mealData.preprocessing_not_required : mealData.preprocessing_required;
+                const tgtList = requiresPreprocessing ? mealData.preprocessing_required : mealData.preprocessing_not_required;
+                const idx = srcList.findIndex(i => i.ingredient_id === ingredientId);
+                if (idx === -1) continue;
+                const item = srcList.splice(idx, 1)[0];
+                if (requiresPreprocessing) { item.yield_rate = item.yield_rate || 100; item.final_qty = (item.required_qty || 0) * (item.yield_rate / 100); }
+                tgtList.push(item);
+                mealData.summary.preprocessing_count = mealData.preprocessing_required.length;
+                mealData.summary.no_preprocessing_count = mealData.preprocessing_not_required.length;
+            }
+            rebuildGlobalSummary();
+            updateStats(currentData.summary);
+            renderMealTabs();
+            renderAll();
+
+            // 서버 반영
+            try {
+                await fetch('/api/preprocessing/toggle', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ ingredient_id: ingredientId, ingredient_code: ingredientCode, ingredient_name: ingredientName, requires_preprocessing: requiresPreprocessing, changed_by: 'nutritionist' })
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        // ============ 하단: 미리보기 ============
+        // 한 단(컬럼)의 테이블 HTML을 생성하는 헬퍼
+        function buildColumnTable(items, startIdx) {
+            let h = `<table class="preview-table"><thead><tr>
+                <th style="width:20px">NO</th>
+                <th style="width:50px">업체명</th>
+                <th>식자재명</th>
+                <th style="width:38px">규격</th>
+                <th style="width:42px">소요량</th>
+                <th style="width:22px">단위</th>
+                <th style="width:28px">수율</th>
+                <th style="width:42px">최종량</th>
+                <th>지시사항</th>
+                <th class="cb-cell">V</th>
+            </tr></thead><tbody>`;
+
+            items.forEach((item, i) => {
+                const yieldRate = item.yield_rate || 100;
+                const reqQty = item._totalReqQty || 0;
+                const finalQty = reqQty * yieldRate / 100;
+                const row = document.querySelector(`tr[data-ingredient-id="${item.ingredient_id}"]`);
+                const instructions = row?.querySelector('.instructions-input')?.value || item.preprocessing_instructions || '';
+                const mealIcons = item._mealTypes.map(mt => (mealTypeConfig[mt]||mealTypeConfig['기타']).icon).join('');
+
+                h += `<tr>
+                    <td>${startIdx + i + 1}</td>
+                    <td style="font-size:9px; text-align:left;">${item.supplier_name || ''}</td>
+                    <td class="name-cell">${item.ingredient_name || '-'} <span class="menu-info">${mealIcons}</span></td>
+                    <td style="font-size:9px;">${item.specification || ''}</td>
+                    <td>${reqQty.toFixed(2)}</td>
+                    <td>${item.unit || ''}</td>
+                    <td>${yieldRate}%</td>
+                    <td class="qty-cell">${finalQty.toFixed(2)}</td>
+                    <td style="text-align:left; font-size:9px;">${instructions}</td>
+                    <td class="cb-cell"><div class="cb-box"></div></td>
+                </tr>`;
+            });
+            h += '</tbody></table>';
+            return h;
+        }
+
+        function renderPreview() {
+            if (!currentData) return;
+            const cookingDate = document.getElementById('cookingDate').value;
+
+            // ① 상단: 식자재 합산 목록 (좌우 2단)
+            const allItems = getAggregatedItems();
+
+            if (allItems.length === 0) {
+                document.getElementById('previewContent').innerHTML = '<div class="empty-state"><div class="icon">📄</div><h3>데이터가 없습니다</h3></div>';
+                return;
+            }
+
+            const PAGE_SIZE = 90;
+            const dayName = getDayName(cookingDate);
+            const catLabel = (selectedCategories.size < allCategories.length && allCategories.length > 1)
+                ? ` | ${[...selectedCategories].join(', ')}` : '';
+            let html = '';
+
+            // 44개씩 페이지 분할 (각 페이지는 좌우 2단, 22개씩)
+            const totalPages = Math.ceil(allItems.length / PAGE_SIZE);
+            for (let page = 0; page < totalPages; page++) {
+                const start = page * PAGE_SIZE;
+                const end = Math.min(start + PAGE_SIZE, allItems.length);
+                const pageItems = allItems.slice(start, end);
+                const mid = Math.ceil(pageItems.length / 2);
+
+                if (page > 0) html += `<div class="page-break"></div>`;
+                html += `<h2 style="margin-bottom:2px;">식자재 준비 목록</h2>
+                    <div class="info-line" style="margin-bottom:6px;"><span class="print-date-highlight">${cookingDate} (${dayName})</span> | 총 ${allItems.length}건 (${start+1}~${end})${catLabel} | 출력: ${getLocalDateString(new Date())}</div>`;
+                html += `<div class="two-column-wrap">`;
+                html += `<div class="two-column-left">${buildColumnTable(pageItems.slice(0, mid), start)}</div>`;
+                html += `<div class="two-column-right">${buildColumnTable(pageItems.slice(mid), start + mid)}</div>`;
+                html += `</div>`;
+            }
+
+            document.getElementById('previewContent').innerHTML = html;
+
+            // ② 끼니별/메뉴별 전처리 트리 구성 (별도 탭에서 사용)
+            currentDetailTree = buildDetailTree(allItems);
+            renderDetailPreview(cookingDate);
+        }
+
+        // 끼니별/메뉴별 트리 구성 (동일 메뉴 내 같은 식자재 합산)
+        let currentDetailTree = null;
+
+        // 끼니 → 메뉴 → 식자재 트리 (카테고리별 양은 컬럼으로 분리)
+        function buildDetailTree(allItems) {
+            // 1) 활성 카테고리 목록 수집
+            const catSet = new Set();
+            allItems.forEach(item => {
+                (item._menuBreakdown || []).forEach(md => {
+                    const cat = md.category_name || md.slot_name || '';
+                    if (cat) catSet.add(cat);
+                });
+            });
+            const categories = [...catSet].sort((a, b) => {
+                const order = ['도시락', '운반', '학교', '요양원'];
+                const ai = order.indexOf(a), bi = order.indexOf(b);
+                return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+            });
+
+            // 2) 끼니 → 메뉴 → 식자재 트리 (카테고리별 양 분리)
+            const tree = {};
+            allItems.forEach(item => {
+                if (!item._menuBreakdown || item._menuBreakdown.length === 0) return;
+                item._menuBreakdown.forEach(md => {
+                    const mt = md.meal_type || '기타';
+                    const menu = md.menu_name || '(메뉴 미지정)';
+                    const cat = md.category_name || md.slot_name || '';
+                    if (!tree[mt]) tree[mt] = {};
+                    if (!tree[mt][menu]) tree[mt][menu] = {};
+
+                    const ingKey = item.ingredient_name || '-';
+                    if (!tree[mt][menu][ingKey]) {
+                        tree[mt][menu][ingKey] = {
+                            ingredient_name: ingKey,
+                            specification: item.specification || '',
+                            total_required_qty: 0,
+                            unit: item.unit || '',
+                            yield_rate: item.yield_rate || 100,
+                            cut_type: md.cut_type || '',
+                            preprocessing_instructions: item.preprocessing_instructions || '',
+                            _required: item._required,
+                            _byCategory: {}  // { cat: { qty, per_person_g, meal_count } }
+                        };
+                    }
+                    const ing = tree[mt][menu][ingKey];
+                    ing.total_required_qty += (md.required_qty || 0);
+                    if (!ing._byCategory[cat]) {
+                        ing._byCategory[cat] = { qty: 0, per_person_g: 0, meal_count: 0 };
+                    }
+                    ing._byCategory[cat].qty += (md.required_qty || 0);
+                    ing._byCategory[cat].per_person_g += (md.per_person_qty_g || 0);
+                    if (md.meal_count > ing._byCategory[cat].meal_count) {
+                        ing._byCategory[cat].meal_count = md.meal_count;
+                    }
+                });
+            });
+            return { tree, categories };
+        }
+
+        function renderDetailPreview(cookingDate) {
+            if (!currentDetailTree) return;
+            const { tree, categories } = currentDetailTree;
+            const container = document.getElementById('detailPreviewContent');
+            if (!container) return;
+
+            const mealOrder = ['조식','중식','석식','야식','행사','기타'];
+            const sortedMeals = Object.keys(tree).sort((a,b) => (mealOrder.indexOf(a)===-1?99:mealOrder.indexOf(a)) - (mealOrder.indexOf(b)===-1?99:mealOrder.indexOf(b)));
+
+            if (sortedMeals.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📄</div><h3>데이터가 없습니다</h3></div>';
+                return;
+            }
+
+            const dayName = getDayName(cookingDate);
+            const catColCount = categories.length; // 카테고리당 2컬럼 (총량 + 인당)
+            const catLabel = (selectedCategories.size < allCategories.length && allCategories.length > 1)
+                ? ` | ${[...selectedCategories].join(', ')}` : '';
+
+            let html = `<h2 style="margin-bottom:4px;">전처리 지시서 (끼니별/메뉴별)</h2>
+                <div class="info-line" style="margin-bottom:8px;"><span class="print-date-highlight">${cookingDate} (${dayName})</span>${catLabel} | 출력: ${getLocalDateString(new Date())}</div>`;
+
+            sortedMeals.forEach((mt) => {
+                const cfg = mealTypeConfig[mt] || mealTypeConfig['기타'];
+                const menus = tree[mt];
+                const menuNames = Object.keys(menus).sort();
+
+                // 끼니 총 식수 계산
+                let mealTotalCount = 0;
+                const catMealCounts = {};
+                categories.forEach(cat => { catMealCounts[cat] = 0; });
+                menuNames.forEach(menuName => {
+                    const ings = Object.values(menus[menuName]);
+                    if (ings.length > 0) {
+                        categories.forEach(cat => {
+                            const bc = ings[0]._byCategory[cat];
+                            if (bc && bc.meal_count > catMealCounts[cat]) catMealCounts[cat] = bc.meal_count;
+                        });
+                    }
+                });
+                categories.forEach(cat => { mealTotalCount += catMealCounts[cat]; });
+
+                html += `<div class="meal-section-header">${cfg.icon} ${cfg.label} <span style="font-size:12px; font-weight:normal; opacity:0.8; margin-left:8px;">${menuNames.length}개 메뉴 / ${mealTotalCount}식</span></div>`;
+
+                // 카테고리 컬럼 헤더 구성
+                let catHeaders = '';
+                categories.forEach(cat => {
+                    const count = catMealCounts[cat] || '';
+                    catHeaders += `<th class="cat-col-header">${cat}${count ? '<br><span style="font-size:8px; font-weight:normal;">('+count+'명)</span>' : ''}</th>`;
+                });
+
+                // 끼니별 하나의 큰 테이블
+                const baseCols = 7; // 메뉴명, NO, 식자재명, 규격, 단위, 전체량, 수율, 최종량... 실제 colspan 계산
+                html += `<table class="preview-table detail-table"><thead><tr>
+                    <th style="width:80px">메뉴명</th>
+                    <th style="width:18px">NO</th>
+                    <th>식자재명</th>
+                    <th style="width:38px">규격</th>
+                    <th style="width:24px">단위</th>
+                    <th style="width:38px">전체량</th>
+                    <th style="width:24px">수율</th>
+                    <th style="width:40px">최종량</th>
+                    ${catHeaders}
+                    <th style="width:50px">절단방식</th>
+                    <th>전처리 지시사항</th>
+                    <th class="cb-cell">V</th>
+                </tr></thead><tbody>`;
+
+                let globalIdx = 0;
+                menuNames.forEach(menuName => {
+                    const ings = Object.values(menus[menuName]);
+                    const totalQty = ings.reduce((s, i) => s + i.total_required_qty, 0);
+
+                    // 메뉴별 식수 정보
+                    let menuMealCount = 0;
+                    const menuCatBadges = [];
+                    categories.forEach(cat => {
+                        const bc = ings[0]?._byCategory[cat];
+                        const c = bc ? bc.meal_count : 0;
+                        menuMealCount += c;
+                        if (c > 0) menuCatBadges.push(`${cat} ${c}`);
+                    });
+
+                    ings.forEach((ing, i) => {
+                        globalIdx++;
+                        const finalQty = ing.total_required_qty * (ing.yield_rate / 100);
+                        const detailKey = `${mt}__${menuName}__${ing.ingredient_name}`;
+                        const cutOpts = cutTypeOptions.map(o => `<option value="${o}" ${(ing.cut_type||'')=== o?'selected':''}>${o||'-'}</option>`).join('');
+
+                        let catCells = '';
+                        categories.forEach(cat => {
+                            const bc = ing._byCategory[cat];
+                            if (bc && bc.qty > 0) {
+                                const perP = bc.per_person_g ? `<span style="font-size:7px; color:#888;">${bc.per_person_g.toFixed(0)}g</span>` : '';
+                                catCells += `<td style="font-size:9px; line-height:1.1;"><b>${bc.qty.toFixed(2)}</b><br>${perP}</td>`;
+                            } else {
+                                catCells += `<td style="color:#ddd;">-</td>`;
+                            }
+                        });
+
+                        // 첫 번째 식자재일 때만 메뉴명 셀 (rowspan)
+                        const menuCell = i === 0
+                            ? `<td rowspan="${ings.length}" style="text-align:left; vertical-align:top; font-weight:700; font-size:10px; background:#f8f9fa; border-right:2px solid #667eea; padding:3px 4px; line-height:1.2;">
+                                ${menuName}<br>
+                                <span style="font-size:8px; color:#888; font-weight:normal;">${menuMealCount}명 / ${totalQty.toFixed(1)}kg</span>
+                              </td>`
+                            : '';
+
+                        html += `<tr${i === 0 ? ' style="border-top:2px solid #ccc;"' : ''}>
+                            ${menuCell}
+                            <td>${globalIdx}</td>
+                            <td style="text-align:left; font-weight:600;">${ing.ingredient_name}</td>
+                            <td style="font-size:8px;">${ing.specification}</td>
+                            <td>${ing.unit}</td>
+                            <td>${ing.total_required_qty.toFixed(2)}</td>
+                            <td>${ing.yield_rate}%</td>
+                            <td class="qty-cell">${finalQty.toFixed(2)}</td>
+                            ${catCells}
+                            <td><select class="cut-type-select detail-cut" data-detail-key="${detailKey}" onchange="updateDetailCutType(this)">${cutOpts}</select></td>
+                            <td><input type="text" class="instructions-input detail-inst" value="${ing.preprocessing_instructions}" placeholder="전처리 방법" data-detail-key="${detailKey}" onchange="updateDetailInstructions(this)"></td>
+                            <td class="cb-cell"><div class="cb-box"></div></td>
+                        </tr>`;
+                    });
+                });
+                html += `</tbody></table>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ============ 상세 지시서 편집 ============
+        function updateDetailCutType(el) {
+            const key = el.dataset.detailKey;
+            const val = el.value;
+            const parts = key.split('__');
+            if (parts.length === 3 && currentDetailTree) {
+                const [mt, menu, ingName] = parts;
+                const ing = currentDetailTree.tree[mt]?.[menu]?.[ingName];
+                if (ing) ing.cut_type = val;
+            }
+        }
+
+        function updateDetailInstructions(el) {
+            const key = el.dataset.detailKey;
+            const val = el.value;
+            const parts = key.split('__');
+            if (parts.length === 3 && currentDetailTree) {
+                const [mt, menu, ingName] = parts;
+                const ing = currentDetailTree.tree[mt]?.[menu]?.[ingName];
+                if (ing) ing.preprocessing_instructions = val;
+            }
+        }
+
+        // ============ 편집 기능 ============
+        function updateYield(input, ingredientId, ingredientCode, ingredientName) {
+            const yieldRate = parseFloat(input.value) || 100;
+            const row = input.closest('tr');
+            const reqQty = parseFloat(row.querySelector('td:nth-child(7)').textContent) || 0;
+            const finalEl = document.getElementById(`final-agg-${ingredientId}`);
+            if (finalEl) finalEl.textContent = (reqQty * yieldRate / 100).toFixed(2);
+
+            const instructions = row.querySelector('.instructions-input')?.value || '';
+            pendingYieldChanges.set(ingredientId, {
+                ingredient_id: ingredientId, ingredient_code: ingredientCode,
+                ingredient_name: ingredientName, yield_rate: yieldRate,
+                preprocessing_instructions: instructions,
+                requires_preprocessing: true
+            });
+            renderPreview();
+        }
+
+        function updateInstructions(ingredientId, value) {
+            const existing = pendingYieldChanges.get(ingredientId);
+            if (existing) existing.preprocessing_instructions = value;
+            renderPreview();
+        }
+
+        async function togglePreprocessing(ingredientId, ingredientCode, ingredientName, requiresPreprocessing, mealType) {
+            // 로컬 데이터 이동
+            const mealData = currentData?.by_meal_type?.[mealType];
+            if (!mealData) return;
+
+            const srcList = requiresPreprocessing ? mealData.preprocessing_not_required : mealData.preprocessing_required;
+            const tgtList = requiresPreprocessing ? mealData.preprocessing_required : mealData.preprocessing_not_required;
+            const idx = srcList.findIndex(i => i.ingredient_id === ingredientId);
+            if (idx === -1) return;
+            const item = srcList.splice(idx, 1)[0];
+            if (requiresPreprocessing) { item.yield_rate = item.yield_rate || 100; item.final_qty = (item.required_qty || 0) * (item.yield_rate / 100); }
+            tgtList.push(item);
+
+            mealData.summary.preprocessing_count = mealData.preprocessing_required.length;
+            mealData.summary.no_preprocessing_count = mealData.preprocessing_not_required.length;
+            rebuildGlobalSummary();
+            updateStats(currentData.summary);
+            renderMealTabs();
+            renderAll();
+
+            // 서버 반영
+            try {
+                const resp = await fetch('/api/preprocessing/toggle', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ ingredient_id: ingredientId, ingredient_code: ingredientCode, ingredient_name: ingredientName, requires_preprocessing: requiresPreprocessing, changed_by: 'nutritionist' })
+                });
+                const result = await resp.json();
+                if (!result.success) {
+                    // 롤백
+                    const ri = tgtList.findIndex(i => i.ingredient_id === ingredientId);
+                    if (ri !== -1) { srcList.push(tgtList.splice(ri, 1)[0]); }
+                    mealData.summary.preprocessing_count = mealData.preprocessing_required.length;
+                    mealData.summary.no_preprocessing_count = mealData.preprocessing_not_required.length;
+                    rebuildGlobalSummary();
+                    renderAll();
+                    alert('변경 실패: ' + result.error);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('서버 오류');
+            }
+        }
+
+        function rebuildGlobalSummary() {
+            let total = 0, req = 0, noreq = 0;
+            currentData.preprocessing_required = [];
+            currentData.preprocessing_not_required = [];
+            (currentData.meal_types || []).forEach(mt => {
+                const d = currentData.by_meal_type[mt];
+                currentData.preprocessing_required.push(...d.preprocessing_required);
+                currentData.preprocessing_not_required.push(...d.preprocessing_not_required);
+                req += d.preprocessing_required.length;
+                noreq += d.preprocessing_not_required.length;
+            });
+            total = req + noreq;
+            currentData.summary = { total_items: total, preprocessing_count: req, no_preprocessing_count: noreq };
+        }
+
+        // ============ 저장 ============
+        async function savePreprocessingInstruction() {
+            if (!currentData || !currentData.preprocessing_required || currentData.preprocessing_required.length === 0) {
+                alert('저장할 전처리 품목이 없습니다.'); return;
+            }
+            const cookingDate = document.getElementById('cookingDate').value;
+            if (!cookingDate) { alert('조리일자를 선택하세요.'); return; }
+
+            const items = currentData.preprocessing_required.map(item => {
+                const row = document.querySelector(`tr[data-ingredient-id="${item.ingredient_id}"]`);
+                let yieldRate = item.yield_rate || 100, instructions = item.preprocessing_instructions || '', cutType = item.cut_type || '';
+                if (row) {
+                    const yi = row.querySelector('.yield-input');
+                    const ii = row.querySelector('.instructions-input');
+                    const ci = row.querySelector('.cut-type-select');
+                    if (yi) yieldRate = parseFloat(yi.value) || 100;
+                    if (ii) instructions = ii.value;
+                    if (ci) cutType = ci.value;
+                }
+                return {
+                    ingredient_id: item.ingredient_id, ingredient_code: item.ingredient_code,
+                    ingredient_name: item.ingredient_name, specification: item.specification,
+                    unit: item.unit, required_qty: item.required_qty || 0, order_qty: item.order_qty,
+                    yield_rate: yieldRate, final_qty: (item.required_qty || 0) * yieldRate / 100,
+                    preprocessing_instructions: instructions, cut_type: cutType
+                };
+            });
+
+            try {
+                const resp = await fetch('/api/preprocessing/save-instruction', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ cooking_date: cookingDate, site_id: getCurrentSiteId(), items, created_by: 'nutritionist' })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    pendingYieldChanges.clear();
+                    alert(`전처리 지시서 저장 완료\n번호: ${result.instruction_number}\n${result.yield_save_count || items.length}건`);
+                } else {
+                    alert('저장 실패: ' + result.error);
+                }
+            } catch (e) { console.error(e); alert('서버 오류'); }
+        }
+
+        // ============ 탭 전환 ============
+        let currentPreviewTab = 'list';
+
+        function switchPreviewTab(tab) {
+            currentPreviewTab = tab;
+            document.querySelectorAll('.preview-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.getElementById('tabList').style.display = tab === 'list' ? 'block' : 'none';
+            document.getElementById('tabDetail').style.display = tab === 'detail' ? 'block' : 'none';
+        }
+
+        // ============ 출력 ============
+        function printCurrentTab() {
+            const isDetail = currentPreviewTab === 'detail';
+            const contentId = isDetail ? 'detailPreviewContent' : 'previewContent';
+            const pageSize = isDetail ? 'A3 portrait' : 'A3 landscape';
+
+            // select/input 값을 텍스트로 치환하여 인쇄
+            const clone = document.getElementById(contentId).cloneNode(true);
+            clone.querySelectorAll('select.detail-cut').forEach(sel => {
+                const span = document.createElement('span');
+                span.textContent = sel.value || '';
+                sel.replaceWith(span);
+            });
+            clone.querySelectorAll('input.detail-inst').forEach(inp => {
+                const span = document.createElement('span');
+                span.textContent = inp.value || '';
+                span.style.fontSize = '10px';
+                inp.replaceWith(span);
+            });
+            printNewWindow(clone.innerHTML, pageSize);
+        }
+
+        function printPreview() {
+            window.print();
+        }
+
+        function printNewWindow(content, pageSize) {
+            pageSize = pageSize || 'A3 landscape';
+            const w = window.open('', '_blank');
+            w.document.write(`<!DOCTYPE html><html><head><title>전처리 지시서</title><style>
+                body { font-family: 'Malgun Gothic', sans-serif; padding: 0; margin: 0; }
+                h2 { text-align: center; font-size: 18pt; margin-bottom: 4px; }
+                .info-line { text-align: center; font-size: 11pt; color: #666; margin-bottom: 6px; }
+                .print-date-highlight { display: inline-block; background: #333; color: white; font-size: 16pt; font-weight: 800; padding: 3px 15px; border-radius: 4px; letter-spacing: 1px; }
+                .two-column-wrap { display: flex; gap: 10px; align-items: flex-start; }
+                .two-column-left, .two-column-right { flex: 1; min-width: 0; }
+                .preview-table { width: 100%; border-collapse: collapse; font-size: 8pt; line-height: 1.15; }
+                .preview-table th { background: #4CAF50; color: white; padding: 2px 3px; border: 1px solid #333; font-size: 7.5pt; font-weight: 600; text-align: center; }
+                .preview-table td { padding: 1px 3px; border: 1px solid #999; text-align: center; }
+                .preview-table .name-cell { text-align: left; font-weight: 600; font-size: 8.5pt; }
+                .preview-table .qty-cell { font-weight: 700; color: #28a745; font-size: 9pt; }
+                .preview-table .menu-info { font-size: 7pt; color: #888; font-weight: normal; }
+                .preview-table .cb-cell { width: 18px; }
+                .preview-table .cb-box { display: inline-block; width: 12px; height: 12px; border: 1.5px solid #333; }
+                .page-break { height: 0; page-break-after: always; break-after: page; }
+                .meal-section { margin-bottom: 10px; }
+                .meal-section-header { background: #495057; color: white; padding: 6px 10px; font-size: 14pt; font-weight: 700; border-radius: 3px 3px 0 0; margin-top: 8px; }
+                .slot-header { background: #e3f2fd; color: #1565c0; padding: 4px 10px; font-size: 12pt; font-weight: 700; }
+                .menu-block { margin: 4px 0; }
+                .menu-block-header { background: #f8f9fa; padding: 4px 10px; font-size: 12pt; font-weight: 700; border-left: 3px solid #667eea; }
+                .detail-table th { background: #78909c !important; font-size: 8pt !important; padding: 2px 3px !important; }
+                .detail-table td { font-size: 8pt !important; padding: 2px 3px !important; }
+                .cat-col-header { background: #667eea !important; color: white !important; font-size: 8pt !important; font-weight: 700 !important; padding: 2px 3px !important; min-width: 40px; }
+                @page { size: ${pageSize}; margin: 3mm; }
+                @media print { * { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+            </style></head><body>${content}</body></html>`);
+            w.document.close();
+            w.print();
+        }
+
+        // ============ 이력 모달 ============
+        async function showHistory(ingredientId) {
+            try {
+                const resp = await fetch(`/api/preprocessing/yield-history/${ingredientId}`);
+                const result = await resp.json();
+                if (result.success) {
+                    let h = '<table class="edit-table" style="font-size:12px;"><thead><tr><th>일시</th><th>이전</th><th>변경</th><th>변경자</th><th>사유</th></tr></thead><tbody>';
+                    result.history.forEach(it => {
+                        h += `<tr><td>${it.changed_at||'-'}</td><td>${it.old_yield_rate||'-'}%</td><td style="color:#667eea;font-weight:600;">${it.new_yield_rate||'-'}%</td><td>${it.changed_by||'-'}</td><td>${it.change_reason||'-'}</td></tr>`;
+                    });
+                    h += '</tbody></table>';
+                    if (result.history.length === 0) h = '<p style="text-align:center;color:#999;padding:2rem;">이력 없음</p>';
+                    document.getElementById('historyContent').innerHTML = h;
+                    document.getElementById('historyModal').style.display = 'block';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // ============ 불러오기 모달 ============
+        function openLoadInstructionModal() {
+            const modal = document.getElementById('loadInstructionModal');
+            const today = new Date();
+            const later = new Date(); later.setDate(today.getDate() + 10);
+            document.getElementById('loadInstructionDateFrom').value = getLocalDateString(today);
+            document.getElementById('loadInstructionDateTo').value = getLocalDateString(later);
+            modal.style.display = 'block';
+            searchSavedInstructions();
+        }
+
+        async function searchSavedInstructions() {
+            const from = document.getElementById('loadInstructionDateFrom').value;
+            const to = document.getElementById('loadInstructionDateTo').value;
+            const container = document.getElementById('savedInstructionsList');
+            container.innerHTML = '<p style="text-align:center;color:#666;"><i class="fas fa-spinner fa-spin"></i> 검색 중...</p>';
+
+            try {
+                let url = '/api/preprocessing/instructions';
+                const params = [];
+                if (from) params.push(`start_date=${from}`);
+                if (to) params.push(`end_date=${to}`);
+                if (params.length) url += '?' + params.join('&');
+
+                const resp = await fetch(url);
+                const result = await resp.json();
+
+                if (result.success && result.instructions.length > 0) {
+                    let h = '<table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="background:#f8f9fa;"><th style="padding:6px;border:1px solid #ddd;">번호</th><th style="padding:6px;border:1px solid #ddd;">조리일자</th><th style="padding:6px;border:1px solid #ddd;">품목</th><th style="padding:6px;border:1px solid #ddd;">상태</th><th style="padding:6px;border:1px solid #ddd;">저장일</th><th style="padding:6px;border:1px solid #ddd;">선택</th></tr></thead><tbody>';
+                    result.instructions.forEach(inst => {
+                        const badge = inst.status === 'confirmed' ? '<span style="background:#28a745;color:white;padding:1px 5px;border-radius:8px;font-size:10px;">확정</span>' : '<span style="background:#ffc107;color:#333;padding:1px 5px;border-radius:8px;font-size:10px;">임시</span>';
+                        h += `<tr><td style="padding:6px;border:1px solid #ddd;">${inst.instruction_number||'-'}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${inst.cooking_date||'-'}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${inst.total_items||0}건</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${badge}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${(inst.created_at||'').substring(0,16).replace('T',' ')}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;"><button class="btn btn-primary btn-sm" onclick="loadSavedInstruction(${inst.id})"><i class="fas fa-download"></i></button> <button class="btn btn-sm" style="background:#dc3545;color:white;" onclick="deleteSavedInstruction(${inst.id},'${inst.instruction_number||''}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                    });
+                    h += '</tbody></table>';
+                    container.innerHTML = h;
+                } else {
+                    container.innerHTML = '<p style="text-align:center;color:#999;">저장된 지시서 없음</p>';
+                }
+            } catch (e) { container.innerHTML = '<p style="color:#dc3545;text-align:center;">오류 발생</p>'; }
+        }
+
+        async function loadSavedInstruction(id) {
+            try {
+                const resp = await fetch(`/api/preprocessing/instruction/${id}`);
+                const result = await resp.json();
+                if (result.success) {
+                    document.getElementById('cookingDate').value = result.instruction.cooking_date;
+                    document.getElementById('loadInstructionModal').style.display = 'none';
+                    await loadPreprocessingData();
+                    alert(`불러옴: ${result.instruction.instruction_number} (${result.instruction.items?.length || 0}건)`);
+                }
+            } catch (e) { alert('오류 발생'); }
+        }
+
+        async function deleteSavedInstruction(id, num) {
+            if (!confirm(`"${num}" 삭제?`)) return;
+            try {
+                const resp = await fetch(`/api/preprocessing/instruction/${id}`, {method:'DELETE'});
+                const result = await resp.json();
+                if (result.success) { alert(result.message); searchSavedInstructions(); }
+                else alert('실패: ' + result.error);
+            } catch (e) { alert('오류'); }
+        }
+
+        // ============ 유틸 ============
+        function getCurrentSiteId() {
+            if (typeof SiteSelector !== 'undefined') {
+                const ctx = SiteSelector.getCurrentContext();
+                return ctx?.site_id || null;
+            }
+            return null;
+        }
+    </script>
+
+    <script src="/static/modules/core/site-selector.js"></script>
+    <script src="/static/js/event-instruction.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof SiteSelector !== 'undefined') {
+                SiteSelector.init('preprocessing-site-selector');
+                SiteSelector.on('siteChange', function() { loadPreprocessingData(); });
+            }
+            if (typeof BrandingManager !== 'undefined') {
+                BrandingManager.applyBranding('전처리 관리');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title>식수 조회 - 급식관리 시스템</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251027">
+    <script src="/static/js/sidebar-dropdown.js"></script>
+    <link rel="stylesheet" href="/static/css/site-selector.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .main-container {
+            flex: 1;
+            padding: 20px 30px;
+            overflow-y: auto;
+        }
+
+        /* 검색 조건 영역 */
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .search-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .search-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .search-group input[type="date"],
+        .search-group select {
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .search-group input:focus,
+        .search-group select:focus {
+            border-color: #4a90d9;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #4a90d9;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #357abd;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        /* 요약 카드 */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .summary-card .number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #4a90d9;
+        }
+
+        .summary-card .unit {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* 테이블 영역 */
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            background: #f8f9fa;
+        }
+
+        .table-header h3 {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-weekday {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-weekend {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .badge-holiday {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+
+        /* 로딩 오버레이 */
+        #loadingOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #4a90d9;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* 퀵 버튼 */
+        .quick-btns {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .quick-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            border-color: #4a90d9;
+            color: #4a90d9;
+        }
+
+        .quick-btn.active {
+            background: #4a90d9;
+            color: white;
+            border-color: #4a90d9;
+        }
+
+        .view-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .view-btn:hover {
+            border-color: #4a90d9;
+            color: #4a90d9;
+        }
+
+        .view-btn.active {
+            background: #4a90d9;
+            color: white;
+            border-color: #4a90d9;
+        }
+
+        .category-row {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .category-row td {
+            padding: 12px 10px !important;
+        }
+
+        /* 피벗 테이블 틀고정 */
+        .table-scroll {
+            position: relative;
+        }
+
+        #mealCountTable thead th {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: #f8f9fa;
+        }
+
+        /* 월 헤더 행 스타일 */
+        .month-header td {
+            position: sticky;
+            top: 38px;
+            z-index: 15;
+        }
+
+        /* 좌측 고정 컬럼 (날짜, 요일) */
+        .pivot-fixed {
+            position: sticky;
+            z-index: 10;
+            background: white;
+        }
+    </style>
+    <script src="/static/modules/core/site-selector.js?v=20251230"></script>
+    <script src="config.js"></script>
+    <script src="static/js/branding.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item active"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content">
+            <!-- 로딩 오버레이 -->
+            <div id="loadingOverlay">
+                <div style="text-align:center;">
+                    <div class="spinner"></div>
+                    <div id="loadingText" style="margin-top:15px; color:#666;">데이터 로딩 중...</div>
+                </div>
+            </div>
+
+            <div class="header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1><i class="fas fa-search"></i> 식수 조회</h1>
+                    <div id="inquiry-site-selector" class="site-selector-standard"></div>
+                </div>
+            </div>
+
+            <div class="main-container">
+                <!-- 검색 조건 -->
+                <div class="search-box">
+                    <div class="search-row">
+                        <div class="search-group">
+                            <label>시작일</label>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <button type="button" class="btn btn-sm" onclick="changeDateInput('startDate', -1)" style="padding: 0.3rem 0.5rem; min-width: auto;">◀</button>
+                                <input type="date" id="startDate">
+                                <button type="button" class="btn btn-sm" onclick="changeDateInput('startDate', 1)" style="padding: 0.3rem 0.5rem; min-width: auto;">▶</button>
+                            </div>
+                        </div>
+                        <div class="search-group">
+                            <label>종료일</label>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <button type="button" class="btn btn-sm" onclick="changeDateInput('endDate', -1)" style="padding: 0.3rem 0.5rem; min-width: auto;">◀</button>
+                                <input type="date" id="endDate">
+                                <button type="button" class="btn btn-sm" onclick="changeDateInput('endDate', 1)" style="padding: 0.3rem 0.5rem; min-width: auto;">▶</button>
+                            </div>
+                        </div>
+                        <div class="search-group">
+                            <label>끼니 유형</label>
+                            <select id="mealTypeFilter">
+                                <option value="">전체</option>
+                                <option value="조식">조식</option>
+                                <option value="중식">중식</option>
+                                <option value="석식">석식</option>
+                                <option value="야식">야식</option>
+                                <option value="행사">행사</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="searchMealCounts()">
+                            <i class="fas fa-search"></i> 조회
+                        </button>
+                        <button class="btn btn-success" onclick="downloadExcel()">
+                            <i class="fas fa-file-excel"></i> 엑셀 다운로드
+                        </button>
+
+                        <div class="quick-btns">
+                            <button class="quick-btn" onclick="setQuickDate('today')">오늘</button>
+                            <button class="quick-btn" onclick="setQuickDate('week')">이번 주</button>
+                            <button class="quick-btn" onclick="setQuickDate('month')">이번 달</button>
+                            <button class="quick-btn" onclick="setQuickDate('lastMonth')">지난 달</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 요약 카드 -->
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <h3>조회 기간</h3>
+                        <div class="number" id="summaryDays">0</div>
+                        <div class="unit">일</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>총 식수</h3>
+                        <div class="number" id="summaryTotal">0</div>
+                        <div class="unit">명</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>일 평균</h3>
+                        <div class="number" id="summaryAvg">0</div>
+                        <div class="unit">명/일</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>입력된 날짜</h3>
+                        <div class="number" id="summaryEnteredDays">0</div>
+                        <div class="unit">일</div>
+                    </div>
+                </div>
+
+                <!-- 데이터 테이블 -->
+                <div class="table-container">
+                    <div class="table-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="display: inline;"><i class="fas fa-table"></i> 식수 내역</h3>
+                            <span id="resultCount" style="color: #666; font-size: 13px; margin-left: 10px;">0건</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="viewPivotBtn" class="view-btn active" onclick="setViewMode('pivot')">
+                                <i class="fas fa-th"></i> 사업장별 추이
+                            </button>
+                            <button id="viewDetailBtn" class="view-btn" onclick="setViewMode('detail')">
+                                <i class="fas fa-list"></i> 상세
+                            </button>
+                            <button id="viewSummaryBtn" class="view-btn" onclick="setViewMode('summary')">
+                                <i class="fas fa-layer-group"></i> 카테고리별
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table id="mealCountTable">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width:100px;">날짜</th>
+                                    <th class="text-center" style="width:60px;">요일</th>
+                                    <th style="width:120px;">사업장</th>
+                                    <th style="width:80px;">끼니</th>
+                                    <th style="width:150px;">메뉴명</th>
+                                    <th class="text-right" style="width:80px;">식수</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr>
+                                    <td colspan="6" class="empty-state">
+                                        <i class="fas fa-search"></i>
+                                        <p>검색 조건을 선택하고 조회 버튼을 클릭하세요.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSiteId = null;
+        let currentGroupId = null;
+        let currentCategoryId = null;
+        let searchResults = [];
+        let currentViewMode = 'pivot';  // 기본값: 피벗 뷰 (사업장별 추이)
+
+        // 보기 모드 전환
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            document.getElementById('viewDetailBtn').classList.toggle('active', mode === 'detail');
+            document.getElementById('viewSummaryBtn').classList.toggle('active', mode === 'summary');
+            document.getElementById('viewPivotBtn').classList.toggle('active', mode === 'pivot');
+
+            renderTable(searchResults);
+        }
+
+        // 로딩 표시
+        function showLoading(text = '데이터 로딩 중...') {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // 날짜 초기화
+        function initDates() {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+
+            document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        }
+
+        // 날짜 변경 함수 (화살표 버튼용)
+        function changeDateInput(inputId, days) {
+            const dateInput = document.getElementById(inputId);
+            if (!dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+            const currentDate = new Date(dateInput.value);
+            currentDate.setDate(currentDate.getDate() + days);
+            dateInput.value = currentDate.toISOString().split('T')[0];
+        }
+
+        // 빠른 날짜 설정
+        function setQuickDate(type) {
+            const today = new Date();
+            let start, end;
+
+            switch (type) {
+                case 'today':
+                    start = end = today;
+                    break;
+                case 'week':
+                    const dayOfWeek = today.getDay();
+                    const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                    start = new Date(today);
+                    start.setDate(today.getDate() - diff);
+                    end = today;
+                    break;
+                case 'month':
+                    start = new Date(today.getFullYear(), today.getMonth(), 1);
+                    end = today;
+                    break;
+                case 'lastMonth':
+                    start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    end = new Date(today.getFullYear(), today.getMonth(), 0);
+                    break;
+            }
+
+            document.getElementById('startDate').value = start.toISOString().split('T')[0];
+            document.getElementById('endDate').value = end.toISOString().split('T')[0];
+
+            // 버튼 활성화 표시
+            document.querySelectorAll('.quick-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            searchMealCounts();
+        }
+
+        // 식수 조회
+        async function searchMealCounts() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const mealType = document.getElementById('mealTypeFilter').value;
+
+            if (!startDate || !endDate) {
+                alert('시작일과 종료일을 선택해주세요.');
+                return;
+            }
+
+            showLoading('식수 데이터 조회 중...');
+
+            try {
+                let url = `/api/meal-counts/range?start_date=${startDate}&end_date=${endDate}`;
+                // 그룹/카테고리/사업장별 필터링 파라미터 추가
+                // site_id와 group_id가 같으면 그룹 선택 (본사, 영남지사 등)
+                if (currentSiteId && currentGroupId && currentSiteId !== currentGroupId) {
+                    // 개별 사업장 선택
+                    url += `&site_id=${currentSiteId}`;
+                } else if (currentGroupId) {
+                    // 그룹 선택 (본사, 영남지사 등)
+                    url += `&group_id=${currentGroupId}`;
+                } else if (currentCategoryId) {
+                    url += `&category_id=${currentCategoryId}`;
+                }
+                if (mealType) url += `&meal_type=${encodeURIComponent(mealType)}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    searchResults = result.data || [];
+                    renderTable(searchResults);
+                    updateSummary(startDate, endDate, searchResults);
+                } else {
+                    alert('조회 실패: ' + (result.error || '알 수 없는 오류'));
+                }
+            } catch (e) {
+                console.error('조회 오류:', e);
+                alert('조회 중 오류가 발생했습니다.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // 테이블 렌더링
+        function renderTable(data) {
+            const table = document.getElementById('mealCountTable');
+            const thead = table.querySelector('thead');
+            const tbody = document.getElementById('tableBody');
+            const resultCount = document.getElementById('resultCount');
+
+            if (!data || data.length === 0) {
+                thead.innerHTML = '<tr><th>데이터 없음</th></tr>';
+                tbody.innerHTML = `
+                    <tr>
+                        <td class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>조회된 데이터가 없습니다.</p>
+                        </td>
+                    </tr>
+                `;
+                resultCount.textContent = '0건';
+                return;
+            }
+
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+            // 피벗 뷰 (사업장별 추이)
+            if (currentViewMode === 'pivot') {
+                renderPivotTable(data, thead, tbody, resultCount, dayNames);
+            }
+            // 카테고리별 요약 모드
+            else if (currentViewMode === 'summary') {
+                renderSummaryTable(data, thead, tbody, resultCount, dayNames);
+            }
+            // 상세 모드 (기존)
+            else {
+                renderDetailTable(data, thead, tbody, resultCount, dayNames);
+            }
+        }
+
+        // 피벗 테이블 렌더링 (사업장 × 날짜) - 행=카테고리>사업장>끼니, 열=날짜
+        function renderPivotTable(data, thead, tbody, resultCount, dayNames) {
+            // 1. 사업장과 카테고리 정보 추출
+            const siteInfo = {}; // { site_name: business_type }
+            data.forEach(row => {
+                if (row.site_name && !siteInfo[row.site_name]) {
+                    siteInfo[row.site_name] = row.business_type || '기타';
+                }
+            });
+
+            const sites = Object.keys(siteInfo);
+            if (sites.length === 0) {
+                thead.innerHTML = '<tr><th>사업장 데이터 없음</th></tr>';
+                tbody.innerHTML = '<tr><td>사업장 정보가 없습니다.</td></tr>';
+                return;
+            }
+
+            // 2. 카테고리별로 사업장 그룹핑
+            const categoryOrder = ['도시락', '운반', '학교', '요양원', '위탁', '기타'];
+            const categoryGroups = {};
+            sites.forEach(site => {
+                const cat = siteInfo[site] || '기타';
+                if (!categoryGroups[cat]) categoryGroups[cat] = [];
+                categoryGroups[cat].push(site);
+            });
+            Object.keys(categoryGroups).forEach(cat => {
+                categoryGroups[cat].sort();
+            });
+
+            // 카테고리 순서대로 정렬된 사업장 목록 생성
+            const sortedSites = [];
+            categoryOrder.forEach(cat => {
+                if (categoryGroups[cat]) {
+                    sortedSites.push(...categoryGroups[cat]);
+                }
+            });
+            Object.keys(categoryGroups).forEach(cat => {
+                if (!categoryOrder.includes(cat)) {
+                    sortedSites.push(...categoryGroups[cat]);
+                }
+            });
+
+            // 3. 날짜 목록 추출 및 정렬
+            const dateSet = new Set();
+            data.forEach(row => {
+                if (row.work_date) dateSet.add(row.work_date);
+            });
+            const sortedDates = Array.from(dateSet).sort();
+
+            // 4. 사업장×끼니(menu_name)×날짜별로 데이터 맵핑
+            const siteData = {}; // { site: { menuName: { date: count, total: n } } }
+            sortedSites.forEach(site => {
+                siteData[site] = { category: siteInfo[site], menus: {}, total: 0 };
+            });
+
+            data.forEach(row => {
+                const site = row.site_name || '미지정';
+                const dateKey = row.work_date;
+                const menuName = row.menu_name || '기타';
+                const count = row.meal_count || 0;
+
+                if (siteData[site]) {
+                    if (!siteData[site].menus[menuName]) {
+                        siteData[site].menus[menuName] = { total: 0 };
+                        sortedDates.forEach(d => siteData[site].menus[menuName][d] = 0);
+                    }
+                    if (siteData[site].menus[menuName][dateKey] !== undefined) {
+                        siteData[site].menus[menuName][dateKey] += count;
+                        siteData[site].menus[menuName].total += count;
+                        siteData[site].total += count;
+                    }
+                }
+            });
+
+            // 5. 날짜별 합계 계산
+            const dateTotals = {};
+            sortedDates.forEach(d => dateTotals[d] = 0);
+            let grandTotal = 0;
+
+            sortedSites.forEach(site => {
+                Object.values(siteData[site].menus).forEach(menu => {
+                    sortedDates.forEach(d => {
+                        dateTotals[d] += menu[d] || 0;
+                    });
+                    grandTotal += menu.total || 0;
+                });
+            });
+
+            // 7. 테이블 헤더 생성
+            const dateHeaders = sortedDates.map(dateStr => {
+                const date = new Date(dateStr);
+                const dayOfWeek = date.getDay();
+                const dayName = dayNames[dayOfWeek];
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                const dayNum = dateStr.substring(8);
+                return `<th class="text-center" style="min-width:42px; padding:5px 3px; font-size:11px; ${isWeekend ? 'background:#fff3e0; color:#e65100;' : ''}">
+                    <div>${dayNum}</div>
+                    <div style="font-size:9px; color:${isWeekend ? '#e65100' : '#888'};">${dayName}</div>
+                </th>`;
+            }).join('');
+
+            thead.innerHTML = `
+                <tr>
+                    <th style="min-width:70px; position:sticky; left:0; background:#f8f9fa; z-index:25;">카테고리</th>
+                    <th style="min-width:100px; position:sticky; left:70px; background:#f8f9fa; z-index:25;">사업장</th>
+                    <th style="min-width:110px; position:sticky; left:170px; background:#f8f9fa; z-index:25;">끼니</th>
+                    ${dateHeaders}
+                    <th class="text-center" style="min-width:60px; background:#e3f2fd; font-weight:700;">합계</th>
+                </tr>
+            `;
+
+            // 8. 테이블 바디 생성
+            let html = '';
+
+            // 상단 합계 행
+            html += `
+                <tr style="background:#e8f4fd; font-weight:600; border-bottom:2px solid #4a90d9;">
+                    <td colspan="3" style="position:sticky; left:0; background:#e8f4fd; z-index:10; border-right:1px solid #ddd; text-align:center; font-size:11px;">일자별 합계</td>
+                    ${sortedDates.map(dateStr => {
+                        const date = new Date(dateStr);
+                        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                        return `<td class="text-center" style="background:${isWeekend ? '#fff3e0' : '#e8f4fd'}; font-size:11px;">${dateTotals[dateStr].toLocaleString()}</td>`;
+                    }).join('')}
+                    <td class="text-center" style="background:#4a90d9; color:white; font-weight:700;">${grandTotal.toLocaleString()}</td>
+                </tr>
+            `;
+
+            let currentCategory = '';
+
+            sortedSites.forEach(site => {
+                const sd = siteData[site];
+                const category = sd.category || '기타';
+
+                // 해당 사업장의 끼니(메뉴) 목록
+                const siteMenus = Object.keys(sd.menus).sort();
+                if (siteMenus.length === 0) return; // 데이터 없으면 스킵
+
+                // 같은 카테고리의 전체 행 수 계산 (rowspan용)
+                const sameCategorySites = sortedSites.filter(s => siteData[s].category === category);
+                let categoryRowCount = 0;
+                sameCategorySites.forEach(s => {
+                    categoryRowCount += Object.keys(siteData[s].menus).length || 1;
+                });
+                const isFirstInCategory = sameCategorySites[0] === site && currentCategory !== category;
+
+                if (isFirstInCategory) {
+                    currentCategory = category;
+                }
+
+                siteMenus.forEach((menuName, menuIdx) => {
+                    const menuData = sd.menus[menuName];
+                    const isFirstMenu = menuIdx === 0;
+                    const isLastMenu = menuIdx === siteMenus.length - 1;
+                    const isLastSiteInCategory = sameCategorySites[sameCategorySites.length - 1] === site;
+
+                    // 카테고리 첫 번째 사업장에 상단 보더 추가
+                    const topBorder = (isFirstInCategory && isFirstMenu) ? 'border-top: 3px solid #4a90d9;' : '';
+                    // 카테고리 마지막 사업장의 마지막 끼니에 하단 보더 추가
+                    const bottomBorder = (isLastSiteInCategory && isLastMenu) ? 'border-bottom: 2px solid #ccc;' : '';
+
+                    // 카테고리별 배경색
+                    const categoryColors = {
+                        '도시락': '#e8f5e9',
+                        '운반': '#fff3e0',
+                        '학교': '#e3f2fd',
+                        '요양원': '#fce4ec',
+                        '위탁': '#f3e5f5',
+                        '기타': '#f5f5f5'
+                    };
+                    const categoryBgColor = categoryColors[category] || '#f5f5f5';
+
+                    html += `<tr style="font-size:12px; ${topBorder} ${bottomBorder}">`;
+
+                    // 카테고리 셀 (카테고리의 첫 번째 사업장 첫 번째 끼니에만)
+                    if (isFirstInCategory && isFirstMenu) {
+                        html += `<td rowspan="${categoryRowCount}" style="font-weight:700; position:sticky; left:0; background:${categoryBgColor}; z-index:11; border-right:2px solid #ddd; vertical-align:middle; text-align:center; writing-mode:vertical-rl; text-orientation:mixed; padding:8px 4px;">${category}</td>`;
+                    }
+
+                    // 사업장 셀 (각 사업장의 첫 번째 끼니에만)
+                    if (isFirstMenu) {
+                        html += `<td rowspan="${siteMenus.length}" style="font-weight:500; position:sticky; left:70px; background:white; z-index:9; border-right:1px solid #eee; vertical-align:middle; padding-left:8px;">${site}</td>`;
+                    }
+
+                    // 끼니(메뉴명) 셀 - 메뉴명 첫글자로 색상 구분
+                    const menuColor = menuName.startsWith('조') ? '#fff8e1' :
+                                      menuName.startsWith('중') ? '#e8f5e9' :
+                                      menuName.startsWith('석') ? '#e3f2fd' :
+                                      menuName.startsWith('야') ? '#fce4ec' : '#f5f5f5';
+                    html += `<td style="position:sticky; left:170px; background:${menuColor}; z-index:8; font-size:11px; border-right:1px solid #eee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px;" title="${menuName}">${menuName}</td>`;
+
+                    // 날짜별 데이터
+                    html += sortedDates.map(dateStr => {
+                        const val = menuData[dateStr] || 0;
+                        const date = new Date(dateStr);
+                        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                        const bgColor = isWeekend ? '#fff8f0' : '';
+                        const color = val > 0 ? '#2c3e50' : '#ddd';
+                        return `<td class="text-center" style="background:${bgColor}; color:${color}; padding:4px 2px;">${val > 0 ? val.toLocaleString() : '-'}</td>`;
+                    }).join('');
+
+                    // 합계
+                    html += `<td class="text-center" style="font-weight:600; background:#e3f2fd;">${menuData.total.toLocaleString()}</td>`;
+                    html += `</tr>`;
+                });
+            });
+
+            // 하단 합계 행
+            html += `
+                <tr style="background:#f0f4f8; font-weight:700; border-top:2px solid #4a90d9;">
+                    <td colspan="3" style="position:sticky; left:0; background:#f0f4f8; z-index:10; border-right:1px solid #ddd; text-align:center;">합계</td>
+                    ${sortedDates.map(dateStr => {
+                        const date = new Date(dateStr);
+                        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                        return `<td class="text-center" style="background:${isWeekend ? '#fff3e0' : '#f0f4f8'};">${dateTotals[dateStr].toLocaleString()}</td>`;
+                    }).join('')}
+                    <td class="text-center" style="background:#4a90d9; color:white;">${grandTotal.toLocaleString()}</td>
+                </tr>
+            `;
+
+            tbody.innerHTML = html;
+            resultCount.textContent = `${sortedSites.length}사업장 × ${sortedDates.length}일`;
+        }
+
+        // 월 펼치기/접기
+        function toggleMonth(monthKey) {
+            const rows = document.querySelectorAll(`.month-${monthKey}`);
+            const icon = document.getElementById(`icon-${monthKey}`);
+            const isHidden = rows[0]?.style.display === 'none';
+
+            rows.forEach(row => {
+                row.style.display = isHidden ? '' : 'none';
+            });
+
+            if (icon) {
+                icon.className = isHidden ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+            }
+        }
+
+        // 카테고리별 요약 테이블
+        function renderSummaryTable(data, thead, tbody, resultCount, dayNames) {
+            thead.innerHTML = `
+                <tr>
+                    <th class="text-center" style="width:90px;">날짜</th>
+                    <th class="text-center" style="width:40px;">요일</th>
+                    <th style="width:120px;">카테고리</th>
+                    <th class="text-right" style="width:60px;">조식</th>
+                    <th class="text-right" style="width:60px;">중식</th>
+                    <th class="text-right" style="width:60px;">석식</th>
+                    <th class="text-right" style="width:60px;">야식</th>
+                    <th class="text-right" style="width:60px;">행사</th>
+                    <th class="text-right" style="width:70px;">합계</th>
+                </tr>
+            `;
+
+            const grouped = {};
+            data.forEach(row => {
+                const category = row.business_type || '미분류';
+                const mealType = row.meal_type || '중식';
+                const count = row.meal_count || 0;
+                const key = `${row.work_date}|${category}`;
+
+                if (!grouped[key]) {
+                    grouped[key] = {
+                        work_date: row.work_date,
+                        category: category,
+                        조식: 0, 중식: 0, 석식: 0, 야식: 0, 행사: 0, total: 0
+                    };
+                }
+
+                if (mealType === '조식') grouped[key].조식 += count;
+                else if (mealType === '석식') grouped[key].석식 += count;
+                else if (mealType === '야식') grouped[key].야식 += count;
+                else if (mealType === '행사') grouped[key].행사 += count;
+                else grouped[key].중식 += count;
+                grouped[key].total += count;
+            });
+
+            const sortedRows = Object.values(grouped).sort((a, b) => {
+                if (a.work_date !== b.work_date) return a.work_date.localeCompare(b.work_date);
+                return (a.category || '').localeCompare(b.category || '');
+            });
+
+            resultCount.textContent = `${sortedRows.length}건 (카테고리별)`;
+            const formatNum = (n) => n > 0 ? n.toLocaleString() : '-';
+
+            tbody.innerHTML = sortedRows.map(row => {
+                const date = new Date(row.work_date);
+                const dayOfWeek = date.getDay();
+                const dayName = dayNames[dayOfWeek];
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                const badgeClass = isWeekend ? 'badge-weekend' : 'badge-weekday';
+
+                return `
+                    <tr class="category-row">
+                        <td class="text-center">${row.work_date}</td>
+                        <td class="text-center"><span class="badge ${badgeClass}">${dayName}</span></td>
+                        <td><strong>${row.category}</strong></td>
+                        <td class="text-right">${formatNum(row.조식)}</td>
+                        <td class="text-right">${formatNum(row.중식)}</td>
+                        <td class="text-right">${formatNum(row.석식)}</td>
+                        <td class="text-right">${formatNum(row.야식)}</td>
+                        <td class="text-right">${formatNum(row.행사)}</td>
+                        <td class="text-right"><strong style="color: #2c3e50;">${row.total.toLocaleString()}</strong></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 상세 테이블
+        function renderDetailTable(data, thead, tbody, resultCount, dayNames) {
+            thead.innerHTML = `
+                <tr>
+                    <th class="text-center" style="width:100px;">날짜</th>
+                    <th class="text-center" style="width:60px;">요일</th>
+                    <th style="width:120px;">사업장</th>
+                    <th style="width:80px;">끼니</th>
+                    <th style="width:150px;">메뉴명</th>
+                    <th class="text-right" style="width:80px;">식수</th>
+                </tr>
+            `;
+
+            resultCount.textContent = `${data.length.toLocaleString()}건`;
+
+            tbody.innerHTML = data.map(row => {
+                const date = new Date(row.work_date);
+                const dayOfWeek = date.getDay();
+                const dayName = dayNames[dayOfWeek];
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                const badgeClass = isWeekend ? 'badge-weekend' : 'badge-weekday';
+
+                return `
+                    <tr>
+                        <td class="text-center">${row.work_date}</td>
+                        <td class="text-center"><span class="badge ${badgeClass}">${dayName}</span></td>
+                        <td>${row.site_name || '-'}</td>
+                        <td>${row.business_type || row.meal_type || '-'}</td>
+                        <td>${row.menu_name || '-'}</td>
+                        <td class="text-right"><strong>${(row.meal_count || 0).toLocaleString()}</strong></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 요약 업데이트
+        function updateSummary(startDate, endDate, data) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+            const totalCount = data.reduce((sum, row) => sum + (row.meal_count || 0), 0);
+            const uniqueDates = new Set(data.map(row => row.work_date));
+            const enteredDays = uniqueDates.size;
+            const avgPerDay = enteredDays > 0 ? Math.round(totalCount / enteredDays) : 0;
+
+            document.getElementById('summaryDays').textContent = days.toLocaleString();
+            document.getElementById('summaryTotal').textContent = totalCount.toLocaleString();
+            document.getElementById('summaryAvg').textContent = avgPerDay.toLocaleString();
+            document.getElementById('summaryEnteredDays').textContent = enteredDays.toLocaleString();
+        }
+
+        // 엑셀 다운로드
+        function downloadExcel() {
+            if (!searchResults || searchResults.length === 0) {
+                alert('다운로드할 데이터가 없습니다. 먼저 조회해주세요.');
+                return;
+            }
+
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            // CSV 생성
+            const headers = ['날짜', '요일', '사업장', '끼니', '메뉴명', '식수'];
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+            const rows = searchResults.map(row => {
+                const date = new Date(row.work_date);
+                const dayName = dayNames[date.getDay()];
+                return [
+                    row.work_date,
+                    dayName,
+                    row.site_name || '',
+                    row.business_type || row.meal_type || '',
+                    row.menu_name || '',
+                    row.meal_count || 0
+                ];
+            });
+
+            // BOM + CSV 문자열 생성
+            const csvContent = '\uFEFF' + [headers, ...rows].map(row =>
+                row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+            ).join('\n');
+
+            // 다운로드
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `식수현황_${startDate}_${endDate}.csv`;
+            link.click();
+        }
+
+        // 사업장 선택기 초기화
+        document.addEventListener('DOMContentLoaded', function () {
+            initDates();
+
+            if (typeof SiteSelector !== 'undefined') {
+                SiteSelector.init('inquiry-site-selector');
+
+                // 초기화 후 저장된 컨텍스트 바로 적용
+                const savedContext = SiteSelector.getCurrentContext();
+                if (savedContext) {
+                    currentSiteId = savedContext.site_id || null;
+                    currentGroupId = savedContext.group_id || null;
+                    currentCategoryId = savedContext.category_id || null;
+                    console.log('초기 컨텍스트 로드:', { site: currentSiteId, group: currentGroupId, category: currentCategoryId });
+                }
+
+                SiteSelector.on('siteChange', function (context) {
+                    // 그룹/카테고리/사업장 ID 분리 저장
+                    currentSiteId = context.site_id || null;
+                    currentGroupId = context.group_id || null;
+                    currentCategoryId = context.category_id || null;
+                    console.log('사업장 선택:', { site: currentSiteId, group: currentGroupId, category: currentCategoryId });
+                    // 자동 재조회
+                    if (document.getElementById('startDate').value && document.getElementById('endDate').value) {
+                        searchMealCounts();
+                    }
+                });
+            }
+
+            // 브랜딩 적용
+            if (typeof BrandingManager !== 'undefined') {
+                BrandingManager.applyBranding('식수 조회');
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,27 @@
+<nav class="sidebar">
+    <div class="logo">
+        <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+    </div>
+    <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+    <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+    <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+    <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+    <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+    <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+    <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+    <a href="ingredients_management.html" class="nav-item"><i class="fas fa-carrot"></i>식자재 관리</a>
+    <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+    <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+    <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+    <div class="nav-dropdown" id="instruction-dropdown">
+        <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+        <div class="nav-submenu">
+            <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+            <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+            <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+            <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+        </div>
+    </div>
+    <div class="nav-divider"></div>
+    <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+</nav>

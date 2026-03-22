@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>보건증 관리 - 급식관리 시스템</title>
+    <link rel="icon" type="image/x-icon" href="static/favicon.ico">
+
+    <!-- 인증 체크 -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+
+    <!-- 외부 라이브러리 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- 공통 사이드바 CSS -->
+    <link rel="stylesheet" href="static/css/common-sidebar.css">
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <script src="static/js/sidebar-dropdown.js"></script>
+
+    <!-- 사업장 선택기 CSS -->
+    <link rel="stylesheet" href="static/css/site-selector.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8f5e9 100%);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 50%, #55efc4 100%);
+            color: white;
+            padding: 18px 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 184, 148, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: translateX(-20%) rotate(0deg); }
+            50% { transform: translateX(20%) rotate(5deg); }
+        }
+
+        .page-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* 상태 요약 카드 - 활기찬 디자인 */
+        .stats-container {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: white;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .stat-card.urgent::before {
+            background: linear-gradient(90deg, #e74c3c, #ff6b6b);
+        }
+
+        .stat-card.warning::before {
+            background: linear-gradient(90deg, #f39c12, #fdcb6e);
+        }
+
+        .stat-card.normal::before {
+            background: linear-gradient(90deg, #00b894, #55efc4);
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .stat-card.urgent .stat-number {
+            background: linear-gradient(135deg, #e74c3c, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card.warning .stat-number {
+            background: linear-gradient(135deg, #f39c12, #fdcb6e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card.normal .stat-number {
+            background: linear-gradient(135deg, #00b894, #55efc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .stat-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+
+        .stat-card.urgent .stat-icon { color: #e74c3c; }
+        .stat-card.warning .stat-icon { color: #f39c12; }
+        .stat-card.normal .stat-icon { color: #00b894; }
+
+        /* 필터 영역 */
+        .filter-bar {
+            background: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .filter-group select {
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .filter-group select:focus {
+            border-color: #00b894;
+            outline: none;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00b894, #00a885);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 184, 148, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+        }
+
+        /* 테이블 */
+        .table-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        }
+
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            font-size: 13px;
+            font-weight: 700;
+            color: #444;
+        }
+
+        td {
+            font-size: 13px;
+        }
+
+        tr {
+            transition: all 0.2s ease;
+        }
+
+        tr:hover {
+            background: linear-gradient(135deg, #f8f9fa, #fff);
+        }
+
+        tr.inactive-row {
+            opacity: 0.6;
+            background: #f5f5f5;
+        }
+
+        /* 상태 뱃지 */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .status-badge.expired {
+            background: linear-gradient(135deg, #fce4e4, #fff5f5);
+            color: #c0392b;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-badge.urgent {
+            background: linear-gradient(135deg, #ffebee, #fff5f5);
+            color: #e74c3c;
+            border: 1px solid #f5c6cb;
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2); }
+            50% { box-shadow: 0 4px 16px rgba(231, 76, 60, 0.4); }
+        }
+
+        .status-badge.warning {
+            background: linear-gradient(135deg, #fff3e0, #fffde7);
+            color: #f39c12;
+            border: 1px solid #ffe0b2;
+        }
+
+        .status-badge.normal {
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            color: #00b894;
+            border: 1px solid #c8e6c9;
+        }
+
+        .days-remaining {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .action-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn.edit {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            color: #1976d2;
+        }
+
+        .action-btn.edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+        }
+
+        .action-btn.delete {
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+            color: #c62828;
+        }
+
+        .action-btn.delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(198, 40, 40, 0.2);
+        }
+
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f8f9fa, #fff);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .modal-close {
+            background: #f0f0f0;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .form-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #00b894;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .form-group label .required {
+            color: #e74c3c;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #00b894;
+            box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: #f8f9fa;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state i {
+            font-size: 56px;
+            margin-bottom: 16px;
+            color: #ddd;
+        }
+
+        .salary-display {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .phone-display {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .birth-display {
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 사이드바 -->
+    <nav class="sidebar" id="sidebar">
+        <!-- sidebar-dropdown.js가 동적으로 삽입 -->
+    </nav>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+        <!-- 페이지 헤더 -->
+        <div class="page-header">
+            <div class="page-header-top">
+                <h1><i class="fas fa-id-card"></i> 보건증 관리</h1>
+                <div class="header-actions">
+                    <div id="site-selector-container"></div>
+                    <button class="btn btn-success" onclick="openAddModal()">
+                        <i class="fas fa-plus"></i> 직원 등록
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 상태 요약 -->
+        <div class="stats-container">
+            <div class="stat-card urgent">
+                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="stat-number" id="stat-urgent">0</div>
+                <div class="stat-label">긴급 (만료/1주일 이내)</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-number" id="stat-warning">0</div>
+                <div class="stat-label">주의 (1개월 이내)</div>
+            </div>
+            <div class="stat-card normal">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-number" id="stat-normal">0</div>
+                <div class="stat-label">정상</div>
+            </div>
+        </div>
+
+        <!-- 필터 -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label>상태:</label>
+                <select id="filter-status" onchange="loadCertificates()">
+                    <option value="">전체</option>
+                    <option value="urgent">긴급</option>
+                    <option value="warning">주의</option>
+                    <option value="normal">정상</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>
+                    <input type="checkbox" id="filter-inactive" onchange="loadCertificates()">
+                    퇴사자 포함
+                </label>
+            </div>
+            <div style="flex: 1;"></div>
+            <button class="btn btn-secondary" onclick="loadCertificates()">
+                <i class="fas fa-sync-alt"></i> 새로고침
+            </button>
+        </div>
+
+        <!-- 테이블 -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>이름</th>
+                        <th>생년월일</th>
+                        <th>연락처</th>
+                        <th>소속</th>
+                        <th>보건증 만료일</th>
+                        <th>상태</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody id="certificate-list">
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>로딩 중...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- 등록/수정 모달 -->
+    <div class="modal" id="certificateModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">직원 등록</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="cert-id">
+
+                <!-- 기본 정보 -->
+                <div class="form-section">
+                    <div class="form-section-title"><i class="fas fa-user"></i> 기본 정보</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>이름 <span class="required">*</span></label>
+                            <input type="text" id="employee-name" placeholder="직원 이름" required>
+                        </div>
+                        <div class="form-group">
+                            <label>직책</label>
+                            <input type="text" id="employee-position" placeholder="예: 조리사, 영양사">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>생년월일</label>
+                            <input type="date" id="birth-date">
+                        </div>
+                        <div class="form-group">
+                            <label>연락처</label>
+                            <input type="tel" id="phone" placeholder="010-0000-0000">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>소속 사업장</label>
+                        <select id="cert-site-id">
+                            <option value="">선택</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 보건증 정보 -->
+                <div class="form-section">
+                    <div class="form-section-title"><i class="fas fa-id-card"></i> 보건증 정보</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>보건증 번호</label>
+                            <input type="text" id="certificate-number" placeholder="보건증 번호">
+                        </div>
+                        <div class="form-group">
+                            <label>만료일 <span class="required">*</span></label>
+                            <input type="date" id="expiry-date" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>발급일</label>
+                        <input type="date" id="issue-date">
+                    </div>
+                </div>
+
+                <!-- 근무 정보 -->
+                <div class="form-section">
+                    <div class="form-section-title"><i class="fas fa-briefcase"></i> 근무 정보</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>입사일</label>
+                            <input type="date" id="hire-date">
+                        </div>
+                        <div class="form-group">
+                            <label>퇴사일</label>
+                            <input type="date" id="resignation-date">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>급여 (원)</label>
+                        <input type="number" id="salary" placeholder="월급여 (숫자만 입력)">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>비고</label>
+                    <textarea id="notes" rows="2" placeholder="메모"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveCertificate()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사이드바 초기화 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof initSidebar === 'function') {
+                await initSidebar('admin');
+            }
+            await loadSites();
+            await loadCertificates();
+        });
+
+        let currentGroupId = null;
+        let currentSiteId = null;
+        let sites = [];
+
+        // 사업장 목록 로드
+        async function loadSites() {
+            try {
+                const response = await fetch('/api/admin/sites');
+                const result = await response.json();
+                if (result.success) {
+                    sites = result.data || [];
+                    const select = document.getElementById('cert-site-id');
+                    select.innerHTML = '<option value="">선택</option>';
+                    sites.forEach(site => {
+                        select.innerHTML += `<option value="${site.id}">${site.site_name || site.name}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('사업장 로드 실패:', error);
+            }
+        }
+
+        // 보건증 목록 로드
+        async function loadCertificates() {
+            const tbody = document.getElementById('certificate-list');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="empty-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>로딩 중...</p>
+                    </td>
+                </tr>
+            `;
+
+            try {
+                const status = document.getElementById('filter-status').value;
+                const includeInactive = document.getElementById('filter-inactive').checked;
+
+                let url = `/api/health-certificates?include_inactive=${includeInactive}`;
+                if (status) url += `&status=${status}`;
+                if (currentSiteId) url += `&site_id=${currentSiteId}`;
+                if (currentGroupId) url += `&group_id=${currentGroupId}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    const data = result.data || [];
+                    const stats = result.stats || {};
+
+                    // 통계 업데이트
+                    document.getElementById('stat-urgent').textContent = stats.urgent || 0;
+                    document.getElementById('stat-warning').textContent = stats.warning || 0;
+                    document.getElementById('stat-normal').textContent = stats.normal || 0;
+
+                    if (data.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" class="empty-state">
+                                    <i class="fas fa-user-slash"></i>
+                                    <p>등록된 직원이 없습니다.</p>
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    tbody.innerHTML = data.map(cert => `
+                        <tr class="${!cert.is_active ? 'inactive-row' : ''}">
+                            <td>
+                                <strong>${cert.employee_name}</strong>
+                                ${cert.employee_position ? `<div style="font-size:11px;color:#666;">${cert.employee_position}</div>` : ''}
+                                ${!cert.is_active ? '<span style="color:#e74c3c;font-size:11px;">(퇴사)</span>' : ''}
+                            </td>
+                            <td class="birth-display">${cert.birth_date || '-'}</td>
+                            <td class="phone-display">${cert.phone || '-'}</td>
+                            <td>${cert.site_name || cert.group_name || '-'}</td>
+                            <td>
+                                ${cert.expiry_date || '-'}
+                                <div class="days-remaining">
+                                    ${getDaysRemainingText(cert.days_remaining, cert.status)}
+                                </div>
+                            </td>
+                            <td><span class="status-badge ${cert.status}">${getStatusText(cert.status)}</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="action-btn edit" onclick="editCertificate(${cert.id})">
+                                        <i class="fas fa-edit"></i> 수정
+                                    </button>
+                                    <button class="action-btn delete" onclick="deleteCertificate(${cert.id}, '${cert.employee_name}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('보건증 로드 실패:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>데이터 로드 실패</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'expired': return '만료됨';
+                case 'urgent': return '긴급';
+                case 'warning': return '주의';
+                case 'normal': return '정상';
+                default: return status;
+            }
+        }
+
+        function getDaysRemainingText(days, status) {
+            if (days === null || days === undefined) return '';
+            if (status === 'expired' || days < 0) return `${Math.abs(days)}일 경과`;
+            if (days === 0) return '오늘 만료';
+            return `${days}일 남음`;
+        }
+
+        // 모달
+        function openAddModal() {
+            document.getElementById('modal-title').textContent = '직원 등록';
+            document.getElementById('cert-id').value = '';
+            document.getElementById('employee-name').value = '';
+            document.getElementById('employee-position').value = '';
+            document.getElementById('birth-date').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('cert-site-id').value = currentSiteId || '';
+            document.getElementById('certificate-number').value = '';
+            document.getElementById('issue-date').value = '';
+            document.getElementById('expiry-date').value = '';
+            document.getElementById('hire-date').value = '';
+            document.getElementById('resignation-date').value = '';
+            document.getElementById('salary').value = '';
+            document.getElementById('notes').value = '';
+            document.getElementById('certificateModal').classList.add('show');
+        }
+
+        async function editCertificate(id) {
+            try {
+                const response = await fetch(`/api/health-certificates?include_inactive=true`);
+                const result = await response.json();
+                if (result.success) {
+                    const cert = result.data.find(c => c.id === id);
+                    if (cert) {
+                        document.getElementById('modal-title').textContent = '직원 수정';
+                        document.getElementById('cert-id').value = cert.id;
+                        document.getElementById('employee-name').value = cert.employee_name || '';
+                        document.getElementById('employee-position').value = cert.employee_position || '';
+                        document.getElementById('birth-date').value = cert.birth_date || '';
+                        document.getElementById('phone').value = cert.phone || '';
+                        document.getElementById('cert-site-id').value = cert.site_id || '';
+                        document.getElementById('certificate-number').value = cert.certificate_number || '';
+                        document.getElementById('issue-date').value = cert.issue_date || '';
+                        document.getElementById('expiry-date').value = cert.expiry_date || '';
+                        document.getElementById('hire-date').value = cert.hire_date || '';
+                        document.getElementById('resignation-date').value = cert.resignation_date || '';
+                        document.getElementById('salary').value = cert.salary || '';
+                        document.getElementById('notes').value = cert.notes || '';
+                        document.getElementById('certificateModal').classList.add('show');
+                    }
+                }
+            } catch (error) {
+                showAlert('데이터 로드 실패', 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('certificateModal').classList.remove('show');
+        }
+
+        async function saveCertificate() {
+            const id = document.getElementById('cert-id').value;
+            const employeeName = document.getElementById('employee-name').value.trim();
+            const expiryDate = document.getElementById('expiry-date').value;
+
+            if (!employeeName) {
+                showAlert('이름을 입력하세요.', 'warning');
+                return;
+            }
+            if (!expiryDate) {
+                showAlert('보건증 만료일을 입력하세요.', 'warning');
+                return;
+            }
+
+            const data = {
+                employee_name: employeeName,
+                employee_position: document.getElementById('employee-position').value.trim() || null,
+                birth_date: document.getElementById('birth-date').value || null,
+                phone: document.getElementById('phone').value.trim() || null,
+                site_id: document.getElementById('cert-site-id').value || null,
+                group_id: currentGroupId,
+                certificate_number: document.getElementById('certificate-number').value.trim() || null,
+                issue_date: document.getElementById('issue-date').value || null,
+                expiry_date: expiryDate,
+                hire_date: document.getElementById('hire-date').value || null,
+                resignation_date: document.getElementById('resignation-date').value || null,
+                salary: document.getElementById('salary').value || null,
+                notes: document.getElementById('notes').value.trim() || null
+            };
+
+            try {
+                const url = id ? `/api/health-certificates/${id}` : '/api/health-certificates';
+                const method = id ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showAlert(id ? '수정되었습니다.' : '등록되었습니다.', 'success');
+                    closeModal();
+                    loadCertificates();
+                } else {
+                    showAlert(result.error || '저장 실패', 'error');
+                }
+            } catch (error) {
+                showAlert('저장 중 오류 발생', 'error');
+            }
+        }
+
+        async function deleteCertificate(id, name) {
+            if (!confirm(`"${name}" 직원을 삭제하시겠습니까?\n(퇴사 처리됩니다)`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/health-certificates/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('삭제되었습니다.', 'success');
+                    loadCertificates();
+                } else {
+                    showAlert(result.error || '삭제 실패', 'error');
+                }
+            } catch (error) {
+                showAlert('삭제 중 오류 발생', 'error');
+            }
+        }
+
+        // 알림 함수 (custom-alert.js가 없을 경우 대비)
+        function showAlert(message, type) {
+            if (typeof customAlert === 'function') {
+                customAlert(message, type);
+            } else {
+                alert(message);
+            }
+        }
+    </script>
+
+    <!-- SiteSelector -->
+    <script src="/static/modules/core/site-selector.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                if (window.SiteSelector) {
+                    await SiteSelector.init('site-selector-container');
+
+                    const ctx = SiteSelector.getCurrentContext();
+                    if (ctx) {
+                        window.currentGroupId = ctx.group_id;
+                        window.currentSiteId = ctx.site_id;
+                    }
+
+                    SiteSelector.on('siteChange', (context) => {
+                        window.currentGroupId = context?.group_id || null;
+                        window.currentSiteId = context?.site_id || null;
+                        loadCertificates();
+                    });
+                }
+            } catch (e) {
+                console.error('SiteSelector 초기화 실패:', e);
+            }
+        });
+    </script>
+</body>
+
+</html>

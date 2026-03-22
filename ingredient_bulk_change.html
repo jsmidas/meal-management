@@ -1,0 +1,3964 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/static/js/auth-check.js"></script>
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title>식자재 일괄변경 - 급식관리 시스템</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251027">
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <link rel="stylesheet" href="/static/css/site-selector.css">
+    <script src="/static/js/sidebar-dropdown.js"></script>
+    <script src="/static/modules/core/site-selector.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        /* 사이드바는 common-sidebar.css에서 처리 */
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        /* 탭 네비게이션 */
+        .tab-nav {
+            display: flex;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #666;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .tab-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .tab-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .tab-btn i {
+            font-size: 16px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 필터 섹션 */
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+            color: #34495e;
+            font-size: 14px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            min-width: 180px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #219a52;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+
+        /* 통계 */
+        .stats-bar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-item .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .stat-item .icon.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .stat-item .icon.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .stat-item .icon.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .stat-item .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-item .label {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        /* 불일치 그룹 카드 */
+        .mismatch-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .mismatch-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .mismatch-header {
+            background: #f8d7da;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .mismatch-header:hover {
+            background: #f5c6cb;
+        }
+
+        .mismatch-header.collapsed {
+            background: #fff3cd;
+        }
+
+        .mismatch-header .title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mismatch-header .title h3 {
+            font-size: 16px;
+            color: #721c24;
+        }
+
+        .mismatch-header.collapsed .title h3 {
+            color: #856404;
+        }
+
+        .mismatch-header .badge {
+            background: #721c24;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .mismatch-header.collapsed .badge {
+            background: #856404;
+        }
+
+        .mismatch-header .toggle-icon {
+            font-size: 18px;
+            color: #721c24;
+            transition: transform 0.2s;
+        }
+
+        .mismatch-header.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+            color: #856404;
+        }
+
+        .mismatch-header .compare-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 15px;
+            transition: all 0.2s;
+        }
+
+        .mismatch-header .compare-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .mismatch-body {
+            padding: 20px;
+            display: block;
+        }
+
+        .mismatch-body.hidden {
+            display: none;
+        }
+
+        /* 불일치 식자재 테이블 */
+        .mismatch-ingredients {
+            margin-top: 15px;
+        }
+
+        .mismatch-ingredients h4 {
+            margin-bottom: 10px;
+            color: #c0392b;
+            font-size: 14px;
+        }
+
+        .mismatch-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .mismatch-table th,
+        .mismatch-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .mismatch-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .mismatch-table .used-in {
+            color: #27ae60;
+        }
+
+        .mismatch-table .not-in {
+            color: #e74c3c;
+        }
+
+        .mismatch-table .price {
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .mismatch-table .actions {
+            white-space: nowrap;
+        }
+
+        .mismatch-action-btn {
+            padding: 5px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .mismatch-action-btn.unify {
+            background: #27ae60;
+            color: white;
+        }
+
+        .mismatch-action-btn.unify:hover {
+            background: #219a52;
+        }
+
+        .mismatch-action-btn.replace {
+            background: #3498db;
+            color: white;
+        }
+
+        .mismatch-action-btn.replace:hover {
+            background: #2980b9;
+        }
+
+        .mismatch-action-btn.ignore {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .mismatch-action-btn.ignore:hover {
+            background: #7f8c8d;
+        }
+
+        .mismatch-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 교체 모달 스타일 */
+        .replace-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2500;  /* 비교 모달(2000)보다 앞에 표시 */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .replace-modal.active {
+            display: flex;
+        }
+
+        .replace-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .replace-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            cursor: move;  /* 드래그 가능 표시 */
+            user-select: none;
+        }
+
+        .replace-modal-header:active {
+            cursor: grabbing;
+        }
+
+        .replace-modal-header h3 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .replace-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .replace-modal-close:hover {
+            color: #333;
+        }
+
+        .current-ingredient-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .current-ingredient-info h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+
+        .target-recipes-list {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .target-recipes-list h4 {
+            margin: 0 0 10px 0;
+            color: #1565c0;
+        }
+
+        .target-recipes-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .new-ingredient-search {
+            margin-bottom: 20px;
+        }
+
+        .new-ingredient-search input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .new-ingredient-search input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .new-ingredient-results {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .new-ingredient-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .new-ingredient-item:hover {
+            background: #f0f7ff;
+        }
+
+        .new-ingredient-item.selected {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .new-ingredient-item .name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .new-ingredient-item .spec {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .new-ingredient-item .price {
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .replace-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .replace-modal-actions button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .replace-modal-actions .cancel-btn {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .replace-modal-actions .confirm-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .replace-modal-actions .confirm-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 레시피 비교 모달 스타일 */
+        .compare-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .compare-modal.active {
+            display: flex;
+        }
+
+        .compare-modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 95%;
+            max-width: 1400px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .compare-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px 12px 0 0;
+        }
+
+        .compare-modal-header h3 {
+            color: white;
+            margin: 0;
+            font-size: 1.3em;
+        }
+
+        .compare-modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .compare-modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .compare-summary {
+            display: flex;
+            gap: 30px;
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .compare-summary .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .compare-summary .summary-item.mismatch {
+            color: #dc2626;
+        }
+
+        .compare-summary .summary-item i {
+            color: #6b7280;
+        }
+
+        .compare-summary .summary-item.mismatch i {
+            color: #dc2626;
+        }
+
+        .compare-table-wrapper {
+            flex: 1;
+            overflow: auto;
+            padding: 0;
+        }
+
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .compare-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .compare-table th {
+            background: #1f2937;
+            color: white;
+            padding: 12px 15px;
+            text-align: center;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .recipe-header-cell {
+            max-width: 150px;
+            white-space: normal;
+            word-break: keep-all;
+        }
+
+        .recipe-header-link {
+            color: #93c5fd;
+            text-decoration: none;
+            font-size: 12px;
+            line-height: 1.3;
+            display: block;
+        }
+
+        .recipe-header-link:hover {
+            color: #60a5fa;
+            text-decoration: underline;
+        }
+
+        .supplier-cell {
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .supplier-name {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .compare-table th:first-child {
+            text-align: left;
+            min-width: 200px;
+            position: sticky;
+            left: 0;
+            z-index: 11;
+        }
+
+        .compare-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .compare-table td:first-child {
+            text-align: left;
+            background: white;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            border-right: 2px solid #e5e7eb;
+        }
+
+        .compare-table tbody tr:hover td {
+            background-color: #f3f4f6;
+        }
+
+        .compare-table tbody tr:hover td:first-child {
+            background-color: #e5e7eb;
+        }
+
+        .compare-table tbody tr.mismatch-row {
+            background-color: #fef2f2;
+        }
+
+        .compare-table tbody tr.mismatch-row td:first-child {
+            background-color: #fee2e2;
+            border-left: 4px solid #dc2626;
+        }
+
+        .compare-table tbody tr.mismatch-row:hover td {
+            background-color: #fee2e2;
+        }
+
+        .compare-table tbody tr.mismatch-row:hover td:first-child {
+            background-color: #fecaca;
+        }
+
+        .compare-table .ingredient-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .compare-table .ingredient-code {
+            font-size: 11px;
+            color: #6b7280;
+            font-family: monospace;
+        }
+
+        .compare-table .cell-has {
+            background-color: #dcfce7 !important;
+            color: #166534;
+        }
+
+        .compare-table .cell-missing {
+            background-color: #fee2e2 !important;
+            color: #991b1b;
+        }
+
+        .compare-table .editable-cell {
+            position: relative;
+        }
+
+        .compare-table .cell-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .compare-table .quantity-value {
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+
+        .compare-table .quantity-value:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .compare-table .cell-delete-btn {
+            display: none;
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .compare-table .editable-cell:hover .cell-delete-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .compare-table .cell-delete-btn:hover {
+            background: #dc2626;
+        }
+
+        .compare-table .quantity-input {
+            width: 60px;
+            padding: 2px 4px;
+            border: 2px solid #3b82f6;
+            border-radius: 4px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .compare-table .quantity-unit {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .compare-table .missing-mark {
+            color: #dc2626;
+            font-size: 16px;
+        }
+
+        .compare-table .price-cell {
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .compare-table .price-per-unit {
+            color: #dc2626;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .compare-legend {
+            display: flex;
+            gap: 25px;
+            padding: 12px 25px;
+            background: #f8f9fa;
+            border-top: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+
+        .compare-legend .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #374151;
+        }
+
+        .compare-legend .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+        }
+
+        .compare-legend .legend-color.has {
+            background-color: #dcfce7;
+        }
+
+        .compare-legend .legend-color.missing {
+            background-color: #fee2e2;
+        }
+
+        .compare-legend .legend-color.mismatch {
+            background: linear-gradient(135deg, #fee2e2 50%, #fef2f2 50%);
+            border-left: 3px solid #dc2626;
+        }
+
+        .compare-modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px 25px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .compare-modal-actions button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .compare-modal-actions .close-btn {
+            background: #6b7280;
+            color: white;
+        }
+
+        .compare-modal-actions .close-btn:hover {
+            background: #4b5563;
+        }
+
+        /* 비교 테이블 내 조치 버튼 */
+        .compare-table .compare-actions {
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .compare-action-btn {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .compare-action-btn.unify {
+            background: #10b981;
+            color: white;
+        }
+
+        .compare-action-btn.unify:hover {
+            background: #059669;
+            transform: scale(1.05);
+        }
+
+        .compare-action-btn.replace {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .compare-action-btn.replace:hover {
+            background: #d97706;
+            transform: scale(1.05);
+        }
+
+        .compare-action-btn i {
+            font-size: 10px;
+        }
+
+        /* 빠른 교체 옵션 스타일 */
+        .quick-replace-section {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .quick-replace-title {
+            font-weight: 600;
+            color: #0369a1;
+            margin-bottom: 12px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .quick-replace-item {
+            background: white;
+            border: 2px solid #e0e7ff;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .quick-replace-item:hover {
+            border-color: #6366f1;
+            background: #eef2ff;
+            transform: translateX(5px);
+        }
+
+        .quick-replace-item.selected {
+            border-color: #10b981;
+            background: #ecfdf5;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+
+        .quick-replace-item.mismatch {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .quick-item-name {
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quick-item-left {
+            flex: 1;
+        }
+
+        .quick-item-info {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .quick-item-price {
+            text-align: right;
+            min-width: 80px;
+        }
+
+        .quick-item-price .price-value {
+            font-weight: 700;
+            color: #dc2626;
+            font-size: 14px;
+        }
+
+        .quick-item-price .price-label {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-left: 2px;
+        }
+
+        .mismatch-badge {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .match-badge {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .search-divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0 15px;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+
+        .search-divider::before,
+        .search-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e7eb;
+        }
+
+        .search-divider span {
+            padding: 0 15px;
+        }
+
+        /* 탭 1: 식자재 교체 스타일 */
+        .replace-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .replace-section h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .ingredient-selector {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        .ingredient-box {
+            flex: 1;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+
+        .ingredient-box.old {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .ingredient-box.new {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .ingredient-box h4 {
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .ingredient-box.old h4 {
+            color: #dc2626;
+        }
+
+        .ingredient-box.new h4 {
+            color: #16a34a;
+        }
+
+        .selected-ing-display {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            min-height: 80px;
+        }
+
+        .selected-ing-display.empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-style: italic;
+        }
+
+        .selected-ing-display .ing-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .selected-ing-display .ing-info {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .arrow-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #3498db;
+            padding-top: 40px;
+        }
+
+        /* 검색 입력 */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+        }
+
+        .search-input-wrapper input {
+            width: 100%;
+            padding-right: 35px;
+        }
+
+        .search-input-wrapper .search-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        /* 검색 결과 드롭다운 */
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: #f0f7ff;
+        }
+
+        .search-result-item .name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .search-result-item .info {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .search-result-item .price-tag {
+            display: inline-block;
+            background: #27ae60;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+
+        /* 레시피 편집 테이블 */
+        .recipe-edit-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .recipe-edit-header {
+            background: #3498db;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recipe-edit-header h3 {
+            font-size: 16px;
+        }
+
+        .recipe-edit-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .recipe-edit-table th,
+        .recipe-edit-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .recipe-edit-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+            font-size: 13px;
+        }
+
+        .recipe-edit-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .recipe-edit-table tr.current {
+            background: #fff3cd;
+        }
+
+        .recipe-edit-table tr.completed {
+            background: #d4edda;
+        }
+
+        .recipe-edit-table input[type="number"] {
+            width: 100px;
+            padding: 8px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            font-size: 14px;
+            text-align: right;
+        }
+
+        .recipe-edit-table input[type="number"]:focus {
+            outline: none;
+            border-color: #2980b9;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+        }
+
+        .recipe-edit-table .status-icon {
+            font-size: 18px;
+        }
+
+        .recipe-edit-table .status-icon.pending {
+            color: #ffc107;
+        }
+
+        .recipe-edit-table .status-icon.done {
+            color: #27ae60;
+        }
+
+        .edit-actions {
+            padding: 20px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .edit-progress {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .edit-progress strong {
+            color: #3498db;
+        }
+
+        /* 적용 시작일 옵션 */
+        .effective-date-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .effective-date-section label {
+            font-weight: bold;
+            color: #856404;
+        }
+
+        .effective-date-section input[type="date"] {
+            padding: 8px 12px;
+            border: 2px solid #f39c12;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .effective-date-section .hint {
+            font-size: 12px;
+            color: #856404;
+        }
+
+        /* 미리보기 모달 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            display: none;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 변경 비교 */
+        .change-comparison {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .comparison-box {
+            flex: 1;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .comparison-box.old {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+
+        .comparison-box.new {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+
+        .comparison-box h4 {
+            font-size: 12px;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .comparison-box .name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .comparison-box.old .name {
+            color: #dc2626;
+        }
+
+        .comparison-box.new .name {
+            color: #16a34a;
+        }
+
+        .comparison-box .detail {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .price-diff {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .price-diff .diff-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .price-diff .diff-value.positive {
+            color: #dc2626;
+        }
+
+        .price-diff .diff-value.negative {
+            color: #16a34a;
+        }
+
+        /* 예약 알림 */
+        .scheduled-notice {
+            background: #fff3cd;
+            border: 2px solid #f39c12;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .scheduled-notice i {
+            font-size: 24px;
+            color: #f39c12;
+            margin-bottom: 10px;
+        }
+
+        .scheduled-notice .date {
+            font-size: 18px;
+            font-weight: bold;
+            color: #856404;
+        }
+
+        /* 이력/예약 테이블 */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .history-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .history-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.applied {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge.failed {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* 로딩 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            display: none;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            color: #27ae60;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #7f8c8d;
+        }
+
+        /* 도움말 */
+        .help-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #0c5460;
+        }
+
+        .help-box strong {
+            color: #004085;
+        }
+
+        .recipe-scope {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #e9ecef;
+            color: #495057;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <div class="nav-dropdown open" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle active" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item active">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content">
+            <!-- 헤더 -->
+            <div class="header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1><i class="fas fa-exchange-alt"></i> 식자재 일괄변경</h1>
+                    <p>레시피의 식자재를 일괄 변경하거나, 불일치 식자재를 통일할 수 있습니다. 변경 이력이 자동으로 기록됩니다.</p>
+                </div>
+                <!-- 사업장 선택기 -->
+                <div id="bulk-change-site-selector" class="site-selector-standard"></div>
+            </div>
+
+            <!-- 탭 네비게이션 -->
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab('replace')">
+                    <i class="fas fa-sync-alt"></i> 식자재 교체
+                </button>
+                <button class="tab-btn" onclick="switchTab('mismatch')">
+                    <i class="fas fa-exclamation-triangle"></i> 불일치 감지
+                </button>
+                <button class="tab-btn" onclick="switchTab('history')">
+                    <i class="fas fa-history"></i> 변경 이력
+                </button>
+                <button class="tab-btn" onclick="switchTab('scheduled')">
+                    <i class="fas fa-calendar-check"></i> 예약 변경
+                </button>
+            </div>
+
+            <!-- ============================================
+                 탭 1: 식자재 교체
+                 ============================================ -->
+            <div class="tab-content active" id="tab-replace">
+                <!-- 도움말 -->
+                <div class="help-box">
+                    <strong><i class="fas fa-info-circle"></i> 사용 방법:</strong>
+                    1) 교체할 기존 식자재를 검색하여 선택 ->
+                    2) 새 식자재를 검색하여 선택 ->
+                    3) 레시피별 수량을 확인/수정 (Enter로 다음 항목 이동) ->
+                    4) 적용 시작일 선택 (선택사항: 미래 날짜 선택 시 예약 변경) ->
+                    5) 일괄 적용
+                </div>
+
+                <!-- 식자재 선택 영역 -->
+                <div class="replace-section">
+                    <h3><i class="fas fa-search"></i> 교체할 식자재 선택</h3>
+                    <div class="ingredient-selector">
+                        <!-- 기존 식자재 -->
+                        <div class="ingredient-box old">
+                            <h4><i class="fas fa-times-circle"></i> 기존 식자재</h4>
+                            <div class="form-group">
+                                <div class="search-input-wrapper">
+                                    <input type="text" id="oldIngSearch" placeholder="기존 식자재 검색..."
+                                        oninput="searchOldIngredient(this.value)">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <div class="search-results" id="oldIngResults"></div>
+                                </div>
+                            </div>
+                            <div class="selected-ing-display empty" id="oldIngDisplay">
+                                기존 식자재를 검색하여 선택하세요
+                            </div>
+                        </div>
+
+                        <!-- 화살표 -->
+                        <div class="arrow-icon">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+
+                        <!-- 새 식자재 -->
+                        <div class="ingredient-box new">
+                            <h4><i class="fas fa-check-circle"></i> 새 식자재</h4>
+                            <div class="form-group">
+                                <div class="search-input-wrapper">
+                                    <input type="text" id="newIngSearch" placeholder="새 식자재 검색..."
+                                        oninput="searchNewIngredient(this.value)" disabled>
+                                    <i class="fas fa-search search-icon"></i>
+                                    <div class="search-results" id="newIngResults"></div>
+                                </div>
+                            </div>
+                            <div class="selected-ing-display empty" id="newIngDisplay">
+                                새 식자재를 검색하여 선택하세요
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 레시피 편집 영역 -->
+                <div class="recipe-edit-section" id="recipeEditSection" style="display: none;">
+                    <div class="recipe-edit-header">
+                        <h3><i class="fas fa-edit"></i> 레시피별 수량 확인/수정</h3>
+                        <div>
+                            <button class="btn btn-secondary" onclick="selectAllRecipes(true)">전체 선택</button>
+                            <button class="btn btn-secondary" onclick="selectAllRecipes(false)">전체 해제</button>
+                        </div>
+                    </div>
+                    <table class="recipe-edit-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">선택</th>
+                                <th style="width: 40px;">상태</th>
+                                <th>레시피명</th>
+                                <th>사업장 범위</th>
+                                <th style="width: 120px;">현재 수량</th>
+                                <th style="width: 150px;">새 수량 (Enter로 이동)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recipeEditBody">
+                            <!-- 동적 생성 -->
+                        </tbody>
+                    </table>
+                    <div class="edit-actions">
+                        <div class="edit-progress">
+                            진행률: <strong id="editProgress">0 / 0</strong>
+                        </div>
+                        <div class="effective-date-section">
+                            <label><i class="fas fa-calendar-alt"></i> 적용 시작일:</label>
+                            <input type="date" id="effectiveDate" min="">
+                            <span class="hint">(비워두면 즉시 적용, 미래 날짜 선택 시 예약)</span>
+                        </div>
+                        <div>
+                            <button class="btn btn-secondary" onclick="cancelReplace()">취소</button>
+                            <button class="btn btn-success" onclick="applyReplace()" id="applyReplaceBtn" disabled>
+                                <i class="fas fa-check"></i> 선택한 레시피에 적용
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================
+                 탭 2: 불일치 감지
+                 ============================================ -->
+            <div class="tab-content" id="tab-mismatch">
+                <!-- 필터 -->
+                <div class="filter-section">
+                    <button class="btn btn-primary" onclick="loadMismatchData()">
+                        <i class="fas fa-sync-alt"></i> 새로고침
+                    </button>
+                </div>
+
+                <!-- 통계 -->
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <div class="icon warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <div class="value" id="mismatchCount">0</div>
+                            <div class="label">불일치 그룹</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="icon info">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <div>
+                            <div class="value" id="recipeCount">0</div>
+                            <div class="label">영향받는 레시피</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 불일치 목록 -->
+                <div class="mismatch-list" id="mismatchList">
+                    <!-- 동적 생성 -->
+                </div>
+            </div>
+
+            <!-- ============================================
+                 탭 3: 변경 이력
+                 ============================================ -->
+            <div class="tab-content" id="tab-history">
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label><i class="fas fa-calendar"></i> 기간</label>
+                        <input type="date" id="historyStartDate">
+                        <span>~</span>
+                        <input type="date" id="historyEndDate">
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fas fa-search"></i> 식자재 코드</label>
+                        <input type="text" id="historyIngredientCode" placeholder="식자재 코드">
+                    </div>
+                    <button class="btn btn-primary" onclick="loadChangeHistory()">
+                        <i class="fas fa-search"></i> 조회
+                    </button>
+                </div>
+
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <div class="icon info">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div>
+                            <div class="value" id="historyCount">0</div>
+                            <div class="label">변경 기록</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>일시</th>
+                                <th>유형</th>
+                                <th>레시피</th>
+                                <th>기존 식자재</th>
+                                <th>새 식자재</th>
+                                <th>수량 변경</th>
+                                <th>배치 ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- 동적 생성 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================
+                 탭 4: 예약 변경
+                 ============================================ -->
+            <div class="tab-content" id="tab-scheduled">
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label><i class="fas fa-filter"></i> 상태</label>
+                        <select id="scheduledStatusFilter" onchange="loadScheduledChanges()">
+                            <option value="pending">대기중</option>
+                            <option value="applied">적용완료</option>
+                            <option value="cancelled">취소됨</option>
+                            <option value="all">전체</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadScheduledChanges()">
+                        <i class="fas fa-sync-alt"></i> 새로고침
+                    </button>
+                    <button class="btn btn-warning" onclick="applyDueSchedules()">
+                        <i class="fas fa-play"></i> 기한 도래 항목 적용
+                    </button>
+                </div>
+
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <div class="icon warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <div class="value" id="scheduledPendingCount">0</div>
+                            <div class="label">대기중</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="icon success">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div>
+                            <div class="value" id="scheduledAppliedCount">0</div>
+                            <div class="label">적용완료</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden;">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>적용 예정일</th>
+                                <th>레시피</th>
+                                <th>현재 식자재</th>
+                                <th>새 식자재</th>
+                                <th>수량</th>
+                                <th>상태</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduledTableBody">
+                            <!-- 동적 생성 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 미리보기 모달 -->
+    <div class="modal-overlay" id="previewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-eye"></i> 변경 미리보기</h2>
+                <button class="modal-close" onclick="closePreviewModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="previewContent">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePreviewModal()">취소</button>
+                <button class="btn btn-success" onclick="confirmApply()">
+                    <i class="fas fa-check"></i> 변경 적용
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로딩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        // 드롭다운 토글 함수
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            if (dropdown) {
+                dropdown.classList.toggle('open');
+            }
+        }
+
+        // ============================================
+        // 전역 변수
+        // ============================================
+        let mismatchData = [];
+        let currentChangeData = null;
+
+        // 교체 기능용
+        let oldIngredient = null;
+        let newIngredient = null;
+        let recipesToEdit = [];
+        let currentEditIndex = -1;
+
+        // ============================================
+        // 모달 드래그 기능
+        // ============================================
+        function makeDraggable(modalContentEl, handleEl) {
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            handleEl.addEventListener('mousedown', function(e) {
+                // 닫기 버튼 클릭 시 드래그 시작 안함
+                if (e.target.closest('.replace-modal-close')) return;
+
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+
+                const rect = modalContentEl.getBoundingClientRect();
+                startLeft = rect.left;
+                startTop = rect.top;
+
+                // 모달을 절대 위치로 전환
+                modalContentEl.style.position = 'fixed';
+                modalContentEl.style.left = startLeft + 'px';
+                modalContentEl.style.top = startTop + 'px';
+                modalContentEl.style.margin = '0';
+                modalContentEl.style.transform = 'none';
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            function onMouseMove(e) {
+                if (!isDragging) return;
+
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+
+                modalContentEl.style.left = (startLeft + dx) + 'px';
+                modalContentEl.style.top = (startTop + dy) + 'px';
+            }
+
+            function onMouseUp() {
+                isDragging = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+        }
+
+        // ============================================
+        // 초기화
+        // ============================================
+
+        // 현재 선택된 사업장 ID
+        let currentGroupId = null;
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            // SiteSelector 초기화
+            await initSiteSelector();
+
+            // 적용 시작일 기본값 설정 (오늘 날짜)
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('effectiveDate').min = today;
+
+            // 이력 조회 기본 날짜 설정 (최근 30일)
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            document.getElementById('historyStartDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+            document.getElementById('historyEndDate').value = today;
+
+            // 교체 모달 드래그 가능하게 설정
+            const replaceModal = document.querySelector('#mismatchReplaceModal .replace-modal-content');
+            const replaceHeader = document.querySelector('#mismatchReplaceModal .replace-modal-header');
+            if (replaceModal && replaceHeader) {
+                makeDraggable(replaceModal, replaceHeader);
+            }
+        });
+
+        // SiteSelector 초기화
+        async function initSiteSelector() {
+            try {
+                await SiteSelector.init('bulk-change-site-selector');
+
+                // 초기 context 가져오기 (페이지 로드 시 초기값 설정)
+                const initialContext = SiteSelector.getCurrentContext();
+                if (initialContext && initialContext.group_id) {
+                    currentGroupId = initialContext.group_id;
+                    console.log('초기 그룹 ID 설정:', currentGroupId);
+                }
+
+                // 사업장 변경 이벤트 리스너
+                SiteSelector.on('siteChange', (context) => {
+                    console.log('사업장 변경:', context);
+                    if (context && context.group_id) {
+                        currentGroupId = context.group_id;
+                    } else {
+                        currentGroupId = null;
+                    }
+
+                    // 현재 활성 탭에 따라 데이터 새로고침
+                    const activeTab = document.querySelector('.tab-content.active');
+                    if (activeTab) {
+                        if (activeTab.id === 'tab-mismatch') {
+                            loadMismatchData();
+                        } else if (activeTab.id === 'tab-replace' && oldIngredient) {
+                            loadRecipesUsingIngredient(oldIngredient.code);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('SiteSelector 초기화 실패:', error);
+            }
+        }
+
+        // 현재 선택된 그룹 ID 반환 (헬퍼 함수)
+        function getSelectedGroupId() {
+            return currentGroupId;
+        }
+
+        // 탭 전환
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            document.querySelector(`.tab-btn[onclick*="${tabName}"]`).classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            if (tabName === 'mismatch') {
+                loadMismatchData();
+            } else if (tabName === 'history') {
+                loadChangeHistory();
+            } else if (tabName === 'scheduled') {
+                loadScheduledChanges();
+            }
+        }
+
+        // ============================================
+        // 탭 1: 식자재 교체 기능
+        // ============================================
+
+        // 기존 식자재 검색 (레시피에서 실제 사용 중인 식자재만)
+        let oldSearchTimeout = null;
+        async function searchOldIngredient(keyword) {
+            if (oldSearchTimeout) clearTimeout(oldSearchTimeout);
+            const resultsDiv = document.getElementById('oldIngResults');
+
+            if (keyword.length < 2) {
+                resultsDiv.classList.remove('show');
+                return;
+            }
+
+            oldSearchTimeout = setTimeout(async () => {
+                try {
+                    // 레시피에서 실제 사용 중인 식자재만 검색 (사업장 필터 적용)
+                    const groupId = getSelectedGroupId();
+                    let url = `/api/ingredients/used-in-recipes?keyword=${encodeURIComponent(keyword)}&limit=15`;
+                    if (groupId) {
+                        url += `&group_id=${groupId}`;
+                    }
+                    const response = await fetch(url);
+                    const result = await response.json();
+
+                    if (result.success && result.results.length > 0) {
+                        resultsDiv.innerHTML = result.results.map(ing => `
+                            <div class="search-result-item" onclick="selectOldIngredient('${ing.ingredient_code}', '${(ing.ingredient_name || '').replace(/'/g, "\\'")}', '${(ing.specification || '').replace(/'/g, "\\'")}', ${ing.selling_price || 0}, '${(ing.supplier_name || '').replace(/'/g, "\\'")}', '${ing.unit || ''}')">
+                                <div class="name">${ing.ingredient_name} <span style="color: #3498db; font-size: 0.85em;">(${ing.recipe_count}개 레시피)</span></div>
+                                <div class="info">
+                                    ${ing.specification || ''} | ${ing.unit || ''} | ${ing.supplier_name || '협력업체 미정'} |
+                                    ${ing.selling_price ? ing.selling_price.toLocaleString() + '원' : '가격 미정'}
+                                    ${ing.price_per_unit ? ' | 단위당 ' + ing.price_per_unit.toLocaleString() + '원' : ''}
+                                </div>
+                            </div>
+                        `).join('');
+                        resultsDiv.classList.add('show');
+                    } else {
+                        resultsDiv.innerHTML = '<div class="search-result-item">레시피에서 사용 중인 식자재가 없습니다.</div>';
+                        resultsDiv.classList.add('show');
+                    }
+                } catch (error) {
+                    console.error('검색 오류:', error);
+                }
+            }, 300);
+        }
+
+        // 기존 식자재 선택
+        async function selectOldIngredient(code, name, spec, price, supplier, unit) {
+            document.getElementById('oldIngResults').classList.remove('show');
+            document.getElementById('oldIngSearch').value = name;
+
+            oldIngredient = { code, name, spec, price, supplier, unit };
+
+            const display = document.getElementById('oldIngDisplay');
+            display.classList.remove('empty');
+            display.innerHTML = `
+                <div class="ing-name">${name}</div>
+                <div class="ing-info">${spec} | ${supplier || '협력업체 미정'} | ${price ? price.toLocaleString() + '원' : '가격 미정'}</div>
+            `;
+
+            // 새 식자재 검색 활성화
+            document.getElementById('newIngSearch').disabled = false;
+
+            // 해당 식자재를 사용하는 레시피 목록 로드
+            await loadRecipesUsingIngredient(code);
+        }
+
+        // 새 식자재 검색
+        let newSearchTimeout = null;
+        async function searchNewIngredient(keyword) {
+            if (newSearchTimeout) clearTimeout(newSearchTimeout);
+            const resultsDiv = document.getElementById('newIngResults');
+
+            if (keyword.length < 2) {
+                resultsDiv.classList.remove('show');
+                return;
+            }
+
+            newSearchTimeout = setTimeout(async () => {
+                try {
+                    const currentCode = oldIngredient ? oldIngredient.code : '';
+                    const groupId = getSelectedGroupId();
+                    let url = `/api/ingredients/search-for-replace?keyword=${encodeURIComponent(keyword)}&current_code=${currentCode}&limit=50`;
+                    if (groupId) {
+                        url += `&group_id=${groupId}`;
+                    }
+                    const response = await fetch(url);
+                    const result = await response.json();
+
+                    if (result.success && result.results.length > 0) {
+                        resultsDiv.innerHTML = result.results.map(ing => `
+                            <div class="search-result-item" onclick="selectNewIngredient('${ing.ingredient_code}', '${(ing.name || '').replace(/'/g, "\\'")}', '${(ing.specification || '').replace(/'/g, "\\'")}', ${ing.selling_price || 0}, '${(ing.supplier_name || '').replace(/'/g, "\\'")}', '${ing.unit || ''}')">
+                                <div class="name">
+                                    ${ing.name}
+                                    ${ing.price_per_unit ? `<span class="price-tag" style="background:#e0f2fe;color:#0369a1;">${ing.price_per_unit.toLocaleString(undefined, {maximumFractionDigits:2})}원/단위</span>` : ''}
+                                </div>
+                                <div class="info">
+                                    <span style="color:#059669;font-weight:500;">${ing.supplier_name || '협력업체 미정'}</span> | ${ing.specification || '-'} | ${ing.selling_price ? ing.selling_price.toLocaleString() + '원' : '가격 미정'}
+                                </div>
+                            </div>
+                        `).join('');
+                        resultsDiv.classList.add('show');
+                    } else {
+                        resultsDiv.innerHTML = '<div class="search-result-item">검색 결과가 없습니다.</div>';
+                        resultsDiv.classList.add('show');
+                    }
+                } catch (error) {
+                    console.error('검색 오류:', error);
+                }
+            }, 300);
+        }
+
+        // 새 식자재 선택
+        function selectNewIngredient(code, name, spec, price, supplier, unit) {
+            document.getElementById('newIngResults').classList.remove('show');
+            document.getElementById('newIngSearch').value = name;
+
+            newIngredient = { code, name, spec, price, supplier, unit };
+
+            const display = document.getElementById('newIngDisplay');
+            display.classList.remove('empty');
+            display.innerHTML = `
+                <div class="ing-name">${name}</div>
+                <div class="ing-info">${spec} | ${supplier || '협력업체 미정'} | ${price ? price.toLocaleString() + '원' : '가격 미정'}</div>
+            `;
+
+            // 수량 편집 활성화
+            enableQuantityEdit();
+        }
+
+        // 해당 식자재를 사용하는 레시피 로드
+        async function loadRecipesUsingIngredient(ingredientCode) {
+            showLoading(true);
+
+            try {
+                const groupId = getSelectedGroupId();
+                let url = `/api/recipes/using-ingredient?ingredient_code=${ingredientCode}`;
+                if (groupId) {
+                    url += `&group_id=${groupId}`;
+                }
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    recipesToEdit = result.recipes || [];
+                    renderRecipeEditTable();
+                } else {
+                    recipesToEdit = [];
+                    renderRecipeEditTable();
+                }
+            } catch (error) {
+                console.error('레시피 로드 실패:', error);
+                recipesToEdit = [];
+                renderRecipeEditTable();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 레시피 편집 테이블 렌더링
+        function renderRecipeEditTable() {
+            const section = document.getElementById('recipeEditSection');
+            const tbody = document.getElementById('recipeEditBody');
+
+            if (recipesToEdit.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            tbody.innerHTML = recipesToEdit.map((recipe, index) => `
+                <tr id="editRow-${index}" class="${index === 0 ? 'current' : ''}">
+                    <td>
+                        <input type="checkbox" id="select-${index}" checked
+                            onchange="updateApplyButton()">
+                    </td>
+                    <td>
+                        <i class="fas fa-clock status-icon pending" id="status-${index}"></i>
+                    </td>
+                    <td><strong>${recipe.recipe_name}</strong></td>
+                    <td>
+                        <span class="recipe-scope">${recipe.scope === 'global' ? '전체' : (recipe.group_name || '사업장')}</span>
+                    </td>
+                    <td>${recipe.quantity || 0} ${recipe.unit || ''}</td>
+                    <td>
+                        <input type="number" id="newQty-${index}"
+                            value="${recipe.quantity || 0}"
+                            step="0.001"
+                            onkeydown="handleQuantityKeydown(event, ${index})"
+                            onfocus="highlightRow(${index})">
+                    </td>
+                </tr>
+            `).join('');
+
+            updateProgress();
+            updateApplyButton();
+
+            // 첫 번째 입력에 포커스
+            setTimeout(() => {
+                const firstInput = document.getElementById('newQty-0');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        }
+
+        // 수량 편집 활성화
+        function enableQuantityEdit() {
+            document.getElementById('applyReplaceBtn').disabled = false;
+        }
+
+        // 수량 입력 키 이벤트
+        function handleQuantityKeydown(event, index) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+
+                // 현재 행 완료 표시
+                document.getElementById(`status-${index}`).className = 'fas fa-check-circle status-icon done';
+                document.getElementById(`editRow-${index}`).classList.remove('current');
+                document.getElementById(`editRow-${index}`).classList.add('completed');
+
+                // 다음 행으로 이동
+                const nextIndex = index + 1;
+                if (nextIndex < recipesToEdit.length) {
+                    document.getElementById(`editRow-${nextIndex}`).classList.add('current');
+                    document.getElementById(`newQty-${nextIndex}`).focus();
+                }
+
+                updateProgress();
+            }
+        }
+
+        // 행 하이라이트
+        function highlightRow(index) {
+            document.querySelectorAll('.recipe-edit-table tr').forEach(row => {
+                row.classList.remove('current');
+            });
+            document.getElementById(`editRow-${index}`).classList.add('current');
+        }
+
+        // 진행률 업데이트
+        function updateProgress() {
+            const completed = document.querySelectorAll('.status-icon.done').length;
+            document.getElementById('editProgress').textContent = `${completed} / ${recipesToEdit.length}`;
+        }
+
+        // 전체 선택/해제
+        function selectAllRecipes(select) {
+            recipesToEdit.forEach((_, index) => {
+                document.getElementById(`select-${index}`).checked = select;
+            });
+            updateApplyButton();
+        }
+
+        // 적용 버튼 상태 업데이트
+        function updateApplyButton() {
+            const anySelected = recipesToEdit.some((_, index) =>
+                document.getElementById(`select-${index}`).checked
+            );
+            document.getElementById('applyReplaceBtn').disabled = !anySelected || !newIngredient;
+        }
+
+        // 교체 취소
+        function cancelReplace() {
+            oldIngredient = null;
+            newIngredient = null;
+            recipesToEdit = [];
+
+            document.getElementById('oldIngSearch').value = '';
+            document.getElementById('newIngSearch').value = '';
+            document.getElementById('newIngSearch').disabled = true;
+            document.getElementById('effectiveDate').value = '';
+
+            document.getElementById('oldIngDisplay').innerHTML = '기존 식자재를 검색하여 선택하세요';
+            document.getElementById('oldIngDisplay').classList.add('empty');
+            document.getElementById('newIngDisplay').innerHTML = '새 식자재를 검색하여 선택하세요';
+            document.getElementById('newIngDisplay').classList.add('empty');
+
+            document.getElementById('recipeEditSection').style.display = 'none';
+        }
+
+        // 교체 적용
+        async function applyReplace() {
+            if (!oldIngredient || !newIngredient) {
+                alert('식자재를 선택해주세요.');
+                return;
+            }
+
+            // 선택된 레시피와 수량 수집
+            const selectedRecipes = [];
+            recipesToEdit.forEach((recipe, index) => {
+                if (document.getElementById(`select-${index}`).checked) {
+                    selectedRecipes.push({
+                        recipe_id: recipe.recipe_id,
+                        recipe_name: recipe.recipe_name,
+                        mri_id: recipe.mri_id,
+                        old_qty: recipe.quantity,
+                        new_qty: parseFloat(document.getElementById(`newQty-${index}`).value) || 0
+                    });
+                }
+            });
+
+            if (selectedRecipes.length === 0) {
+                alert('적용할 레시피를 선택해주세요.');
+                return;
+            }
+
+            const effectiveDate = document.getElementById('effectiveDate').value;
+            const isScheduled = effectiveDate && new Date(effectiveDate) > new Date();
+
+            // 미리보기 표시
+            const content = document.getElementById('previewContent');
+            const priceDiff = (newIngredient.price || 0) - (oldIngredient.price || 0);
+
+            content.innerHTML = `
+                ${isScheduled ? `
+                <div class="scheduled-notice">
+                    <i class="fas fa-calendar-check"></i>
+                    <div>예약 변경</div>
+                    <div class="date">${effectiveDate}부터 적용됩니다</div>
+                </div>
+                ` : ''}
+
+                <div class="change-comparison">
+                    <div class="comparison-box old">
+                        <h4>기존 식자재</h4>
+                        <div class="name">${oldIngredient.name}</div>
+                        <div class="detail">
+                            ${oldIngredient.spec || ''}<br>
+                            ${oldIngredient.supplier || ''}<br>
+                            단가: ${oldIngredient.price ? oldIngredient.price.toLocaleString() + '원' : '-'}
+                        </div>
+                    </div>
+                    <div class="comparison-box new">
+                        <h4>새 식자재</h4>
+                        <div class="name">${newIngredient.name}</div>
+                        <div class="detail">
+                            ${newIngredient.spec || ''}<br>
+                            ${newIngredient.supplier || ''}<br>
+                            단가: ${newIngredient.price ? newIngredient.price.toLocaleString() + '원' : '-'}
+                        </div>
+                    </div>
+                </div>
+
+                ${priceDiff !== 0 ? `
+                <div class="price-diff">
+                    <div>단가 변화</div>
+                    <div class="diff-value ${priceDiff > 0 ? 'positive' : 'negative'}">
+                        ${priceDiff > 0 ? '+' : ''}${priceDiff.toLocaleString()}원
+                    </div>
+                </div>
+                ` : ''}
+
+                <h4 style="margin-bottom: 10px;">변경될 레시피 (${selectedRecipes.length}개)</h4>
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 5px;">
+                    <table style="width: 100%; font-size: 13px;">
+                        <tr style="background: #f8f9fa;">
+                            <th style="padding: 8px;">레시피명</th>
+                            <th style="padding: 8px; text-align: right;">기존 수량</th>
+                            <th style="padding: 8px; text-align: right;">새 수량</th>
+                        </tr>
+                        ${selectedRecipes.map(r => `
+                            <tr>
+                                <td style="padding: 8px;">${r.recipe_name}</td>
+                                <td style="padding: 8px; text-align: right;">${r.old_qty}</td>
+                                <td style="padding: 8px; text-align: right; color: #27ae60; font-weight: bold;">${r.new_qty}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </div>
+            `;
+
+            // 변경 데이터 저장
+            currentChangeData = {
+                type: 'replace',
+                old_ingredient_code: oldIngredient.code,
+                new_ingredient_code: newIngredient.code,
+                recipes: selectedRecipes,
+                effective_date: effectiveDate || null
+            };
+
+            document.getElementById('previewModal').classList.add('show');
+        }
+
+        // 변경 확정 적용
+        async function confirmApply() {
+            if (!currentChangeData) return;
+
+            showLoading(true);
+            closePreviewModal();
+
+            try {
+                if (currentChangeData.type === 'replace') {
+                    // 개별 수량을 포함한 일괄 변경 API 호출
+                    const changes = currentChangeData.recipes.map(recipe => ({
+                        recipe_id: recipe.recipe_id,
+                        mri_id: recipe.mri_id,
+                        new_quantity: recipe.new_qty
+                    }));
+
+                    const payload = {
+                        new_ingredient_code: currentChangeData.new_ingredient_code,
+                        changes: changes
+                    };
+
+                    // 적용 시작일이 있으면 추가
+                    if (currentChangeData.effective_date) {
+                        payload.effective_date = currentChangeData.effective_date;
+                    }
+
+                    const response = await fetch('/api/ingredient-bulk-change/with-quantities', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        alert(result.message + (result.batch_id ? `\n배치 ID: ${result.batch_id}` : ''));
+                    } else {
+                        alert('변경 실패: ' + result.error);
+                    }
+                    cancelReplace();
+                } else {
+                    // 불일치 탭의 변경
+                    const response = await fetch('/api/ingredient-bulk-change', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            recipe_ids: currentChangeData.recipe_ids,
+                            old_ingredient_code: currentChangeData.old_ingredient_code,
+                            new_ingredient_code: currentChangeData.new_ingredient_code
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        alert(result.message);
+                        loadMismatchData();
+                    } else {
+                        alert('변경 실패: ' + result.error);
+                    }
+                }
+
+                currentChangeData = null;
+            } catch (error) {
+                console.error('변경 적용 오류:', error);
+                alert('변경 적용 중 오류가 발생했습니다.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ============================================
+        // 탭 2: 불일치 감지 기능
+        // ============================================
+
+        async function loadMismatchData() {
+            showLoading(true);
+
+            try {
+                const groupId = getSelectedGroupId();
+                let url = '/api/ingredient-mismatch';
+                if (groupId) {
+                    url += `?group_id=${groupId}`;
+                }
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    mismatchData = result.mismatch_groups || [];
+                    renderMismatchList();
+                    updateMismatchStats();
+                } else {
+                    alert('데이터 로드 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('불일치 데이터 로드 실패:', error);
+                alert('데이터 로드 중 오류가 발생했습니다.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function updateMismatchStats() {
+            document.getElementById('mismatchCount').textContent = mismatchData.length;
+            let totalRecipes = 0;
+            mismatchData.forEach(group => {
+                totalRecipes += group.recipes.length;
+            });
+            document.getElementById('recipeCount').textContent = totalRecipes;
+        }
+
+        function renderMismatchList() {
+            const container = document.getElementById('mismatchList');
+
+            if (mismatchData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>불일치 항목 없음</h3>
+                        <p>모든 레시피의 식자재가 일관되게 구성되어 있습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            mismatchData.forEach((group, index) => {
+                html += `
+                    <div class="mismatch-card" id="card-${index}">
+                        <div class="mismatch-header">
+                            <div class="title" onclick="toggleCard(${index})" style="cursor: pointer; flex: 1;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <h3>${group.base_name}</h3>
+                                <span class="badge">${group.recipe_count}개 레시피</span>
+                            </div>
+                            <button class="compare-btn" onclick="event.stopPropagation(); openCompareModal(${index})" title="레시피 전체 비교">
+                                <i class="fas fa-columns"></i> 비교
+                            </button>
+                            <i class="fas fa-chevron-down toggle-icon" onclick="toggleCard(${index})" style="cursor: pointer;"></i>
+                        </div>
+                        <div class="mismatch-body">
+                            <div class="mismatch-ingredients">
+                                <h4><i class="fas fa-exclamation-triangle"></i> 불일치 식자재</h4>
+                                <table class="mismatch-table">
+                                    <thead>
+                                        <tr>
+                                            <th>식자재명</th>
+                                            <th>코드</th>
+                                            <th>단위</th>
+                                            <th>단가</th>
+                                            <th>단위당단가</th>
+                                            <th title="이 식자재가 등록된 레시피">재료 있음 ✓</th>
+                                            <th title="이 식자재가 없는 레시피">재료 없음 ✗</th>
+                                            <th>조치</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${group.mismatched_items.map((item, itemIndex) => `
+                                            <tr>
+                                                <td><strong>${item.ingredient_name}</strong></td>
+                                                <td><code>${item.ingredient_code}</code></td>
+                                                <td>${item.unit || '-'}</td>
+                                                <td class="price">${item.price ? item.price.toLocaleString() + '원' : '-'}</td>
+                                                <td class="price" style="color: #e74c3c; font-weight: bold;">${item.price_per_unit ? item.price_per_unit.toLocaleString(undefined, {maximumFractionDigits: 2}) + '원' : '-'}</td>
+                                                <td class="used-in">${item.used_in.join(', ')}</td>
+                                                <td class="not-in">${item.not_in.join(', ')}</td>
+                                                <td class="actions">
+                                                    <button class="mismatch-action-btn unify"
+                                                        onclick="unifyIngredient(${index}, ${itemIndex})"
+                                                        title="'재료 없음' 레시피에 이 식자재 추가하여 통일">
+                                                        <i class="fas fa-plus"></i> 통일
+                                                    </button>
+                                                    <button class="mismatch-action-btn replace"
+                                                        onclick="openReplaceModal(${index}, ${itemIndex})"
+                                                        title="다른 식자재로 교체">
+                                                        <i class="fas fa-exchange-alt"></i> 교체
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleCard(index) {
+            const card = document.getElementById(`card-${index}`);
+            const header = card.querySelector('.mismatch-header');
+            const body = card.querySelector('.mismatch-body');
+
+            header.classList.toggle('collapsed');
+            body.classList.toggle('hidden');
+        }
+
+        // ============================================
+        // 불일치 조치 기능
+        // ============================================
+
+        // 모달 관련 상태
+        let currentMismatchContext = null;
+        let selectedNewIngredient = null;
+
+        // 식자재 통일 (미사용 레시피에 식자재 추가)
+        async function unifyIngredient(groupIndex, itemIndex) {
+            const group = mismatchData[groupIndex];
+            const item = group.mismatched_items[itemIndex];
+
+            const confirmMsg = `"${item.ingredient_name}"을(를) 다음 레시피에 추가하시겠습니까?\n\n` +
+                item.not_in.join('\n') +
+                `\n\n(${item.not_in.length}개 레시피에 추가됨)`;
+
+            if (!confirm(confirmMsg)) return;
+
+            showLoading(true);
+
+            try {
+                // 미사용 레시피 ID 목록
+                const recipeIds = item.not_in_ids;
+
+                // 각 레시피에 식자재 추가 API 호출
+                const response = await fetch('/api/ingredient-mismatch/unify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ingredient_code: item.ingredient_code,
+                        ingredient_name: item.ingredient_name,
+                        recipe_ids: recipeIds,
+                        unit: item.unit || 'EA',
+                        quantity: 0.01  // 기본 수량
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`✅ ${result.updated_count}개 레시피에 식자재가 추가되었습니다.\n\n목록을 새로고침합니다.`);
+                    // 불일치 목록 즉시 새로고침
+                    showLoading(false);
+                    await loadMismatchData();
+                    return;  // finally 실행 후 종료
+                } else {
+                    alert('❌ 오류: ' + result.error);
+                }
+            } catch (error) {
+                console.error('통일 오류:', error);
+                alert('❌ 처리 중 오류가 발생했습니다.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 교체 모달 열기
+        function openReplaceModal(groupIndex, itemIndex) {
+            const group = mismatchData[groupIndex];
+            const item = group.mismatched_items[itemIndex];
+
+            currentMismatchContext = {
+                groupIndex,
+                itemIndex,
+                group,
+                item,
+                // 사용 중인 레시피들의 ID
+                recipeIds: item.used_in_ids
+            };
+
+            selectedNewIngredient = null;
+
+            // 현재 식자재 정보 표시
+            document.getElementById('modalCurrentIngredient').innerHTML = `
+                <strong>${item.ingredient_name}</strong><br>
+                <small>코드: ${item.ingredient_code} | 단가: ${item.price ? item.price.toLocaleString() + '원' : '-'}</small>
+            `;
+
+            // 대상 레시피 목록 표시
+            document.getElementById('modalTargetRecipes').innerHTML =
+                item.used_in.map(name => `<li>${name}</li>`).join('');
+
+            // 검색 초기화
+            document.getElementById('modalIngredientSearch').value = '';
+            document.getElementById('modalIngredientResults').innerHTML = '<div style="padding: 20px; color: #999; text-align: center;">새 식자재를 검색하세요</div>';
+            document.getElementById('modalConfirmBtn').disabled = true;
+
+            // 모달 표시
+            document.getElementById('mismatchReplaceModal').classList.add('active');
+        }
+
+        // 모달 닫기
+        function closeMismatchReplaceModal() {
+            document.getElementById('mismatchReplaceModal').classList.remove('active');
+            currentMismatchContext = null;
+            selectedNewIngredient = null;
+
+            // 모달 위치 초기화 (다음에 열 때 중앙에 표시)
+            const modalContent = document.querySelector('#mismatchReplaceModal .replace-modal-content');
+            if (modalContent) {
+                modalContent.style.position = '';
+                modalContent.style.left = '';
+                modalContent.style.top = '';
+                modalContent.style.margin = '';
+                modalContent.style.transform = '';
+            }
+        }
+
+        // ============================================
+        // 레시피 비교 모달 기능
+        // ============================================
+
+        // 비교 모달 열기
+        async function openCompareModal(groupIndex) {
+            const group = mismatchData[groupIndex];
+            if (!group) {
+                alert('그룹 정보를 찾을 수 없습니다');
+                return;
+            }
+
+            // recipe_ids 추출 (used_in_ids와 not_in_ids에서 모든 레시피 ID 수집)
+            const allRecipeIds = new Set();
+            group.mismatched_items.forEach(item => {
+                (item.used_in_ids || []).forEach(id => allRecipeIds.add(id));
+                (item.not_in_ids || []).forEach(id => allRecipeIds.add(id));
+            });
+
+            if (allRecipeIds.size === 0) {
+                alert('비교할 레시피가 없습니다');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch(`/api/recipes/compare-group?recipe_ids=${Array.from(allRecipeIds).join(',')}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert('레시피 정보를 불러오지 못했습니다: ' + (result.error || ''));
+                    return;
+                }
+
+                // 모달 내용 렌더링
+                renderCompareModal(group.base_name, result);
+
+                // 모달 표시
+                document.getElementById('recipeCompareModal').classList.add('active');
+
+            } catch (error) {
+                console.error('비교 모달 오류:', error);
+                alert('비교 모달을 열 수 없습니다: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 비교 모달 상태 저장
+        let currentCompareData = null;
+
+        // 비교 모달 렌더링
+        function renderCompareModal(baseName, data) {
+            // 현재 비교 데이터 저장 (조치 버튼에서 사용)
+            currentCompareData = { baseName, ...data };
+
+            document.getElementById('compareModalTitle').textContent = `${baseName} 레시피 비교`;
+            document.getElementById('compareRecipeCount').textContent = data.recipe_count;
+            document.getElementById('compareTotalCount').textContent = data.ingredient_count;
+            document.getElementById('compareMismatchCount').textContent = data.mismatch_count;
+
+            const recipes = data.recipes;
+            const allIngredients = data.all_ingredients;
+
+            // 테이블 헤더 생성 (식자재 정보 먼저, 레시피명은 전체 표시)
+            let headerHtml = '<tr>';
+            // 1. 식자재, 협력업체, 단위당단가 컬럼
+            headerHtml += '<th>식자재</th><th>협력업체</th><th>단위당단가</th>';
+            // 2. 레시피(메뉴)명 컬럼들 (전체 이름 표시)
+            recipes.forEach(recipe => {
+                headerHtml += `<th class="recipe-header-cell" title="클릭하여 레시피 편집">
+                    <a href="/menu_recipe_management.html?recipe_id=${recipe.id}" target="_blank" class="recipe-header-link">
+                        ${escapeHtml(recipe.name)}
+                    </a>
+                </th>`;
+            });
+            // 3. 조치 컬럼
+            headerHtml += '<th>조치</th></tr>';
+            document.getElementById('compareTableHead').innerHTML = headerHtml;
+
+            // 테이블 본문 생성
+            let bodyHtml = '';
+            allIngredients.forEach((ing, ingIndex) => {
+                const rowClass = ing.is_mismatch ? 'mismatch-row' : '';
+                bodyHtml += `<tr class="${rowClass}">`;
+
+                // 1. 식자재명 컬럼
+                bodyHtml += `<td>
+                    <div class="ingredient-name">${ing.name}</div>
+                    <div class="ingredient-code">${ing.code}</div>
+                </td>`;
+
+                // 2. 협력업체 컬럼 (첫 번째 레시피에서 가져옴)
+                const firstRecipeId = ing.in_recipes[0];
+                const firstRecipe = recipes.find(r => r.id === firstRecipeId);
+                const ingDetail = firstRecipe?.ingredients.find(i => i.code === ing.code);
+                const supplierName = ingDetail?.supplier || '';
+                bodyHtml += `<td class="supplier-cell">
+                    <span class="supplier-name">${supplierName || '-'}</span>
+                </td>`;
+
+                // 3. 단위당단가 컬럼
+                const pricePerUnit = ingDetail?.price_per_unit || 0;
+                bodyHtml += `<td class="price-cell">
+                    ${pricePerUnit ? '<span class="price-per-unit">' + pricePerUnit.toLocaleString(undefined, {maximumFractionDigits: 2}) + '원</span>' : '-'}
+                </td>`;
+
+                // 4. 각 레시피별 수량 컬럼
+                recipes.forEach(recipe => {
+                    const recipeData = ing.by_recipe[recipe.id];
+                    if (recipeData && recipeData.has) {
+                        const cellClass = ing.is_mismatch ? 'cell-has' : '';
+                        // 1인필요량(g)을 DB에서 직접 가져와서 표시
+                        const requiredGrams = recipeData.required_grams || 0;
+                        const originalQty = recipeData.quantity || 0;  // 원래 quantity 값 보존
+                        const displayQty = requiredGrams > 0 ? requiredGrams : recipeData.quantity;
+                        const displayUnit = requiredGrams > 0 ? 'g' : recipeData.unit;
+                        const isGramsMode = requiredGrams > 0;
+                        bodyHtml += `<td class="${cellClass} editable-cell" data-ing-code="${ing.code}" data-recipe-id="${recipe.id}">
+                            <div class="cell-content">
+                                <span class="quantity-value" onclick="editCellQuantity(this, '${ing.code}', ${recipe.id}, ${displayQty}, '${displayUnit}', ${isGramsMode}, ${originalQty})" title="클릭하여 1인필요량 수정">${displayQty}</span>
+                                <span class="quantity-unit">${displayUnit}</span>
+                                <button class="cell-delete-btn" onclick="deleteIngredientFromRecipe('${ing.code}', ${recipe.id}, '${escapeHtml(ing.name)}', '${escapeHtml(recipe.name)}')" title="이 레시피에서 삭제">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </td>`;
+                    } else {
+                        const cellClass = ing.is_mismatch ? 'cell-missing' : '';
+                        bodyHtml += `<td class="${cellClass}">
+                            <span class="missing-mark">✗</span>
+                        </td>`;
+                    }
+                });
+
+                // 5. 조치 컬럼 (불일치 항목만 버튼 표시)
+                if (ing.is_mismatch) {
+                    bodyHtml += `<td class="compare-actions">
+                        <button class="compare-action-btn unify" onclick="unifyFromCompare(${ingIndex})" title="없는 레시피에 추가">
+                            <i class="fas fa-plus"></i> 통일
+                        </button>
+                        <button class="compare-action-btn replace" onclick="openReplaceFromCompare(${ingIndex})" title="다른 식자재로 교체">
+                            <i class="fas fa-exchange-alt"></i> 교체
+                        </button>
+                    </td>`;
+                } else {
+                    bodyHtml += `<td class="compare-actions">
+                        <span style="color: #10b981; font-size: 12px;">✓ 일치</span>
+                    </td>`;
+                }
+
+                bodyHtml += '</tr>';
+            });
+
+            document.getElementById('compareTableBody').innerHTML = bodyHtml;
+        }
+
+        // 비교 모달에서 통일 실행
+        async function unifyFromCompare(ingIndex) {
+            if (!currentCompareData) return;
+
+            const ing = currentCompareData.all_ingredients[ingIndex];
+            if (!ing || !ing.is_mismatch) return;
+
+            // 없는 레시피 ID 목록
+            const missingRecipeIds = ing.not_in_recipes;
+            const missingRecipes = currentCompareData.recipes
+                .filter(r => missingRecipeIds.includes(r.id));
+
+            // 있는 레시피에서 수량/단위 정보 가져오기
+            const hasRecipeId = ing.in_recipes[0];
+            const sourceData = ing.by_recipe[hasRecipeId];
+
+            // 유사 식자재 찾기: 추가하려는 레시피에 이미 비슷한 이름의 식자재가 있는지 확인
+            // 예: "[GS]감자고로케,DC,중국산,900G" vs "[GS]감자고로케,DC,중국산,가토코,1.6KG"
+            const similarIngredients = findSimilarIngredientsInMissingRecipes(ing, missingRecipes);
+
+            if (similarIngredients.length > 0) {
+                // 유사 식자재가 있는 경우: 교체할지 추가만 할지 선택
+                await showUnifyWithSimilarDialog(ing, missingRecipes, sourceData, similarIngredients);
+            } else {
+                // 유사 식자재가 없는 경우: 기존 로직대로 추가
+                await performUnify(ing, missingRecipeIds, missingRecipes.map(r => r.name), sourceData, false, []);
+            }
+        }
+
+        // 유사 식자재 찾기 (같은 기본 이름 패턴)
+        function findSimilarIngredientsInMissingRecipes(targetIng, missingRecipes) {
+            const similar = [];
+
+            // 기본 이름 추출 (첫 번째 콤마 전까지 또는 첫 몇 글자)
+            const baseName = extractBaseName(targetIng.name);
+
+            missingRecipes.forEach(recipe => {
+                recipe.ingredients.forEach(recipeIng => {
+                    if (recipeIng.code === targetIng.code) return; // 같은 식자재는 제외
+
+                    const ingBaseName = extractBaseName(recipeIng.name);
+                    if (baseName && ingBaseName && baseName === ingBaseName) {
+                        similar.push({
+                            recipeId: recipe.id,
+                            recipeName: recipe.name,
+                            ingredientCode: recipeIng.code,
+                            ingredientName: recipeIng.name,
+                            quantity: recipeIng.quantity,
+                            unit: recipeIng.unit
+                        });
+                    }
+                });
+            });
+
+            return similar;
+        }
+
+        // 기본 이름 추출 (예: "[GS]감자고로케,DC,중국산,900G" -> "[GS]감자고로케")
+        function extractBaseName(name) {
+            if (!name) return '';
+            // 첫 번째 콤마 전까지의 문자열
+            const commaIdx = name.indexOf(',');
+            if (commaIdx > 0) {
+                return name.substring(0, commaIdx);
+            }
+            // 콤마가 없으면 앞 10글자
+            return name.substring(0, Math.min(10, name.length));
+        }
+
+        // 유사 식자재가 있을 때 선택 다이얼로그 표시
+        async function showUnifyWithSimilarDialog(ing, missingRecipes, sourceData, similarIngredients) {
+            const missingRecipeNames = missingRecipes.map(r => r.name);
+            const missingRecipeIds = missingRecipes.map(r => r.id);
+
+            // 그룹화: 레시피별로 어떤 유사 식자재가 있는지
+            const recipesSimilarInfo = similarIngredients.map(s =>
+                `• ${s.recipeName}: ${s.ingredientName}`
+            ).join('\n');
+
+            const msg = `"${ing.name}"을(를) 다음 레시피에 추가하려고 합니다:\n` +
+                missingRecipeNames.join(', ') +
+                `\n\n⚠️ 하지만 해당 레시피에 유사한 식자재가 이미 있습니다:\n${recipesSimilarInfo}\n\n` +
+                `어떻게 하시겠습니까?\n\n` +
+                `[확인] = 기존 유사 식자재 삭제 후 교체\n` +
+                `[취소] = 작업 취소`;
+
+            if (confirm(msg)) {
+                // 확인: 교체 (기존 삭제 후 추가)
+                await performUnify(ing, missingRecipeIds, missingRecipeNames, sourceData, true, similarIngredients);
+            }
+            // 취소: 아무것도 하지 않음
+        }
+
+        // 실제 통일 수행
+        async function performUnify(ing, missingRecipeIds, missingRecipeNames, sourceData, replaceSimilar, similarIngredients) {
+            showLoading(true);
+
+            try {
+                // 교체 모드인 경우: 먼저 유사 식자재 삭제
+                if (replaceSimilar && similarIngredients.length > 0) {
+                    for (const sim of similarIngredients) {
+                        await fetch('/api/ingredient-mismatch/delete-from-recipe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ingredient_code: sim.ingredientCode,
+                                recipe_id: sim.recipeId
+                            })
+                        });
+                    }
+                }
+
+                // 식자재 추가 (required_grams도 전달)
+                const requestBody = {
+                    ingredient_code: ing.code,
+                    ingredient_name: ing.name,
+                    recipe_ids: missingRecipeIds,
+                    quantity: sourceData.quantity,
+                    unit: sourceData.unit
+                };
+
+                // required_grams 값이 있으면 전달
+                if (sourceData.required_grams && sourceData.required_grams > 0) {
+                    requestBody.required_grams = sourceData.required_grams;
+                }
+
+                const response = await fetch('/api/ingredient-mismatch/unify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (replaceSimilar) {
+                        alert(`${similarIngredients.length}개 유사 식자재 삭제 후\n${result.updated_count}개 레시피에 식자재가 추가되었습니다.`);
+                    } else {
+                        alert(`${result.updated_count}개 레시피에 식자재가 추가되었습니다.`);
+                    }
+                    // 비교 모달 새로고침
+                    refreshCompareModal();
+                } else {
+                    alert('통일 실패: ' + (result.error || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('통일 오류:', error);
+                alert('통일 중 오류 발생: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 비교 모달에서 특정 레시피의 식자재 삭제
+        async function deleteIngredientFromRecipe(ingredientCode, recipeId, ingredientName, recipeName) {
+            if (!confirm(`"${recipeName}" 레시피에서\n"${ingredientName}"을(를) 삭제하시겠습니까?`)) {
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/ingredient-mismatch/delete-from-recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ingredient_code: ingredientCode,
+                        recipe_id: recipeId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`삭제 완료: ${result.message}`);
+                    refreshCompareModal();
+                } else {
+                    alert('삭제 실패: ' + (result.error || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('삭제 오류:', error);
+                alert('삭제 중 오류 발생: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 비교 모달에서 수량 편집
+        function editCellQuantity(element, ingredientCode, recipeId, currentQty, unit, isGramsMode = false, originalQuantity = null) {
+            // 이미 편집 중이면 무시
+            if (element.querySelector('input')) return;
+
+            const originalValue = currentQty;
+            const originalHtml = element.innerHTML;
+
+            // input으로 교체
+            element.innerHTML = `<input type="number" class="quantity-input" value="${currentQty}" step="0.1" min="0">`;
+            const input = element.querySelector('input');
+            input.focus();
+            input.select();
+
+            // Enter 키 또는 blur 시 저장
+            const saveQuantity = async () => {
+                const newQty = parseFloat(input.value);
+
+                if (isNaN(newQty) || newQty < 0) {
+                    element.innerHTML = originalValue;
+                    return;
+                }
+
+                if (newQty === originalValue) {
+                    element.innerHTML = originalValue;
+                    return;
+                }
+
+                // API 호출하여 수량 업데이트 (isGramsMode이면 required_grams도 업데이트)
+                try {
+                    const requestBody = {
+                        ingredient_code: ingredientCode,
+                        recipe_id: recipeId,
+                        // grams 모드면 원래 quantity 값 유지, 없으면 0.001 사용
+                        new_quantity: isGramsMode ? (originalQuantity || 0.001) : newQty
+                    };
+
+                    // required_grams 모드이면 required_grams 값도 전달
+                    if (isGramsMode) {
+                        requestBody.required_grams = newQty;
+                    }
+
+                    const response = await fetch('/api/ingredient-mismatch/update-quantity', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        element.innerHTML = newQty;
+                        // 잠시 후 모달 새로고침 (깜빡임 방지)
+                        setTimeout(() => refreshCompareModal(), 500);
+                    } else {
+                        alert('수량 변경 실패: ' + (result.error || '알 수 없는 오류'));
+                        element.innerHTML = originalValue;
+                    }
+                } catch (error) {
+                    console.error('수량 변경 오류:', error);
+                    element.innerHTML = originalValue;
+                }
+            };
+
+            input.addEventListener('blur', saveQuantity);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    element.innerHTML = originalValue;
+                }
+            });
+        }
+
+        // 비교 모달에서 교체 모달 열기
+        function openReplaceFromCompare(ingIndex) {
+            if (!currentCompareData) return;
+
+            const ing = currentCompareData.all_ingredients[ingIndex];
+            if (!ing || !ing.is_mismatch) return;
+
+            // 있는 레시피 정보
+            const hasRecipeIds = ing.in_recipes;
+            const hasRecipeNames = currentCompareData.recipes
+                .filter(r => hasRecipeIds.includes(r.id))
+                .map(r => r.name);
+
+            // 교체 모달용 컨텍스트 설정
+            currentMismatchContext = {
+                item: {
+                    ingredient_code: ing.code,
+                    ingredient_name: ing.name,
+                    used_in: hasRecipeNames,
+                    used_in_ids: hasRecipeIds
+                },
+                recipeIds: hasRecipeIds,
+                fromCompare: true
+            };
+
+            // 현재 식자재 정보 표시
+            document.getElementById('modalCurrentIngredient').innerHTML = `
+                <div><strong>${ing.name}</strong> (${ing.code})</div>
+            `;
+
+            // 대상 레시피 목록 표시
+            document.getElementById('modalTargetRecipes').innerHTML = hasRecipeNames
+                .map(name => `<li>${name}</li>`)
+                .join('');
+
+            // 화면에 보이는 다른 식자재들로 빠른 선택 옵션 생성
+            const quickOptions = currentCompareData.all_ingredients
+                .filter(other => other.code !== ing.code)  // 자기 자신 제외
+                .map(other => {
+                    const hasCount = other.in_recipes.length;
+                    const totalCount = currentCompareData.recipes.length;
+
+                    // 첫 번째 레시피에서 가격 정보 가져오기
+                    const firstRecipeId = other.in_recipes[0];
+                    const firstRecipe = currentCompareData.recipes.find(r => r.id === firstRecipeId);
+                    const ingDetail = firstRecipe?.ingredients.find(i => i.code === other.code);
+                    const pricePerUnit = ingDetail?.price_per_unit || 0;
+                    const unit = ingDetail?.unit || '';
+
+                    return `
+                        <div class="quick-replace-item ${other.is_mismatch ? 'mismatch' : ''}"
+                            onclick="selectQuickReplacement('${other.code}', '${escapeHtml(other.name)}')">
+                            <div class="quick-item-left">
+                                <div class="quick-item-name">
+                                    ${other.name}
+                                    ${other.is_mismatch ? '<span class="mismatch-badge">불일치</span>' : '<span class="match-badge">일치</span>'}
+                                </div>
+                                <div class="quick-item-info">${hasCount}/${totalCount} 레시피 | ${unit || '-'}</div>
+                            </div>
+                            <div class="quick-item-price">
+                                ${pricePerUnit ? '<span class="price-value">' + pricePerUnit.toLocaleString(undefined, {maximumFractionDigits: 2}) + '원</span><span class="price-label">/단위</span>' : '-'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            // 검색 결과 영역에 빠른 선택 옵션 표시
+            document.getElementById('modalIngredientSearch').value = '';
+            document.getElementById('modalIngredientResults').innerHTML = `
+                <div class="quick-replace-section">
+                    <div class="quick-replace-title">
+                        <i class="fas fa-bolt"></i> 화면의 다른 식자재로 빠른 교체
+                    </div>
+                    ${quickOptions || '<div style="padding: 10px; color: #999;">다른 식자재가 없습니다</div>'}
+                </div>
+                <div class="search-divider">
+                    <span>또는 새 식자재 검색</span>
+                </div>
+            `;
+            document.getElementById('modalConfirmBtn').disabled = true;
+            selectedNewIngredient = null;
+
+            // 교체 모달 표시
+            document.getElementById('mismatchReplaceModal').classList.add('active');
+        }
+
+        // 빠른 교체 선택
+        function selectQuickReplacement(code, name) {
+            // 선택된 식자재의 전체 정보 찾기
+            const ing = currentCompareData.all_ingredients.find(i => i.code === code);
+            if (!ing) return;
+
+            // 첫 번째 레시피에서 가격/단위 정보 가져오기
+            const firstRecipeId = ing.in_recipes[0];
+            const firstRecipe = currentCompareData.recipes.find(r => r.id === firstRecipeId);
+            const ingDetail = firstRecipe?.ingredients.find(i => i.code === code);
+
+            selectedNewIngredient = {
+                code: code,
+                name: name,
+                price: ingDetail?.price || 0,
+                spec: ingDetail?.specification || '',
+                unit: ingDetail?.unit || '',
+                supplier: ingDetail?.supplier || ''
+            };
+
+            // 선택 표시 업데이트
+            document.querySelectorAll('.quick-replace-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            // 확인 버튼 활성화
+            document.getElementById('modalConfirmBtn').disabled = false;
+        }
+
+        // 비교 모달 새로고침
+        async function refreshCompareModal() {
+            if (!currentCompareData) return;
+
+            const recipeIds = currentCompareData.recipes.map(r => r.id);
+
+            try {
+                const response = await fetch(`/api/recipes/compare-group?recipe_ids=${recipeIds.join(',')}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    renderCompareModal(currentCompareData.baseName, result);
+                    // 불일치 목록도 새로고침
+                    loadMismatchData();
+                }
+            } catch (error) {
+                console.error('새로고침 오류:', error);
+            }
+        }
+
+        // 비교 모달 닫기
+        function closeCompareModal() {
+            document.getElementById('recipeCompareModal').classList.remove('active');
+        }
+
+        // 모달 내 식자재 검색
+        let modalSearchTimeout = null;
+        async function searchModalIngredient(keyword) {
+            clearTimeout(modalSearchTimeout);
+
+            if (keyword.length < 2) {
+                document.getElementById('modalIngredientResults').innerHTML =
+                    '<div style="padding: 20px; color: #999; text-align: center;">2글자 이상 입력하세요</div>';
+                return;
+            }
+
+            modalSearchTimeout = setTimeout(async () => {
+                try {
+                    const currentCode = currentMismatchContext?.item?.ingredient_code || '';
+                    const response = await fetch(`/api/ingredients/search-for-replace?keyword=${encodeURIComponent(keyword)}&current_code=${currentCode}&limit=50`);
+                    const result = await response.json();
+
+                    if (result.success && result.results.length > 0) {
+                        document.getElementById('modalIngredientResults').innerHTML = result.results.map(ing => `
+                            <div class="new-ingredient-item ${selectedNewIngredient?.code === ing.ingredient_code ? 'selected' : ''}"
+                                onclick="selectModalIngredient(event, '${ing.ingredient_code}', '${escapeHtml(ing.name)}', ${ing.selling_price || 0}, '${escapeHtml(ing.specification || '')}', '${escapeHtml(ing.unit || '')}', '${escapeHtml(ing.supplier_name || '')}')">
+                                <div>
+                                    <div class="name">${ing.name}</div>
+                                    <div class="spec">${ing.specification || ''} | ${ing.unit || ''} | ${ing.supplier_name || ''}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="price">${ing.selling_price ? ing.selling_price.toLocaleString() + '원' : '-'}</div>
+                                    <div style="font-size: 11px; color: #e74c3c; font-weight: bold;">
+                                        단위당 ${ing.price_per_unit ? ing.price_per_unit.toLocaleString(undefined, {maximumFractionDigits: 2}) + '원' : '-'}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        document.getElementById('modalIngredientResults').innerHTML =
+                            '<div style="padding: 20px; color: #999; text-align: center;">검색 결과가 없습니다</div>';
+                    }
+                } catch (error) {
+                    console.error('검색 오류:', error);
+                }
+            }, 300);
+        }
+
+        // 모달 내 식자재 선택
+        function selectModalIngredient(event, code, name, price, spec, unit, supplier) {
+            selectedNewIngredient = { code, name, price, spec, unit, supplier };
+
+            // 선택 표시 업데이트
+            document.querySelectorAll('.new-ingredient-item').forEach(el => el.classList.remove('selected'));
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('selected');
+            }
+
+            // 확인 버튼 활성화
+            document.getElementById('modalConfirmBtn').disabled = false;
+
+            console.log('선택된 식자재:', selectedNewIngredient);
+        }
+
+        // 교체 실행
+        async function confirmMismatchReplace() {
+            if (!currentMismatchContext || !selectedNewIngredient) {
+                alert('새 식자재를 선택해주세요.');
+                return;
+            }
+
+            const { item, recipeIds } = currentMismatchContext;
+            const fromCompare = currentMismatchContext.fromCompare;
+
+            // 모달 닫기 전에 값 저장
+            const newIngCode = selectedNewIngredient.code;
+            const newIngName = selectedNewIngredient.name;
+
+            const confirmMsg = `"${item.ingredient_name}"을(를)\n"${newIngName}"(으)로 교체하시겠습니까?\n\n` +
+                `대상: ${recipeIds.length}개 레시피`;
+
+            if (!confirm(confirmMsg)) return;
+
+            showLoading(true);
+            closeMismatchReplaceModal();
+
+            try {
+                const response = await fetch('/api/ingredient-mismatch/replace', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        old_ingredient_code: item.ingredient_code,
+                        new_ingredient_code: newIngCode,
+                        new_ingredient_name: newIngName,
+                        recipe_ids: recipeIds
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`✅ ${result.updated_count}개 레시피의 식자재가 교체되었습니다.\n\n목록을 새로고침합니다.`);
+                    // 불일치 목록 즉시 새로고침
+                    showLoading(false);
+                    await loadMismatchData();
+                    // 비교 모달에서 호출된 경우 비교 모달도 새로고침
+                    if (fromCompare && currentCompareData) {
+                        await refreshCompareModal();
+                    }
+                    return;
+                } else {
+                    alert('❌ 오류: ' + result.error);
+                }
+            } catch (error) {
+                console.error('교체 오류:', error);
+                alert('❌ 처리 중 오류가 발생했습니다.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // HTML 이스케이프 함수
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/'/g, "\\'");
+        }
+
+        // ============================================
+        // 탭 3: 변경 이력
+        // ============================================
+
+        async function loadChangeHistory() {
+            showLoading(true);
+
+            try {
+                const startDate = document.getElementById('historyStartDate').value;
+                const endDate = document.getElementById('historyEndDate').value;
+                const ingredientCode = document.getElementById('historyIngredientCode').value;
+
+                let url = '/api/ingredient-change-history?limit=200';
+                if (startDate) url += `&start_date=${startDate}`;
+                if (endDate) url += `&end_date=${endDate}`;
+                if (ingredientCode) url += `&ingredient_code=${ingredientCode}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('historyCount').textContent = result.count;
+                    renderHistoryTable(result.history);
+                } else {
+                    alert('이력 로드 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('이력 로드 실패:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function renderHistoryTable(history) {
+            const tbody = document.getElementById('historyTableBody');
+
+            if (history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">변경 이력이 없습니다.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = history.map(item => `
+                <tr>
+                    <td>${item.created_at ? new Date(item.created_at).toLocaleString('ko-KR') : '-'}</td>
+                    <td>${getChangeTypeLabel(item.change_type)}</td>
+                    <td>${item.recipe_name || '-'}</td>
+                    <td>
+                        ${item.old_ingredient_name || '-'}<br>
+                        <small style="color: #999;">${item.old_ingredient_code || ''}</small>
+                    </td>
+                    <td>
+                        ${item.new_ingredient_name || '-'}<br>
+                        <small style="color: #999;">${item.new_ingredient_code || ''}</small>
+                    </td>
+                    <td>${item.old_quantity || 0} -> ${item.new_quantity || 0}</td>
+                    <td><code style="font-size: 11px;">${item.batch_id || '-'}</code></td>
+                </tr>
+            `).join('');
+        }
+
+        function getChangeTypeLabel(type) {
+            const labels = {
+                'bulk_replace': '일괄 교체',
+                'bulk_add': '일괄 추가',
+                'single_update': '단건 수정',
+                'scheduled': '예약 적용',
+                'rollback': '롤백'
+            };
+            return labels[type] || type;
+        }
+
+        // ============================================
+        // 탭 4: 예약 변경
+        // ============================================
+
+        async function loadScheduledChanges() {
+            showLoading(true);
+
+            try {
+                const status = document.getElementById('scheduledStatusFilter').value;
+                const response = await fetch(`/api/scheduled-ingredient-changes?status=${status}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    renderScheduledTable(result.scheduled_changes);
+                    updateScheduledStats(result.scheduled_changes);
+                } else {
+                    alert('예약 변경 로드 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('예약 변경 로드 실패:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function updateScheduledStats(changes) {
+            const pending = changes.filter(c => c.status === 'pending').length;
+            const applied = changes.filter(c => c.status === 'applied').length;
+            document.getElementById('scheduledPendingCount').textContent = pending;
+            document.getElementById('scheduledAppliedCount').textContent = applied;
+        }
+
+        function renderScheduledTable(changes) {
+            const tbody = document.getElementById('scheduledTableBody');
+
+            if (changes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">예약된 변경이 없습니다.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = changes.map(item => `
+                <tr>
+                    <td>${item.effective_date || '-'}</td>
+                    <td>${item.recipe_name || '-'}</td>
+                    <td>
+                        ${item.current_ingredient_name || '-'}<br>
+                        <small style="color: #999;">${item.current_quantity || 0}</small>
+                    </td>
+                    <td>
+                        ${item.new_ingredient_name || '-'}<br>
+                        <small style="color: #999;">${item.new_quantity || 0}</small>
+                    </td>
+                    <td>${item.current_quantity || 0} -> ${item.new_quantity || 0}</td>
+                    <td>
+                        <span class="status-badge ${item.status}">${getStatusLabel(item.status)}</span>
+                    </td>
+                    <td>
+                        ${item.status === 'pending' ? `
+                            <button class="btn btn-success" style="padding: 5px 10px; font-size: 12px;" onclick="applyScheduleNow(${item.id})">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" onclick="cancelSchedule(${item.id})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        ` : '-'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'pending': '대기중',
+                'applied': '적용완료',
+                'cancelled': '취소됨',
+                'failed': '실패'
+            };
+            return labels[status] || status;
+        }
+
+        async function applyScheduleNow(scheduleId) {
+            if (!confirm('이 예약을 지금 적용하시겠습니까?')) return;
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/scheduled-ingredient-changes/apply-now', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ schedule_ids: [scheduleId] })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    loadScheduledChanges();
+                } else {
+                    alert('적용 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('적용 실패:', error);
+                alert('적용 중 오류가 발생했습니다.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function cancelSchedule(scheduleId) {
+            const reason = prompt('취소 사유를 입력하세요 (선택):');
+            if (reason === null) return; // 취소 버튼
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/scheduled-ingredient-changes/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ schedule_id: scheduleId, cancel_reason: reason })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    loadScheduledChanges();
+                } else {
+                    alert('취소 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('취소 실패:', error);
+                alert('취소 중 오류가 발생했습니다.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function applyDueSchedules() {
+            if (!confirm('적용일이 오늘 이전인 모든 대기중 예약을 적용하시겠습니까?')) return;
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/scheduled-ingredient-changes/apply-now', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apply_all_due: true })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                    loadScheduledChanges();
+                } else {
+                    alert('적용 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('적용 실패:', error);
+                alert('적용 중 오류가 발생했습니다.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ============================================
+        // 공통 함수
+        // ============================================
+
+        function closePreviewModal() {
+            document.getElementById('previewModal').classList.remove('show');
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('show', show);
+        }
+
+        // 검색 결과 외부 클릭 시 닫기
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-input-wrapper')) {
+                document.querySelectorAll('.search-results').forEach(el => {
+                    el.classList.remove('show');
+                });
+            }
+        });
+    </script>
+
+    <!-- 식자재 교체 모달 -->
+    <div id="mismatchReplaceModal" class="replace-modal">
+        <div class="replace-modal-content">
+            <div class="replace-modal-header">
+                <h3><i class="fas fa-exchange-alt"></i> 식자재 교체</h3>
+                <button class="replace-modal-close" onclick="closeMismatchReplaceModal()">&times;</button>
+            </div>
+
+            <div class="current-ingredient-info">
+                <h4><i class="fas fa-box"></i> 현재 식자재</h4>
+                <div id="modalCurrentIngredient"></div>
+            </div>
+
+            <div class="target-recipes-list">
+                <h4><i class="fas fa-utensils"></i> 변경 대상 레시피</h4>
+                <ul id="modalTargetRecipes"></ul>
+            </div>
+
+            <div class="new-ingredient-search">
+                <label><strong>새 식자재 검색</strong></label>
+                <input type="text" id="modalIngredientSearch" placeholder="식자재명 또는 코드 입력..." oninput="searchModalIngredient(this.value)">
+            </div>
+
+            <div id="modalIngredientResults" class="new-ingredient-results"></div>
+
+            <div class="replace-modal-actions">
+                <button class="cancel-btn" onclick="closeMismatchReplaceModal()">취소</button>
+                <button id="modalConfirmBtn" class="confirm-btn" onclick="confirmMismatchReplace()" disabled>
+                    <i class="fas fa-check"></i> 교체 실행
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 레시피 비교 모달 -->
+    <div id="recipeCompareModal" class="compare-modal">
+        <div class="compare-modal-content">
+            <div class="compare-modal-header">
+                <h3><i class="fas fa-columns"></i> <span id="compareModalTitle">레시피 비교</span></h3>
+                <button class="compare-modal-close" onclick="closeCompareModal()">&times;</button>
+            </div>
+
+            <div class="compare-summary">
+                <span class="summary-item">
+                    <i class="fas fa-utensils"></i> 레시피: <strong id="compareRecipeCount">0</strong>개
+                </span>
+                <span class="summary-item">
+                    <i class="fas fa-carrot"></i> 총 식자재: <strong id="compareTotalCount">0</strong>개
+                </span>
+                <span class="summary-item mismatch">
+                    <i class="fas fa-exclamation-triangle"></i> 불일치: <strong id="compareMismatchCount">0</strong>개
+                </span>
+            </div>
+
+            <div class="compare-table-wrapper">
+                <table class="compare-table" id="compareTable">
+                    <thead id="compareTableHead">
+                        <!-- 동적 생성 -->
+                    </thead>
+                    <tbody id="compareTableBody">
+                        <!-- 동적 생성 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="compare-legend">
+                <span class="legend-item"><span class="legend-color has"></span> 있음</span>
+                <span class="legend-item"><span class="legend-color missing"></span> 없음</span>
+                <span class="legend-item"><span class="legend-color mismatch"></span> 불일치 항목</span>
+            </div>
+
+            <div class="compare-modal-actions">
+                <button class="close-btn" onclick="closeCompareModal()">
+                    <i class="fas fa-times"></i> 닫기
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

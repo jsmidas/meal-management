@@ -1,0 +1,245 @@
+/* 통일된 사이드바 스타일 - 모든 페이지에서 동일하게 사용 */
+
+/* 브랜딩 색상 변수 (기본값) - JS BrandingManager가 동적으로 오버라이드 */
+:root {
+    --brand-primary: #2a5298;
+    --brand-secondary: #667eea;
+}
+
+/* 컨테이너 기본 설정 */
+.container {
+    display: flex;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+/* 사이드바 고정 스타일 */
+.sidebar {
+    width: 180px !important; /* 고정 너비 줄임 (250px -> 180px) */
+    min-width: 180px !important; /* 최소 너비 보장 */
+    max-width: 180px !important; /* 최대 너비 제한 */
+    background: linear-gradient(160deg, var(--brand-primary), var(--brand-secondary));
+    color: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.15) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+    flex-shrink: 0 !important; /* 축소 방지 */
+    position: fixed !important; /* 고정 위치 */
+    left: 0 !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+}
+
+/* 메인 컨텐츠 영역 */
+.main-content {
+    flex: 1 !important;
+    margin-left: 180px !important; /* 사이드바 너비만큼 마진 */
+    padding: 20px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important; /* 가로 스크롤바 깜빡임 방지 */
+    max-height: 100vh !important;
+    box-sizing: border-box !important;
+    background: #f8f9fa;
+}
+
+/* 로고 영역 - 이미지 로고로 변경 */
+.sidebar .logo {
+    text-align: center;
+    padding: 15px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.1);
+    margin: 0;
+}
+
+.sidebar .logo img {
+    width: 120px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.sidebar .logo h1 {
+    font-size: 14px;
+    margin: 8px 0 0 0;
+    color: var(--brand-secondary);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: none; /* 텍스트 숨김 */
+}
+
+/* 네비게이션 아이템 */
+.sidebar .nav-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    border-left: 3px solid transparent;
+    margin: 0;
+    font-weight: 500;
+}
+
+.sidebar .nav-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-left-color: var(--brand-secondary);
+    color: white;
+    transform: translateX(2px);
+}
+
+.sidebar .nav-item.active {
+    background: rgba(255, 255, 255, 0.18);
+    border-left-color: var(--brand-secondary);
+    font-weight: 600;
+    color: white;
+}
+
+.sidebar .nav-item .icon {
+    margin-right: 12px;
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+    opacity: 0.9;
+}
+
+/* 구분선 */
+.sidebar .nav-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 12px 20px;
+}
+
+/* 관리자 메뉴 */
+.sidebar .admin-item {
+    background: rgba(231, 76, 60, 0.1);
+    border-left-color: #e74c3c;
+}
+
+.sidebar .admin-item:hover {
+    background: rgba(231, 76, 60, 0.2);
+    border-left-color: #c0392b;
+}
+
+/* 드롭다운 서브메뉴 */
+.sidebar .nav-dropdown {
+    position: relative;
+}
+
+.sidebar .nav-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    border-left: 3px solid transparent;
+    margin: 0;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.sidebar .nav-dropdown-toggle:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-left-color: var(--brand-secondary);
+    color: white;
+}
+
+.sidebar .nav-dropdown-toggle.active {
+    background: rgba(255, 255, 255, 0.18);
+    border-left-color: var(--brand-secondary);
+    font-weight: 600;
+    color: white;
+}
+
+.sidebar .nav-dropdown-toggle i:first-child {
+    margin-right: 12px;
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar .nav-dropdown-toggle .dropdown-arrow {
+    font-size: 10px;
+    transition: transform 0.3s ease;
+}
+
+.sidebar .nav-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.sidebar .nav-submenu {
+    display: none;
+    background: rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+
+.sidebar .nav-dropdown.open .nav-submenu {
+    display: block;
+}
+
+.sidebar .nav-submenu .nav-item {
+    padding: 10px 20px 10px 48px;
+    font-size: 13px;
+    border-left: none;
+}
+
+.sidebar .nav-submenu .nav-item:hover {
+    background: rgba(52, 152, 219, 0.25);
+}
+
+.sidebar .nav-submenu .nav-item.active {
+    background: rgba(52, 152, 219, 0.35);
+    font-weight: 600;
+}
+
+/* 반응형 */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+        min-width: 220px;
+        max-width: 220px;
+    }
+
+    .main-content {
+        margin-left: 220px;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+        min-width: 200px;
+        max-width: 200px;
+    }
+
+    .main-content {
+        margin-left: 200px;
+        padding: 15px;
+    }
+}
+
+/* 스크롤바 스타일링 */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
+}

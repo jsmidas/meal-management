@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title>발주 관리 - 급식관리 시스템</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251028">
+    <script src="/static/js/sidebar-dropdown.js"></script>
+    <link rel="stylesheet" href="/static/css/site-selector.css">
+    <link rel="stylesheet" href="/static/css/ordering-management.css">
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="config.js"></script>
+    <script src="static/js/branding.js"></script>
+    <!-- 엑셀/PDF 출력 라이브러리 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item active"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content">
+            <div class="main-container">
+                <!-- 헤더 -->
+                <div class="header-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h1 class="page-title">
+                            <i class="fas fa-shopping-cart"></i>
+                            발주 관리
+                        </h1>
+                        <div id="ordering-site-selector" class="site-selector-standard"></div>
+                    </div>
+                </div>
+
+                <!-- Step 1: 기준 설정 -->
+                <div class="card">
+                    <h3 class="card-title"><i class="fas fa-cog"></i> Step 1: 발주 기준 설정</h3>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <label class="setting-label">식단표 날짜</label>
+                            <div style="display: flex; align-items: center; gap: 0.3rem;">
+                                <button type="button" class="btn btn-sm" onclick="changeDateInput('mealPlanDate', -1)"
+                                    style="padding: 0.3rem 0.5rem; min-width: auto;">◀</button>
+                                <input type="date" class="setting-input" id="mealPlanDate" style="flex: 1;">
+                                <button type="button" class="btn btn-sm" onclick="changeDateInput('mealPlanDate', 1)"
+                                    style="padding: 0.3rem 0.5rem; min-width: auto;">▶</button>
+                            </div>
+                            <small style="color: #888; font-size: 11px;">메뉴가 제공되는 날</small>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">입고일</label>
+                            <div style="display: flex; align-items: center; gap: 0.3rem;">
+                                <button type="button" class="btn btn-sm" onclick="changeDateInput('orderDate', -1)"
+                                    style="padding: 0.3rem 0.5rem; min-width: auto;">◀</button>
+                                <input type="date" class="setting-input" id="orderDate" style="flex: 1;">
+                                <button type="button" class="btn btn-sm" onclick="changeDateInput('orderDate', 1)"
+                                    style="padding: 0.3rem 0.5rem; min-width: auto;">▶</button>
+                            </div>
+                            <small style="color: #888; font-size: 11px;">발주서 작성일 (오늘)</small>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">창고/도착지</label>
+                            <select class="setting-input" id="warehouseSelect">
+                                <option value="">선택...</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-label">발주유형</label>
+                            <select class="setting-input" id="orderType">
+                                <option value="regular">정기발주</option>
+                                <option value="additional">추가발주</option>
+                                <option value="urgent">긴급발주</option>
+                            </select>
+                        </div>
+                        <div class="setting-item" style="justify-content: flex-end;">
+                            <button class="btn btn-primary" onclick="calculateOrder()">
+                                <i class="fas fa-calculator"></i> 발주량 계산
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 이전 발주서 조회 -->
+                <div class="card">
+                    <h3 class="card-title" style="cursor: pointer;" onclick="togglePreviousOrders()">
+                        <i class="fas fa-history"></i> 이전 발주서 조회
+                        <i class="fas fa-chevron-down" id="previousOrdersToggle"
+                            style="float: right; transition: transform 0.3s;"></i>
+                    </h3>
+                    <div id="previousOrdersSection" style="display: none;">
+                        <div
+                            style="margin-bottom: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: end;">
+                            <div>
+                                <label
+                                    style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">사업장</label>
+                                <select class="setting-input" id="orderSearchSite" style="width: 100%;">
+                                    <option value="">전체 사업장</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label
+                                    style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">협력업체</label>
+                                <select class="setting-input" id="orderSearchSupplier" style="width: 100%;">
+                                    <option value="">전체 업체</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">입고일
+                                    기간</label>
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <input type="date" class="setting-input" id="orderSearchFrom" style="flex: 1;">
+                                    <span>~</span>
+                                    <input type="date" class="setting-input" id="orderSearchTo" style="flex: 1;">
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary" onclick="loadPreviousOrders()" style="width: 100%;">
+                                    <i class="fas fa-search"></i> 조회
+                                </button>
+                            </div>
+                        </div>
+                        <div id="previousOrdersList">
+                            <p style="color: #888; text-align: center; padding: 20px;">조회 조건을 선택하고 조회 버튼을 클릭하세요.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 행사 발주 현황 -->
+                <div class="card">
+                    <h3 class="card-title" style="cursor: pointer;" onclick="toggleEventOrders()">
+                        <i class="fas fa-star" style="color: #f59e0b;"></i> 행사 발주 현황
+                        <i class="fas fa-chevron-down" id="eventOrdersToggle"
+                            style="float: right; transition: transform 0.3s;"></i>
+                    </h3>
+                    <div id="eventOrdersSection" style="display: none;">
+                        <div style="margin-bottom: 10px; display: flex; gap: 10px; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <select class="setting-input" id="eventOrderStatusFilter" style="width: 120px;" onchange="loadEventOrdersInOrdering()">
+                                    <option value="">전체 상태</option>
+                                    <option value="pending">대기</option>
+                                    <option value="confirmed">확정</option>
+                                    <option value="cancelled">취소</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="loadEventOrdersInOrdering()" style="padding: 6px 14px; font-size: 12px;">
+                                    <i class="fas fa-sync-alt"></i> 새로고침
+                                </button>
+                            </div>
+                            <a href="/event_ordering_management.html" class="btn btn-secondary" style="padding: 6px 14px; font-size: 12px; text-decoration: none;">
+                                <i class="fas fa-external-link-alt"></i> 행사 발주 페이지
+                            </a>
+                        </div>
+                        <div id="eventOrdersList" style="overflow-x: auto;">
+                            <p style="color: #888; text-align: center; padding: 15px;">로딩 중...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: 계산 결과 -->
+                <div class="card" id="resultSection" style="display: none;">
+                    <h3 class="card-title"><i class="fas fa-list-alt"></i> Step 2: 식수 × 식단 = 발주량</h3>
+
+                    <!-- 경고 표시 영역 -->
+                    <div id="warningSection"></div>
+
+                    <!-- 끼니별 내역 -->
+                    <div id="mealSections"></div>
+                </div>
+
+                <!-- Step 3: 최종 발주서 -->
+                <div class="card" id="orderSection" style="display: none;">
+                    <h3 class="card-title"><i class="fas fa-file-invoice"></i> Step 3: 최종 발주서</h3>
+
+                    <!-- 발주량 올림 방식 선택 -->
+                    <div style="background: #f0f4ff; border: 1px solid #667eea; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                            <i class="fas fa-calculator" style="color: #667eea;"></i>
+                            <span style="font-weight: 600; color: #333;">발주량 올림 방식</span>
+                            <span style="font-size: 11px; color: #666; margin-left: 10px;">
+                                <span style="color: #2196F3; font-weight: 600;">■ 파란색</span> = 올림/내림 적용됨 (수정 가능)
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 8px 12px; background: white; border-radius: 6px; border: 2px solid transparent; transition: all 0.2s;" class="rounding-option" data-value="threshold">
+                                <input type="radio" name="roundingMethod" value="threshold" checked style="margin-top: 3px;">
+                                <div>
+                                    <div style="font-weight: 600; color: #333;">임계값 올림 <span style="color: #28a745; font-size: 11px;">(추천)</span></div>
+                                    <div style="font-size: 11px; color: #666;">0.3 미만 버림, 0.3 이상 올림<br><span style="color: #888;">예: 15.1→15, 15.3→16</span></div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 8px 12px; background: white; border-radius: 6px; border: 2px solid transparent; transition: all 0.2s;" class="rounding-option" data-value="ceil">
+                                <input type="radio" name="roundingMethod" value="ceil" style="margin-top: 3px;">
+                                <div>
+                                    <div style="font-weight: 600; color: #333;">무조건 올림</div>
+                                    <div style="font-size: 11px; color: #666;">소수점 있으면 무조건 올림<br><span style="color: #888;">예: 15.1→16, 15.9→16</span></div>
+                                </div>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 8px 12px; background: white; border-radius: 6px; border: 2px solid transparent; transition: all 0.2s;" class="rounding-option" data-value="round">
+                                <input type="radio" name="roundingMethod" value="round" style="margin-top: 3px;">
+                                <div>
+                                    <div style="font-weight: 600; color: #333;">반올림</div>
+                                    <div style="font-size: 11px; color: #666;">0.5 미만 버림, 0.5 이상 올림<br><span style="color: #888;">예: 15.4→15, 15.5→16</span></div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="order-table-container">
+                        <table class="order-table">
+                            <thead>
+                                <tr>
+                                    <th>NO</th>
+                                    <th>식자재코드</th>
+                                    <th>식자재명</th>
+                                    <th>규격</th>
+                                    <th>협력업체</th>
+                                    <th>단위</th>
+                                    <th>식수</th>
+                                    <th>필요량</th>
+                                    <th style="background: #28a745;">현재재고<br><small
+                                            style="font-weight:normal;">(수동입력)</small></th>
+                                    <th>발주량</th>
+                                    <th>단가</th>
+                                    <th>금액</th>
+                                    <th>입고예정일</th>
+                                    <th>상태</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 수동 품목 추가 섹션 -->
+                    <div class="manual-add-section"
+                        style="margin-top: 15px; padding: 15px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
+                        <h5 style="margin-bottom: 10px; color: #495057; font-size: 0.95rem; font-weight: 600;">
+                            <i class="fas fa-plus-circle" style="color: #667eea;"></i> 수동 발주 품목 추가 (장갑, 소모품, 마트구매 등)
+                        </h5>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px;">
+                            <label style="font-size: 13px; font-weight: 600; color: #495057; white-space: nowrap;">식단표 날짜:</label>
+                            <input type="date" id="manualDate" style="padding: 8px 10px; border: 2px solid #667eea; border-radius: 6px; font-size: 13px; width: 160px;">
+                            <span style="font-size: 12px; color: #888;">* 해당 식재료비가 집계될 날짜 (과거 날짜 가능)</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                            <!-- Hidden fields for ID and Code -->
+                            <input type="hidden" id="manualId">
+                            <input type="hidden" id="manualCode">
+
+                            <!-- Searchable Input Group + 직접입력 -->
+                            <div style="display: flex; flex: 2; min-width: 200px; border: 2px solid #667eea; border-radius: 6px; overflow: hidden; background: white;">
+                                <input type="text" id="manualName" placeholder="품명 직접입력 또는 🔍검색"
+                                    style="flex: 1; padding: 10px 12px; border: none; outline: none; font-size: 13px; background: white;">
+                                <button type="button" onclick="openIngredientSearch()"
+                                    title="식자재 DB에서 검색"
+                                    style="padding: 10px 15px; background: linear-gradient(135deg, #667eea, #764ba2); border: none; color: white; cursor: pointer;">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+
+                            <input type="text" id="manualSpec" placeholder="규격"
+                                style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
+                            <input type="text" id="manualUnit" placeholder="단위"
+                                style="width: 60px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; text-align: center;">
+                            <input type="text" id="manualSupplier" placeholder="구매업체"
+                                style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
+                            <input type="number" id="manualQty" placeholder="수량" min="1"
+                                style="width: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; text-align: center;">
+                            <input type="number" id="manualPrice" placeholder="단가" min="0"
+                                style="width: 90px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; text-align: right;">
+                            <input type="text" id="manualRemarks" placeholder="비고"
+                                style="flex: 1.5; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
+                            <button onclick="addManualItem()"
+                                style="padding: 10px 16px; background: linear-gradient(135deg, #28a745, #20c997); border: none; border-radius: 6px; color: white; cursor: pointer; font-size: 13px; font-weight: 600; white-space: nowrap;">
+                                <i class="fas fa-plus"></i> 추가
+                            </button>
+                        </div>
+                        <!-- 수동 추가된 품목 목록 -->
+                        <div id="manualItemsList" style="margin-top: 12px; display: none;">
+                            <div style="font-size: 12px; color: #667eea; font-weight: 600; margin-bottom: 6px;">
+                                <i class="fas fa-list"></i> 수동 추가 품목
+                            </div>
+                            <div id="manualItemsContainer" style="max-height: 150px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 6px; padding: 8px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="total-section">
+                        <div class="total-row"
+                            style="border-bottom: 1px dashed #ddd; padding-bottom: 8px; margin-bottom: 8px;">
+                            <span id="cutoffInfo" style="font-size: 0.9rem;">
+                                <span style="color: #666;"><i class="fas fa-clock"></i> 발주 마감: 16시</span>
+                            </span>
+                        </div>
+                        <div class="total-row">
+                            <span>발주 가능 품목:</span>
+                            <span id="orderableCount">0개</span>
+                        </div>
+                        <div class="total-row">
+                            <span>발주 불가 품목:</span>
+                            <span id="unorderableCount" style="color: #dc3545;">0개</span>
+                        </div>
+                        <div class="total-row" style="border-top: 1px dashed #ddd; padding-top: 8px; margin-top: 8px;">
+                            <span>수동발주 금액:</span>
+                            <span id="manualOrderAmount" style="color: #667eea; font-weight: 600;">₩0</span>
+                        </div>
+                        <div class="total-row grand-total">
+                            <span>총 발주 금액:</span>
+                            <span id="totalAmount">₩0</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-success" onclick="saveOrder()" id="saveOrderBtn">
+                            <i class="fas fa-save"></i> 발주서 저장
+                        </button>
+                        <button class="btn btn-warning" onclick="confirmOrder()" id="confirmOrderBtn"
+                            style="display: none;">
+                            <i class="fas fa-check"></i> 발주 확정
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel"></i> 엑셀
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportToPdf()">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="btn btn-danger" onclick="resetOrder()">
+                            <i class="fas fa-redo"></i> 초기화
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 4: 협력업체별 발주서 수정 -->
+                <div class="card" id="step4Section" style="display: none;">
+                    <h3 class="card-title">
+                        <i class="fas fa-building"></i> Step 4: 협력업체별 발주서 수정
+                        <span id="step4ModifiedBadge" style="display:none; margin-left: 8px;" class="badge badge-warning">수정됨</span>
+                        <button class="btn btn-secondary" onclick="toggleStep4All()" style="margin-left: auto; padding: 4px 10px; font-size: 12px;">
+                            <i class="fas fa-compress-arrows-alt"></i> 전체 접기/펼치기
+                        </button>
+                    </h3>
+                    <div id="step4Summary" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px; padding: 10px 15px; background: #f0f4ff; border-radius: 8px; font-size: 14px;">
+                        <span><i class="fas fa-building" style="color: #667eea;"></i> 업체: <strong id="step4SupplierCount">0</strong>개</span>
+                        <span><i class="fas fa-boxes" style="color: #28a745;"></i> 품목: <strong id="step4ItemCount">0</strong>개</span>
+                        <span><i class="fas fa-won-sign" style="color: #f5576c;"></i> 총액: <strong id="step4TotalAmount">₩0</strong></span>
+                    </div>
+                    <div id="step4Content">
+                        <!-- 협력업체별 접기/펼치기 섹션이 동적으로 생성됨 -->
+                    </div>
+                </div>
+
+                <!-- Step 5: 수정 반영 최종 발주서 -->
+                <div class="card" id="step5Section" style="display: none;">
+                    <h3 class="card-title">
+                        <i class="fas fa-clipboard-check"></i> Step 5: 수정 반영 최종 발주서
+                        <small style="margin-left: 8px; font-weight: normal; color: #666;">Step 4 변경사항 반영됨</small>
+                    </h3>
+                    <!-- 변경 요약 -->
+                    <div id="step5ChangeSummary" style="display: none; margin-bottom: 15px; padding: 10px 15px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; font-size: 13px;">
+                    </div>
+                    <div class="order-table-container">
+                        <table class="order-table">
+                            <thead>
+                                <tr>
+                                    <th>NO</th>
+                                    <th>식자재코드</th>
+                                    <th>식자재명</th>
+                                    <th>규격</th>
+                                    <th>협력업체</th>
+                                    <th>단위</th>
+                                    <th>식수</th>
+                                    <th>필요량</th>
+                                    <th style="background: #28a745;">재고</th>
+                                    <th>발주량</th>
+                                    <th>단가</th>
+                                    <th>금액</th>
+                                    <th>입고예정일</th>
+                                    <th>변경</th>
+                                </tr>
+                            </thead>
+                            <tbody id="step5TableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="total-section" style="margin-top: 15px;">
+                        <div class="total-row grand-total">
+                            <span>총 발주 금액 (수정 반영):</span>
+                            <span id="step5TotalAmount">₩0</span>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-success" onclick="saveOrderFromStep5()" id="step5SaveBtn">
+                            <i class="fas fa-save"></i> 발주서 저장 (수정 반영)
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportStep5ToExcel()">
+                            <i class="fas fa-file-excel"></i> 엑셀
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportStep5ToPdf()">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 빈 상태 -->
+                <div class="card" id="emptyState">
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h3>발주 계산을 시작하세요</h3>
+                        <p>식단표 날짜와 입고일을 선택하고 "발주량 계산" 버튼을 클릭하세요.</p>
+                        <p style="font-size: 0.85rem; color: #999; margin-top: 1rem;">
+                            식수 × 식단표(레시피)를 기반으로 자동으로 발주량을 계산합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p id="loadingText">계산 중입니다...</p>
+        </div>
+    </div>
+
+    <!-- 하단 발주 현황 요약 패널 -->
+    <div id="orderSummaryPanel" class="order-summary-panel" style="display: none;">
+        <!-- 헤더 (접기/펼치기) -->
+        <div class="summary-panel-header" onclick="toggleSummaryPanel()">
+            <div class="summary-panel-title">
+                <i class="fas fa-chart-bar"></i>
+                <span>발주 현황 요약</span>
+                <span id="summaryBadge" class="summary-badge">0건</span>
+            </div>
+            <div class="summary-panel-stats">
+                <span class="stat-item included">
+                    <i class="fas fa-check-circle"></i>
+                    반영: <strong id="summaryIncludedCount">0</strong>건
+                    <span id="summaryIncludedAmount">₩0</span>
+                </span>
+                <span class="stat-item excluded">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    미반영: <strong id="summaryExcludedCount">0</strong>건
+                </span>
+            </div>
+            <button class="summary-toggle-btn" id="summaryToggleBtn">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+        </div>
+
+        <!-- 본문 (접었다 펼 수 있음) -->
+        <div class="summary-panel-body" id="summaryPanelBody">
+            <div class="summary-columns">
+                <!-- 왼쪽: 반영된 항목 -->
+                <div class="summary-column included-column">
+                    <div class="column-header">
+                        <i class="fas fa-check-circle"></i> 반영됨
+                        <span class="column-count" id="includedColumnCount">0건</span>
+                    </div>
+                    <div class="column-body" id="includedItemsList">
+                        <p class="empty-message">발주 계산 후 표시됩니다</p>
+                    </div>
+                </div>
+
+                <!-- 오른쪽: 미반영 항목 -->
+                <div class="summary-column excluded-column">
+                    <div class="column-header">
+                        <i class="fas fa-exclamation-triangle"></i> 미반영 (발주불가/제외)
+                        <span class="column-count" id="excludedColumnCount">0건</span>
+                    </div>
+                    <div class="column-body" id="excludedItemsList">
+                        <p class="empty-message">발주 계산 후 표시됩니다</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사업장 선택기 -->
+    <script src="/static/modules/core/site-selector.js"></script>
+
+    <!-- 발주 관리 모듈 (순서 중요) -->
+    <script src="/static/js/ordering-state.js?v=20260306"></script>
+    <script src="/static/js/ordering-management.js?v=20260306"></script>
+    <script src="/static/js/ordering-display.js?v=20260306"></script>
+    <script src="/static/js/ordering-history.js?v=20260310"></script>
+    <script src="/static/js/ordering-export.js?v=20260306"></script>
+    <script src="/static/js/ordering-modal.js?v=20260306"></script>
+    <script src="/static/js/ordering-override.js?v=20260306"></script>
+    <script src="/static/js/ordering-ui.js?v=20260306"></script>
+    <script src="/static/js/ordering-steps.js?v=20260306"></script>
+
+    <!-- 발주서 수정 모달 -->
+    <div class="modal-overlay" id="orderEditModal" onclick="if(event.target === this) closeOrderEditModal()">
+        <div class="modal-content" style="max-width: 1100px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <h2><i class="fas fa-edit"></i> 발주서 수정 (수량 조정)</h2>
+                <button class="modal-close" onclick="closeOrderEditModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <!-- 발주서 정보 -->
+                <div class="order-info-grid"
+                    style="padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #eee;">
+                    <div class="order-info-item">
+                        <span class="order-info-label">발주번호</span>
+                        <span class="order-info-value" id="editOrderNumber">-</span>
+                    </div>
+                    <div class="order-info-item">
+                        <span class="order-info-label">사업장</span>
+                        <span class="order-info-value" id="editOrderSite">-</span>
+                    </div>
+                    <div class="order-info-item">
+                        <span class="order-info-label">입고일</span>
+                        <span class="order-info-value" id="editOrderDate">-</span>
+                    </div>
+                    <div class="order-info-item">
+                        <span class="order-info-label">식단표 날짜</span>
+                        <span class="order-info-value" id="editUsageDate">-</span>
+                    </div>
+                </div>
+
+                <!-- 수정 안내 -->
+                <div style="padding: 10px 20px; background: #fff3cd; color: #856404; font-size: 13px;">
+                    <i class="fas fa-info-circle"></i>
+                    발주량을 직접 수정하세요. <strong>0</strong>으로 설정하면 해당 품목은 발주에서 제외됩니다.
+                </div>
+
+                <!-- 품목 테이블 -->
+                <div style="padding: 15px 20px; max-height: 400px; overflow-y: auto;">
+                    <table class="order-table" style="font-size: 13px;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;min-width:150px;">품목명/규격</th>
+                                <th style="min-width:80px;">협력업체</th>
+                                <th style="min-width:50px;">끼니</th>
+                                <th style="min-width:100px;">메뉴</th>
+                                <th style="min-width:70px;">필요량</th>
+                                <th style="min-width:120px;">발주량</th>
+                                <th style="min-width:80px;">단가</th>
+                                <th style="min-width:90px;">금액</th>
+                            </tr>
+                        </thead>
+                        <tbody id="editOrderItemsBody">
+                            <!-- 동적으로 생성 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 합계 -->
+                <div
+                    style="padding: 15px 20px; background: #f8f9fa; border-top: 2px solid #667eea; display: flex; justify-content: flex-end; gap: 30px;">
+                    <div>
+                        <span style="color: #666;">총 품목수:</span>
+                        <strong id="editTotalItems" style="margin-left: 8px; font-size: 1.1rem;">0개</strong>
+                    </div>
+                    <div>
+                        <span style="color: #666;">총 금액:</span>
+                        <strong id="editTotalAmount"
+                            style="margin-left: 8px; font-size: 1.2rem; color: #667eea;">0원</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeOrderEditModal()">
+                    <i class="fas fa-times"></i> 취소
+                </button>
+                <button class="btn btn-primary" onclick="saveOrderEdit()"
+                    style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none;">
+                    <i class="fas fa-save"></i> 수정 저장
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 발주서 상세 모달 -->
+    <div class="modal-overlay" id="orderDetailModal" onclick="if(event.target === this) closeOrderDetailModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-invoice"></i> 발주서 상세</h2>
+                <button class="modal-close" onclick="closeOrderDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="orderDetailBody">
+                <!-- 동적으로 내용이 채워집니다 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="openDataVerificationModal()" title="발주량/전처리량/조리량 데이터 검증">
+                    <i class="fas fa-check-double"></i> 데이터 검증
+                </button>
+                <button class="btn btn-info" onclick="goToPreprocessingInstruction()" title="이 발주서의 전처리 지시서 보기">
+                    <i class="fas fa-cut"></i> 전처리 지시서
+                </button>
+                <button class="btn btn-info" onclick="goToCookingInstruction()" title="이 발주서의 조리 지시서 보기">
+                    <i class="fas fa-fire"></i> 조리 지시서
+                </button>
+                <button class="btn btn-secondary" onclick="exportViewedOrderToExcel()">
+                    <i class="fas fa-file-excel"></i> 엑셀
+                </button>
+                <button class="btn btn-secondary" onclick="exportViewedOrderToPdf()">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button class="btn btn-secondary" onclick="printOrderDetail()">
+                    <i class="fas fa-print"></i> 인쇄
+                </button>
+                <button class="btn btn-primary" onclick="closeOrderDetailModal()">
+                    <i class="fas fa-times"></i> 닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 데이터 검증 모달 -->
+    <div class="modal-overlay" id="dataVerificationModal" onclick="if(event.target === this) closeDataVerificationModal()">
+        <div class="modal-content" style="max-width: 1200px; width: 95%;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                <h2><i class="fas fa-check-double"></i> 데이터 검증 - 발주/전처리/조리 수량 비교</h2>
+                <button class="modal-close" onclick="closeDataVerificationModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="dataVerificationBody" style="max-height: 70vh; overflow-y: auto;">
+                <div class="loading" style="padding: 3rem; text-align: center;">
+                    <div class="spinner"></div>
+                    <p>데이터를 비교하는 중...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div id="verificationSummary" style="flex: 1; text-align: left; font-size: 14px;"></div>
+                <button class="btn btn-primary" onclick="closeDataVerificationModal()">
+                    <i class="fas fa-times"></i> 닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 식자재 검색 모달 -->
+    <div class="modal-overlay" id="ingredientSearchModal" onclick="if(event.target === this) closeIngredientSearchModal()">
+        <div class="modal-content" style="max-width: 950px; width: 95%;">
+            <div class="modal-header">
+                <h2><i class="fas fa-search"></i> 식자재 검색</h2>
+                <button class="modal-close" onclick="closeIngredientSearchModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="ingSearchKeyword" class="form-control"
+                        placeholder="식자재명 입력..."
+                        onkeyup="searchIngredientsKey(event)"
+                        style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    <button class="btn btn-primary" type="button" onclick="searchIngredients()"
+                        style="padding: 10px 20px; background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 6px; color: white; cursor: pointer;">
+                        <i class="fas fa-search"></i> 검색
+                    </button>
+                </div>
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead style="background: #f8f9fa; position: sticky; top: 0;">
+                            <tr>
+                                <th style="padding: 10px 6px; text-align: left; border-bottom: 2px solid #dee2e6;">식자재명</th>
+                                <th style="padding: 10px 6px; text-align: left; border-bottom: 2px solid #dee2e6;">규격</th>
+                                <th style="padding: 10px 6px; text-align: left; border-bottom: 2px solid #dee2e6;">단위</th>
+                                <th style="padding: 10px 6px; text-align: right; border-bottom: 2px solid #dee2e6;">단위당단가</th>
+                                <th style="padding: 10px 6px; text-align: center; border-bottom: 2px solid #dee2e6;">선발주</th>
+                                <th style="padding: 10px 6px; text-align: left; border-bottom: 2px solid #dee2e6;">공급업체</th>
+                                <th style="padding: 10px 6px; text-align: center; border-bottom: 2px solid #dee2e6; width: 55px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="ingSearchResults">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px; color: #999;">검색어를 입력하세요.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 발주서 변경 비교 모달 -->
+    <div class="modal-overlay" id="orderCompareModal" onclick="if(event.target === this) closeOrderCompareModal()">
+        <div class="modal-content" style="max-width: 1400px; width: 98%;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #6a11cb, #2575fc);">
+                <h2><i class="fas fa-balance-scale"></i> 발주서 변경 비교 리포트</h2>
+                <button class="modal-close" onclick="closeOrderCompareModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1rem; max-height: 75vh; overflow-y: auto;">
+                <!-- 원본 발주서 정보 -->
+                <div id="compareOrderInfo" style="background: #f8f9fa; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <strong id="compareOrderNumber" style="font-size: 16px; color: #333;">-</strong>
+                            <span style="margin-left: 15px; color: #666;">식단일: <span id="compareUsageDate">-</span></span>
+                            <span style="margin-left: 15px; color: #666;">원본금액: <span id="compareOriginalAmount" style="font-weight: 600;">-</span></span>
+                        </div>
+                        <div style="color: #888; font-size: 12px;">
+                            비교 시점: <span id="compareTimestamp">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 요약 탭 -->
+                <div id="compareSummaryTabs" style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button class="compare-tab active" data-type="increased" style="background: #d4edda; color: #155724; border: 2px solid #28a745; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-arrow-up"></i> 수량증가 <span id="tabIncreased">0</span>
+                    </button>
+                    <button class="compare-tab" data-type="decreased" style="background: #fff3cd; color: #856404; border: 2px solid #ffc107; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-arrow-down"></i> 수량감소 <span id="tabDecreased">0</span>
+                    </button>
+                    <button class="compare-tab" data-type="added" style="background: #d1ecf1; color: #0c5460; border: 2px solid #17a2b8; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-plus"></i> 신규추가 <span id="tabAdded">0</span>
+                    </button>
+                    <button class="compare-tab" data-type="removed" style="background: #f8d7da; color: #721c24; border: 2px solid #dc3545; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-minus"></i> 삭제됨 <span id="tabRemoved">0</span>
+                    </button>
+                    <button class="compare-tab" data-type="replaced" style="background: #e2d9f3; color: #4a148c; border: 2px solid #9c27b0; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-exchange-alt"></i> 교체됨 <span id="tabReplaced">0</span>
+                    </button>
+                    <div style="flex: 1;"></div>
+                    <div style="display: flex; align-items: center; gap: 15px; font-size: 13px;">
+                        <span style="color: #28a745;">추가구매: <strong id="summaryAdditional">0건 (₩0)</strong></span>
+                        <span style="color: #dc3545;">감량: <strong id="summaryDecrease">₩0</strong></span>
+                        <span style="color: #333;">순변동: <strong id="summaryNetChange">₩0</strong></span>
+                    </div>
+                </div>
+
+                <!-- 비교 결과 테이블 -->
+                <div style="overflow-x: auto; border: 1px solid #dee2e6; border-radius: 8px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1000px;">
+                        <thead style="background: #f8f9fa; position: sticky; top: 0;">
+                            <tr>
+                                <th style="padding: 10px 6px; text-align: center; border-bottom: 2px solid #dee2e6; width: 40px;">
+                                    <input type="checkbox" id="compareSelectAll" onchange="toggleCompareSelectAll()">
+                                </th>
+                                <th style="padding: 10px 6px; text-align: left; border-bottom: 2px solid #dee2e6;">식자재코드</th>
+                                <th style="padding: 10px 6px; text-align: left; border-bottom: 2px solid #dee2e6;">식자재명</th>
+                                <th style="padding: 10px 6px; text-align: left; border-bottom: 2px solid #dee2e6;">규격</th>
+                                <th style="padding: 10px 6px; text-align: right; border-bottom: 2px solid #dee2e6;">기존</th>
+                                <th style="padding: 10px 6px; text-align: right; border-bottom: 2px solid #dee2e6;">현재</th>
+                                <th style="padding: 10px 6px; text-align: right; border-bottom: 2px solid #dee2e6;">차이</th>
+                                <th style="padding: 10px 6px; text-align: right; border-bottom: 2px solid #dee2e6;">금액차이</th>
+                                <th style="padding: 10px 6px; text-align: left; border-bottom: 2px solid #dee2e6; min-width: 250px;">변경 원인</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compareTableBody">
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: 40px; color: #999;">
+                                    <i class="fas fa-spinner fa-spin"></i> 비교 데이터 로딩 중...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #dee2e6; padding: 15px 20px;">
+                <div style="flex: 1; text-align: left; font-size: 13px;">
+                    선택: <strong id="compareSelectedCount">0</strong>건 (<strong id="compareSelectedAmount">₩0</strong>)
+                </div>
+                <button class="btn btn-success" onclick="generateAdditionalOrder()" style="margin-right: 10px;">
+                    <i class="fas fa-cart-plus"></i> 추가발주서 생성
+                </button>
+                <button class="btn btn-info" onclick="exportComparisonToExcel()">
+                    <i class="fas fa-file-excel"></i> 엑셀 내보내기
+                </button>
+                <button class="btn btn-secondary" onclick="closeOrderCompareModal()">
+                    <i class="fas fa-times"></i> 닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 식자재 변경(대체/추가/제외) 모달 -->
+    <div class="modal-overlay" id="ingredientOverrideModal" onclick="if(event.target === this) closeIngredientOverrideModal()">
+        <div class="modal-content" style="max-width: 1150px; width: 95%;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #ff6b6b, #feca57);">
+                <h2><i class="fas fa-exchange-alt"></i> <span id="overrideModalTitle">식자재 변경</span></h2>
+                <button class="modal-close" onclick="closeIngredientOverrideModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <!-- 변경 유형 선택 -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <label class="override-type-option" data-type="replace" style="flex: 1; min-width: 150px; padding: 12px 15px; border: 2px solid #667eea; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s;">
+                        <input type="radio" name="overrideType" value="replace" checked style="display: none;">
+                        <i class="fas fa-sync-alt" style="font-size: 18px; color: #667eea;"></i>
+                        <div>
+                            <div style="font-weight: 600; color: #333;">대체</div>
+                            <div style="font-size: 11px; color: #666;">다른 식자재로 교체</div>
+                        </div>
+                    </label>
+                    <label class="override-type-option" data-type="add" style="flex: 1; min-width: 150px; padding: 12px 15px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s;">
+                        <input type="radio" name="overrideType" value="add" style="display: none;">
+                        <i class="fas fa-plus-circle" style="font-size: 18px; color: #28a745;"></i>
+                        <div>
+                            <div style="font-weight: 600; color: #333;">추가</div>
+                            <div style="font-size: 11px; color: #666;">레시피에 식자재 추가</div>
+                        </div>
+                    </label>
+                    <label class="override-type-option" data-type="exclude" style="flex: 1; min-width: 150px; padding: 12px 15px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s;">
+                        <input type="radio" name="overrideType" value="exclude" style="display: none;">
+                        <i class="fas fa-times-circle" style="font-size: 18px; color: #dc3545;"></i>
+                        <div>
+                            <div style="font-weight: 600; color: #333;">제외</div>
+                            <div style="font-size: 11px; color: #666;">이번 발주에서 제외</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- 원본 식자재 정보 (대체/제외 시 표시) -->
+                <div id="originalIngredientSection" style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px;">
+                    <div style="font-weight: 600; color: #856404; margin-bottom: 8px;">
+                        <i class="fas fa-exclamation-triangle"></i> 원본 식자재
+                    </div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px;">
+                        <span><strong>품명:</strong> <span id="overrideOriginalName">-</span></span>
+                        <span><strong>규격:</strong> <span id="overrideOriginalSpec">-</span></span>
+                        <span><strong>선발주일:</strong> <span id="overrideOriginalLeadTime" style="color: #dc3545; font-weight: 600;">-</span></span>
+                        <span><strong>협력업체:</strong> <span id="overrideOriginalSupplier">-</span></span>
+                    </div>
+                    <input type="hidden" id="overrideOriginalId">
+                    <input type="hidden" id="overrideOriginalCode">
+                </div>
+
+                <!-- 레시피 정보 (추가 시 필요) -->
+                <div id="recipeInfoSection" style="background: #e7f3ff; border: 1px solid #007bff; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: none;">
+                    <div style="font-weight: 600; color: #0056b3; margin-bottom: 8px;">
+                        <i class="fas fa-utensils"></i> 대상 레시피
+                    </div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px;">
+                        <span><strong>메뉴:</strong> <span id="overrideRecipeName">-</span></span>
+                        <span><strong>슬롯:</strong> <span id="overrideSlotName">-</span></span>
+                    </div>
+                    <input type="hidden" id="overrideRecipeId">
+                </div>
+
+                <!-- 대체/추가 식자재 검색 섹션 -->
+                <div id="replacementSearchSection">
+                    <div style="font-weight: 600; color: #333; margin-bottom: 10px;">
+                        <i class="fas fa-search"></i> <span id="searchSectionTitle">대체 식자재 검색</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="overrideSearchKeyword" class="form-control"
+                            placeholder="식자재명 입력..."
+                            onkeyup="if(event.key==='Enter') searchAlternativeIngredients()"
+                            style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                        <button class="btn btn-primary" type="button" onclick="searchAlternativeIngredients()"
+                            style="padding: 10px 20px; background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 6px; color: white; cursor: pointer;">
+                            <i class="fas fa-search"></i> 검색
+                        </button>
+                        <button class="btn btn-secondary" type="button" onclick="loadRecommendedAlternatives()"
+                            style="padding: 10px 15px; background: #6c757d; border: none; border-radius: 6px; color: white; cursor: pointer;" title="같은 카테고리 추천">
+                            <i class="fas fa-magic"></i> 추천
+                        </button>
+                    </div>
+
+                    <!-- 추가 시 1인 필요량 입력 -->
+                    <div id="addQuantitySection" style="display: none; background: #d4edda; border: 1px solid #28a745; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px;">
+                        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                            <div style="font-weight: 600; color: #155724;">
+                                <i class="fas fa-balance-scale"></i> 1인 필요량
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="number" id="overrideAddQuantity" step="0.001" min="0" value="0.05"
+                                    style="width: 100px; padding: 8px; border: 1px solid #28a745; border-radius: 4px; text-align: right;">
+                                <select id="overrideAddUnit" style="padding: 8px; border: 1px solid #28a745; border-radius: 4px;">
+                                    <option value="kg">kg</option>
+                                    <option value="g">g</option>
+                                    <option value="EA">EA</option>
+                                    <option value="포">포</option>
+                                </select>
+                            </div>
+                            <span style="font-size: 12px; color: #155724;">레시피와 동일한 단위 기준</span>
+                        </div>
+                    </div>
+
+                    <!-- 검색 결과 테이블 -->
+                    <div style="max-height: 350px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead style="background: #f1f3f5; position: sticky; top: 0; z-index: 1;">
+                                <tr>
+                                    <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #adb5bd; font-weight: 700; color: #212529;">식자재명</th>
+                                    <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #adb5bd; font-weight: 700; color: #212529;">규격</th>
+                                    <th style="padding: 10px 8px; text-align: center; border-bottom: 2px solid #adb5bd; font-weight: 700; color: #212529;">단위</th>
+                                    <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #adb5bd; font-weight: 700; color: #212529;">단가</th>
+                                    <th style="padding: 10px 8px; text-align: right; border-bottom: 2px solid #adb5bd; font-weight: 700; color: #0d6efd;">단위당단가</th>
+                                    <th style="padding: 10px 8px; text-align: center; border-bottom: 2px solid #adb5bd; font-weight: 700; color: #212529;">선발주</th>
+                                    <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #adb5bd; font-weight: 700; color: #212529;">공급업체</th>
+                                    <th style="padding: 10px 8px; text-align: center; border-bottom: 2px solid #adb5bd; width: 60px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="overrideSearchResults">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                                        검색어를 입력하거나 [추천] 버튼을 클릭하세요.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 변경 사유 -->
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="font-weight: 600; font-size: 13px; color: #333; display: block; margin-bottom: 5px;">
+                                <i class="fas fa-comment-alt"></i> 변경 사유
+                            </label>
+                            <select id="overrideReason" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="lead_time_exceeded">선발주일 초과</option>
+                                <option value="out_of_stock">품절/재고없음</option>
+                                <option value="price">가격 사유</option>
+                                <option value="not_needed">불필요 (이번만 제외)</option>
+                                <option value="manual">기타 (수동)</option>
+                            </select>
+                        </div>
+                        <div style="flex: 2; min-width: 300px;">
+                            <label style="font-weight: 600; font-size: 13px; color: #333; display: block; margin-bottom: 5px;">
+                                <i class="fas fa-sticky-note"></i> 메모 (선택)
+                            </label>
+                            <input type="text" id="overrideNotes" placeholder="추가 메모..."
+                                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 선택된 대체 식자재 표시 -->
+                <div id="selectedReplacementSection" style="display: none; margin-top: 15px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px; padding: 12px 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-weight: 600; color: #155724;"><i class="fas fa-check-circle"></i> 선택됨:</span>
+                            <span id="selectedReplacementName" style="font-weight: 600; margin-left: 10px;">-</span>
+                            <span id="selectedReplacementSpec" style="color: #666; margin-left: 10px;">-</span>
+                            <span id="selectedReplacementLeadTime" style="color: #28a745; margin-left: 10px;">-</span>
+                        </div>
+                        <button type="button" onclick="clearSelectedReplacement()" style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 16px;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="selectedReplacementId">
+                    <input type="hidden" id="selectedReplacementCode">
+                    <input type="hidden" id="selectedReplacementPrice">
+                    <input type="hidden" id="selectedReplacementUnit">
+                    <input type="hidden" id="selectedReplacementSupplier">
+                    <input type="hidden" id="selectedReplacementLeadTimeValue">
+                </div>
+            </div>
+
+            <div class="modal-footer" style="border-top: 1px solid #dee2e6; padding: 15px 20px;">
+                <button class="btn btn-secondary" onclick="closeIngredientOverrideModal()">
+                    <i class="fas fa-times"></i> 취소
+                </button>
+                <button class="btn btn-primary" onclick="saveIngredientOverride()" id="saveOverrideBtn"
+                    style="background: linear-gradient(135deg, #ff6b6b, #feca57); border: none;">
+                    <i class="fas fa-save"></i> <span id="saveOverrideBtnText">적용</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* 식자재 오버라이드 모달 스타일 */
+        .override-type-option {
+            background: white;
+        }
+        .override-type-option:hover {
+            border-color: #667eea !important;
+            background: #f8f9ff;
+        }
+        .override-type-option.selected {
+            border-color: #667eea !important;
+            background: #f0f4ff;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        .override-type-option.selected[data-type="add"] {
+            border-color: #28a745 !important;
+            background: #d4edda;
+        }
+        .override-type-option.selected[data-type="exclude"] {
+            border-color: #dc3545 !important;
+            background: #f8d7da;
+        }
+
+        /* 발주 불가 품목 액션 버튼 */
+        .cannot-order-actions {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .cannot-order-actions button {
+            padding: 3px 8px;
+            font-size: 11px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-replace {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .btn-replace:hover {
+            opacity: 0.85;
+        }
+        .btn-exclude {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-exclude:hover {
+            background: #5a6268;
+        }
+
+        /* 오버라이드 요약 패널 */
+        .override-summary-panel {
+            background: #fff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+        }
+        .override-summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            margin: 4px 0;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .override-summary-item.replace {
+            background: #f0f4ff;
+            border-left: 3px solid #667eea;
+        }
+        .override-summary-item.add {
+            background: #d4edda;
+            border-left: 3px solid #28a745;
+        }
+        .override-summary-item.exclude {
+            background: #f8d7da;
+            border-left: 3px solid #dc3545;
+        }
+        .override-remove-btn {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+
+        /* 발주서 비교 모달 스타일 */
+        .compare-tab {
+            transition: all 0.2s;
+        }
+        .compare-tab:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
+        }
+        .compare-tab.active {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        .compare-row-increased { background-color: #d4edda !important; }
+        .compare-row-decreased { background-color: #fff3cd !important; }
+        .compare-row-added { background-color: #d1ecf1 !important; }
+        .compare-row-removed { background-color: #f8d7da !important; }
+        .compare-row-replaced { background-color: #e2d9f3 !important; }
+        .compare-row-hidden { display: none !important; }
+        #compareTableBody tr:hover { filter: brightness(0.97); }
+
+        /* 충돌 해결 모달 스타일 */
+        .conflict-modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .conflict-modal {
+            background: white; border-radius: 12px; max-width: 900px; width: 95%;
+            max-height: 85vh; display: flex; flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .conflict-modal-header {
+            padding: 18px 24px; background: linear-gradient(135deg, #ef4444, #f97316);
+            color: white; border-radius: 12px 12px 0 0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .conflict-modal-header h2 { margin: 0; font-size: 1.15rem; }
+        .conflict-modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+        .conflict-modal-footer {
+            padding: 15px 24px; border-top: 1px solid #e5e7eb;
+            display: flex; justify-content: flex-end; gap: 10px;
+        }
+        .conflict-item {
+            border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px;
+            margin-bottom: 12px; background: #fafafa;
+        }
+        .conflict-item-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; font-weight: 600; color: #1f2937;
+        }
+        .conflict-item-reason {
+            font-size: 12px; color: #dc2626; background: #fef2f2;
+            padding: 3px 8px; border-radius: 4px;
+        }
+        .conflict-options { display: flex; gap: 8px; flex-wrap: wrap; }
+        .conflict-option {
+            flex: 1; min-width: 140px; padding: 10px 12px;
+            border: 2px solid #e5e7eb; border-radius: 8px;
+            cursor: pointer; background: white; transition: all 0.2s;
+            text-align: center; font-size: 13px;
+        }
+        .conflict-option:hover { border-color: #667eea; background: #f0f4ff; }
+        .conflict-option.selected { border-color: #667eea; background: #eef2ff; box-shadow: 0 2px 8px rgba(102,126,234,0.2); }
+        .conflict-option.selected-green { border-color: #22c55e; background: #f0fdf4; }
+        .conflict-option.selected-red { border-color: #ef4444; background: #fef2f2; }
+        .conflict-option-icon { font-size: 1.3rem; margin-bottom: 4px; }
+        .conflict-option-label { font-weight: 600; color: #374151; }
+        .conflict-option-desc { font-size: 11px; color: #6b7280; margin-top: 2px; }
+        .conflict-alt-supplier {
+            margin-top: 8px; padding: 8px 10px; background: #f0f4ff;
+            border: 1px solid #c7d2fe; border-radius: 6px; font-size: 12px; display: none;
+        }
+    </style>
+
+    <!-- 주문불가 충돌 해결 모달 -->
+    <div id="blackoutConflictModal" class="conflict-modal-overlay" style="display: none;" onclick="if(event.target===this) closeBlackoutConflictModal()">
+        <div class="conflict-modal">
+            <div class="conflict-modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> 주문불가 항목 충돌 해결</h2>
+                <button onclick="closeBlackoutConflictModal()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div class="conflict-modal-body">
+                <p style="color: #6b7280; margin-bottom: 15px; font-size: 14px;">
+                    아래 항목들은 협력업체 휴무 등의 사유로 발주가 불가능합니다. 각 항목별로 처리 방법을 선택하세요.
+                </p>
+                <div id="conflictItemsList"></div>
+            </div>
+            <div class="conflict-modal-footer">
+                <button class="btn btn-secondary" onclick="closeBlackoutConflictModal()">
+                    <i class="fas fa-times"></i> 닫기
+                </button>
+                <button class="btn btn-primary" onclick="applyConflictResolutions()" style="background: linear-gradient(135deg, #667eea, #764ba2); border: none;">
+                    <i class="fas fa-check"></i> 일괄 적용
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: 식자재 대체 모달 -->
+    <div class="modal-overlay" id="step4ReplaceModal" onclick="if(event.target===this) closeStep4ReplaceModal()">
+        <div class="modal-content" style="max-width: 1100px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #8b5cf6, #a855f7);">
+                <h2><i class="fas fa-sync-alt"></i> 식자재 대체</h2>
+                <button class="modal-close" onclick="closeStep4ReplaceModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <!-- 원본 식자재 정보 -->
+                <div id="step4ReplaceOriginalInfo" style="margin-bottom: 15px; padding: 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 6px;">현재 식자재</div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                        <span style="font-weight: 700; font-size: 15px; color: #333;" id="step4ReplaceOriginalName">-</span>
+                        <span style="font-size: 13px; color: #888;" id="step4ReplaceOriginalCode">-</span>
+                        <span style="font-size: 13px; color: #555;" id="step4ReplaceOriginalSpec">-</span>
+                        <span style="font-size: 13px; color: #667eea;" id="step4ReplaceOriginalSupplier">-</span>
+                        <span style="font-size: 13px; color: #28a745; font-weight: 600;" id="step4ReplaceOriginalPrice">-</span>
+                    </div>
+                </div>
+                <!-- 검색 필터 -->
+                <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <input type="text" id="step4ReplaceSearchKeyword" class="setting-input" style="flex: 2; min-width: 200px;" placeholder="식자재명 검색" onkeydown="if(event.key==='Enter') step4SearchReplacementIngredient()">
+                    <input type="text" id="step4ReplaceSearchSupplier" class="setting-input" style="flex: 1; min-width: 150px;" placeholder="협력업체명 검색" onkeydown="if(event.key==='Enter') step4SearchReplacementIngredient()">
+                    <button class="btn btn-primary" onclick="step4SearchReplacementIngredient()"><i class="fas fa-search"></i> 검색</button>
+                </div>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="order-table" style="font-size: 12px;">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 80px;">식자재코드</th>
+                                <th style="text-align: left; min-width: 150px;">식자재명</th>
+                                <th style="min-width: 100px;">규격</th>
+                                <th>단위</th>
+                                <th style="min-width: 70px;">입고가</th>
+                                <th style="min-width: 70px;">단위당단가</th>
+                                <th style="min-width: 60px;">기준용량</th>
+                                <th style="min-width: 50px;">리드타임</th>
+                                <th style="min-width: 100px;">협력업체</th>
+                                <th style="min-width: 60px;">선택</th>
+                            </tr>
+                        </thead>
+                        <tbody id="step4ReplaceSearchResults">
+                            <tr><td colspan="10" style="text-align: center; padding: 30px; color: #999;">검색어를 입력하세요.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: 식자재 추가 모달 -->
+    <div class="modal-overlay" id="step4AddModal" onclick="if(event.target===this) closeStep4AddModal()">
+        <div class="modal-content" style="max-width: 1100px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                <h2><i class="fas fa-plus-circle"></i> 식자재 추가</h2>
+                <button class="modal-close" onclick="closeStep4AddModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <p style="margin-bottom: 10px; font-size: 14px;">
+                    <strong id="step4AddSupplierName">-</strong> 업체에 식자재를 추가합니다.
+                </p>
+                <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <input type="text" id="step4AddSearchKeyword" class="setting-input" style="flex: 2; min-width: 200px;" placeholder="식자재명 검색" onkeydown="if(event.key==='Enter') step4SearchAddIngredient()">
+                    <input type="text" id="step4AddSearchSupplier" class="setting-input" style="flex: 1; min-width: 150px;" placeholder="협력업체명 검색" onkeydown="if(event.key==='Enter') step4SearchAddIngredient()">
+                    <button class="btn btn-primary" onclick="step4SearchAddIngredient()"><i class="fas fa-search"></i> 검색</button>
+                </div>
+                <div style="max-height: 350px; overflow-y: auto;">
+                    <table class="order-table" style="font-size: 12px;">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 80px;">식자재코드</th>
+                                <th style="text-align: left; min-width: 150px;">식자재명</th>
+                                <th style="min-width: 100px;">규격</th>
+                                <th>단위</th>
+                                <th style="min-width: 70px;">입고가</th>
+                                <th style="min-width: 70px;">단위당단가</th>
+                                <th style="min-width: 50px;">리드타임</th>
+                                <th style="min-width: 100px;">협력업체</th>
+                                <th style="min-width: 60px;">선택</th>
+                            </tr>
+                        </thead>
+                        <tbody id="step4AddSearchResults">
+                            <tr><td colspan="9" style="text-align: center; padding: 30px; color: #999;">검색어를 입력하세요.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="step4AddSelectedItem" style="display: none; margin-top: 15px; padding: 12px; background: #f0fdf4; border: 1px solid #a5d6a7; border-radius: 8px;">
+                    <div style="font-weight: 600; margin-bottom: 10px; color: #2e7d32;">선택된 식자재</div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span id="step4AddSelectedName" style="flex: 1; font-weight: 500;"></span>
+                        <input type="number" id="step4AddQty" placeholder="수량" min="1" value="1" style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; text-align: center;">
+                        <button class="btn btn-success" onclick="confirmStep4Add()"><i class="fas fa-plus"></i> 추가</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

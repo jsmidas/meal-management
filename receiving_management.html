@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title>입고명세서 관리 - 급식관리 시스템</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251027">
+    <script src="/static/js/sidebar-dropdown.js"></script>
+    <!-- 사업장 선택기 CSS -->
+    <link rel="stylesheet" href="/static/css/site-selector.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 사이드바 스타일 제거됨 - common-sidebar.css 사용 */
+
+        /* 메인 컨텐츠 */
+        .main-content {
+            flex: 1;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+
+        /* 메인 컨테이너 */
+        .main-container {
+            max-width: 1600px;
+            margin: 1rem auto;
+            padding: 0 0.5rem;
+        }
+
+        .header-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .filter-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .filter-input {
+            padding: 0.6rem;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #FF6B35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        /* 버튼 스타일 */
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B35, #F7931E);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 출력 액션 버튼 */
+        .print-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            justify-content: flex-end;
+        }
+
+
+        /* 입고 명세서 문서 리스트 */
+        .receiving-documents {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .document-item {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #FF6B35;
+        }
+
+        .document-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .document-info h3 {
+            margin: 0 0 0.3rem 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+        .document-info p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .document-summary {
+            text-align: right;
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .items-table th {
+            background: #f8f9fa;
+            padding: 0.6rem 0.4rem;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+            font-size: 0.8rem;
+        }
+
+        .items-table td {
+            padding: 0.5rem 0.4rem;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+
+        .items-table tr:hover {
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        /* 입고 확인 체크박스 */
+        .receive-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: #28a745;
+            cursor: pointer;
+        }
+
+        .receive-checkbox:checked+.status-cell {
+            background: #d4edda !important;
+            color: #155724;
+        }
+
+        .status-cell {
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .status-pending {
+            background: #fff3cd !important;
+            color: #856404;
+        }
+
+        .status-received {
+            background: #d4edda !important;
+            color: #155724;
+        }
+
+        .status-overdue {
+            background: #f8d7da !important;
+            color: #721c24;
+        }
+
+        /* 카드 하단 정보 */
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .total-info {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .total-amount {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #FF6B35;
+        }
+
+        /* 입고 완료 버튼 */
+        .complete-receiving {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        /* 로딩 오버레이 */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #FF6B35;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .receiving-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .supplier-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            margin: 2rem 0;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 1rem;
+        }
+    </style>
+    <script src="config.js"></script>
+    <script src="static/js/branding.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item active"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="main-content">
+
+            <div class="main-container">
+                <!-- 헤더 섹션 -->
+                <div class="header-section">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h1 class="page-title" style="margin: 0;">
+                            <i class="fas fa-truck"></i>
+                            입고명세서 관리
+                        </h1>
+                        <!-- 사업장 선택기 -->
+                        <div id="receiving-site-selector" class="site-selector-standard"></div>
+                    </div>
+
+                    <!-- 출력 액션 버튼 -->
+                    <div class="print-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="printReceivingStatement()">
+                            <i class="fas fa-print"></i> 인쇄
+                        </button>
+                        <button class="btn btn-success" onclick="downloadReceivingExcel()">
+                            <i class="fas fa-file-excel"></i> 엑셀
+                        </button>
+                        <button class="btn btn-secondary" onclick="printAllDocuments()">
+                            <i class="fas fa-file-pdf"></i> 업체별 출력
+                        </button>
+                    </div>
+
+                    <!-- 필터 컨트롤 -->
+                    <div class="filter-controls">
+                        <div class="filter-item">
+                            <label class="filter-label">📅 입고일</label>
+                            <div style="display: flex; align-items: center; gap: 0.3rem;">
+                                <button class="btn btn-sm" onclick="changeReceivingDate(-1)" style="padding: 0.3rem 0.5rem; min-width: auto;">◀</button>
+                                <input type="date" class="filter-input" id="receivingDate" style="flex: 1;">
+                                <button class="btn btn-sm" onclick="changeReceivingDate(1)" style="padding: 0.3rem 0.5rem; min-width: auto;">▶</button>
+                            </div>
+                        </div>
+                        <div class="filter-item">
+                            <label class="filter-label">📋 발주서</label>
+                            <select class="filter-input" id="orderFilter">
+                                <option value="">전체 발주서</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label class="filter-label">🏢 거래처</label>
+                            <select class="filter-input" id="supplierFilter">
+                                <option value="">전체 거래처</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label class="filter-label" style="opacity: 0;">액션</label>
+                            <button class="btn btn-primary" onclick="loadReceivingDocuments()">
+                                <i class="fas fa-search"></i>
+                                조회
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 요약 정보 -->
+                <div id="receivingSummary" style="display: none; margin-bottom: 1rem; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white;">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <strong><i class="fas fa-calendar-day"></i> 입고일:</strong>
+                            <span id="summaryReceivingDate">-</span>
+                        </div>
+                        <div>
+                            <strong><i class="fas fa-calendar-week"></i> 식단표 날짜:</strong>
+                            <span id="summaryUsageDates">-</span>
+                        </div>
+                        <div>
+                            <strong><i class="fas fa-boxes"></i> 총 품목:</strong>
+                            <span id="summaryTotalItems">-</span>개
+                        </div>
+                        <div>
+                            <strong><i class="fas fa-won-sign"></i> 총 금액:</strong>
+                            <span id="summaryTotalAmount">-</span>원
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 뷰 전환 탭 -->
+                <div id="receivingViewTabs" style="display: none; margin-bottom: 1rem; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn receiving-tab active" data-view="byOrder" onclick="switchReceivingView('byOrder')" style="background: #667eea; color: white;">
+                            <i class="fas fa-file-invoice"></i> 발주서별 (기존)
+                        </button>
+                        <button class="btn receiving-tab btn-secondary" data-view="byUsageDate" onclick="switchReceivingView('byUsageDate')">
+                            <i class="fas fa-calendar-alt"></i> 식단표 날짜별
+                        </button>
+                        <button class="btn receiving-tab btn-secondary" data-view="bySupplier" onclick="switchReceivingView('bySupplier')">
+                            <i class="fas fa-building"></i> 업체별 합산
+                        </button>
+                        <button class="btn receiving-tab btn-secondary" data-view="byIngredient" onclick="switchReceivingView('byIngredient')">
+                            <i class="fas fa-carrot"></i> 식자재별 합산
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 입고 명세서 문서 리스트 -->
+                <div class="receiving-documents" id="receivingDocuments">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+
+                <!-- 빈 상태 -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-icon">📦</div>
+                    <h3>입고 예정인 발주 건이 없습니다</h3>
+                    <p>조회 조건을 변경하거나 발주 관리에서 발주를 진행해주세요.</p>
+                </div>
+            </div>
+
+
+            <!-- 로딩 오버레이 -->
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="loading-content">
+                    <div class="spinner"></div>
+                    <p>입고 정보를 불러오는 중...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        // 현재 데이터 저장용
+        let currentReceivingData = [];
+        let receivingStatementData = null;  // API 응답 전체 저장
+        let currentReceivingView = 'byOrder';
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeReceivingPage();
+        });
+
+        // 로컬 시간 기준 날짜 문자열 반환 (YYYY-MM-DD)
+        function getLocalDateString(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function initializeReceivingPage() {
+            // 내일 날짜로 초기화 (입고는 보통 익일 기준)
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('receivingDate').value = getLocalDateString(tomorrow);
+
+            // 협력업체 목록 로드
+            loadSupplierList();
+
+            // 초기 데이터 로드 - 사용자가 조회 버튼 클릭 시에만 로드
+            // loadReceivingDocuments();
+        }
+
+        async function loadSupplierList() {
+            try {
+                const response = await fetch('/api/orders/receiving');
+                const result = await response.json();
+
+                if (result.success && result.suppliers) {
+                    const select = document.getElementById('supplierFilter');
+                    select.innerHTML = '<option value="">전체 거래처</option>';
+                    result.suppliers.forEach(supplier => {
+                        select.innerHTML += `<option value="${supplier}">${supplier}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('협력업체 목록 로드 오류:', error);
+            }
+        }
+
+        // 날짜 변경 함수
+        function changeReceivingDate(days) {
+            const dateInput = document.getElementById('receivingDate');
+            const currentDate = new Date(dateInput.value);
+            currentDate.setDate(currentDate.getDate() + days);
+            dateInput.value = getLocalDateString(currentDate);
+            loadReceivingDocuments();
+        }
+
+        async function loadReceivingDocuments() {
+            showLoading();
+
+            try {
+                const receivingDate = document.getElementById('receivingDate').value;
+                const selectedSupplier = document.getElementById('supplierFilter').value;
+                const selectedOrder = document.getElementById('orderFilter').value;
+
+                const params = new URLSearchParams();
+                if (receivingDate) params.append('receiving_date', receivingDate);
+                if (selectedSupplier) params.append('supplier_name', selectedSupplier);
+                if (selectedOrder) params.append('order_number', selectedOrder);
+
+                // 🏢 사업장 ID 추가
+                const siteId = typeof getCurrentSiteId === 'function' ? getCurrentSiteId() : null;
+                if (siteId) params.append('site_id', siteId);
+
+                // 기존 API 호출 (발주서별)
+                const response = await fetch(`/api/orders/receiving?${params.toString()}`);
+                const result = await response.json();
+
+                // 새 API 호출 (식단표날짜별/업체별/식자재별)
+                let statementUrl = `/api/orders/receiving/statement?receiving_date=${receivingDate}`;
+                if (siteId) statementUrl += `&site_id=${siteId}`;
+                const statementResponse = await fetch(statementUrl);
+                const statementResult = await statementResponse.json();
+
+                if (result.success) {
+                    currentReceivingData = result.data || [];
+
+                    // 발주서 필터 업데이트
+                    updateOrderFilter(result.orders || []);
+
+                    // 협력업체 필터 업데이트
+                    updateSupplierFilter(result.suppliers || []);
+
+                    // 요약 정보 및 뷰 전환 데이터 저장
+                    if (statementResult.success) {
+                        receivingStatementData = statementResult;
+                        updateSummaryDisplay(receivingDate, statementResult);
+                    }
+
+                    // 현재 뷰에 따라 표시
+                    switchReceivingView(currentReceivingView);
+                } else {
+                    console.error('입고 문서 로드 실패:', result.error);
+                    displayReceivingDocuments([]);
+                    hideSummaryAndTabs();
+                }
+            } catch (error) {
+                console.error('입고 문서 로드 오류:', error);
+                displayReceivingDocuments([]);
+                hideSummaryAndTabs();
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function updateSummaryDisplay(receivingDate, data) {
+            const summary = data.summary || {};
+
+            document.getElementById('receivingSummary').style.display = 'block';
+            document.getElementById('receivingViewTabs').style.display = 'block';
+            document.getElementById('summaryReceivingDate').textContent = receivingDate;
+            document.getElementById('summaryUsageDates').textContent =
+                summary.usage_dates?.join(', ') || '-';
+            document.getElementById('summaryTotalItems').textContent =
+                Number(summary.total_items || 0).toLocaleString();
+            document.getElementById('summaryTotalAmount').textContent =
+                Number(summary.total_amount || 0).toLocaleString();
+        }
+
+        function hideSummaryAndTabs() {
+            document.getElementById('receivingSummary').style.display = 'none';
+            document.getElementById('receivingViewTabs').style.display = 'none';
+        }
+
+        function switchReceivingView(view) {
+            currentReceivingView = view;
+
+            // 탭 버튼 스타일 업데이트
+            document.querySelectorAll('.receiving-tab').forEach(btn => {
+                if (btn.dataset.view === view) {
+                    btn.classList.remove('btn-secondary');
+                    btn.style.background = '#667eea';
+                    btn.style.color = 'white';
+                } else {
+                    btn.classList.add('btn-secondary');
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }
+            });
+
+            // 뷰에 따라 다른 렌더링
+            if (view === 'byOrder') {
+                displayReceivingDocuments(currentReceivingData);
+            } else {
+                renderStatementView(view);
+            }
+        }
+
+        function renderStatementView(view) {
+            const container = document.getElementById('receivingDocuments');
+            const emptyState = document.getElementById('emptyState');
+
+            if (!receivingStatementData) {
+                container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">조회된 데이터가 없습니다.</p>';
+                emptyState.style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            let html = '';
+
+            if (view === 'byUsageDate') {
+                // 식단표 날짜별 보기
+                const data = receivingStatementData.by_usage_date || [];
+
+                if (data.length === 0) {
+                    html = '<div style="background: white; padding: 40px; border-radius: 8px; text-align: center; color: #888;">해당 입고일에 입고 예정 품목이 없습니다.</div>';
+                } else {
+                    data.forEach(usageGroup => {
+                        const dateObj = new Date(usageGroup.usage_date);
+                        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                        const dayName = dayNames[dateObj.getDay()];
+
+                        html += `
+                            <div style="margin-bottom: 25px; border: 2px solid #667eea; border-radius: 10px; overflow: hidden; background: white;">
+                                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 15px; font-weight: 600;">
+                                    <i class="fas fa-calendar-day"></i> 식단표 날짜: ${usageGroup.usage_date} (${dayName})
+                                    <span style="float: right; font-weight: normal;">
+                                        ${usageGroup.suppliers.length}개 업체 | ${usageGroup.total_items}개 품목 | ${Number(usageGroup.total_amount).toLocaleString()}원
+                                    </span>
+                                </div>
+                        `;
+
+                        usageGroup.suppliers.forEach(supplier => {
+                            html += `
+                                <div style="padding: 15px; border-bottom: 1px solid #e2e8f0;">
+                                    <h4 style="margin: 0 0 10px 0; color: #4a5568; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+                                        <i class="fas fa-building"></i> ${supplier.supplier_name}
+                                        <span style="font-weight: normal; font-size: 0.85rem; color: #666;">
+                                            (${supplier.items.length}개 품목 | ${Number(supplier.total_amount).toLocaleString()}원)
+                                        </span>
+                                    </h4>
+                                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                        <thead>
+                                            <tr style="background: #f7fafc;">
+                                                <th style="padding: 8px; border: 1px solid #e2e8f0;">코드</th>
+                                                <th style="padding: 8px; border: 1px solid #e2e8f0; text-align: left;">품목명</th>
+                                                <th style="padding: 8px; border: 1px solid #e2e8f0;">규격</th>
+                                                <th style="padding: 8px; border: 1px solid #e2e8f0;">수량</th>
+                                                <th style="padding: 8px; border: 1px solid #e2e8f0;">단가</th>
+                                                <th style="padding: 8px; border: 1px solid #e2e8f0;">금액</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                            `;
+
+                            supplier.items.forEach(item => {
+                                const mergedBadge = item.merged_count > 1
+                                    ? `<span style="background:#e2e8f0;color:#4a5568;padding:1px 5px;border-radius:3px;font-size:10px;margin-left:5px;">${item.merged_count}건</span>`
+                                    : '';
+
+                                html += `
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #666;">${item.ingredient_code || '-'}</td>
+                                        <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: left;">${item.ingredient_name || '-'}${mergedBadge}</td>
+                                        <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">${item.specification || '-'}</td>
+                                        <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;"><strong>${Number(item.order_qty || 0).toLocaleString()}</strong> ${item.unit || ''}</td>
+                                        <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: right;">${Number(item.unit_price || 0).toLocaleString()}원</td>
+                                        <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: right;"><strong>${Number(item.total_price || 0).toLocaleString()}원</strong></td>
+                                    </tr>
+                                `;
+                            });
+
+                            html += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `;
+                        });
+
+                        html += `</div>`;
+                    });
+                }
+
+            } else if (view === 'bySupplier') {
+                // 업체별 합산 보기
+                const data = receivingStatementData.by_supplier_total || [];
+
+                if (data.length === 0) {
+                    html = '<div style="background: white; padding: 40px; border-radius: 8px; text-align: center; color: #888;">데이터가 없습니다.</div>';
+                } else {
+                    html += `<div style="background: #fff3cd; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                        <i class="fas fa-info-circle"></i> 모든 식단표 날짜의 식자재를 업체별로 합산한 결과입니다. 입고 검수 시 활용하세요.
+                    </div>`;
+
+                    data.forEach(supplier => {
+                        html += `
+                            <div style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: white;">
+                                <div style="background: #4a5568; color: white; padding: 10px 15px; font-weight: 600;">
+                                    <i class="fas fa-building"></i> ${supplier.supplier_name}
+                                    <span style="float: right;">${supplier.items.length}개 품목 | ${Number(supplier.total_amount).toLocaleString()}원</span>
+                                </div>
+                                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                    <thead>
+                                        <tr style="background: #f7fafc;">
+                                            <th style="padding: 8px; border: 1px solid #e2e8f0;">코드</th>
+                                            <th style="padding: 8px; border: 1px solid #e2e8f0; text-align: left;">품목명</th>
+                                            <th style="padding: 8px; border: 1px solid #e2e8f0;">규격</th>
+                                            <th style="padding: 8px; border: 1px solid #e2e8f0;">총 수량</th>
+                                            <th style="padding: 8px; border: 1px solid #e2e8f0;">단가</th>
+                                            <th style="padding: 8px; border: 1px solid #e2e8f0;">총 금액</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+
+                        supplier.items.forEach(item => {
+                            html += `
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #666;">${item.ingredient_code || '-'}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: left;">${item.ingredient_name || '-'}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">${item.specification || '-'}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;"><strong>${Number(item.order_qty || 0).toLocaleString()}</strong> ${item.unit || ''}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: right;">${Number(item.unit_price || 0).toLocaleString()}원</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: right;"><strong>${Number(item.total_price || 0).toLocaleString()}원</strong></td>
+                                </tr>
+                            `;
+                        });
+
+                        html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    });
+                }
+
+            } else if (view === 'byIngredient') {
+                // 식자재별 합산 보기
+                const data = receivingStatementData.by_ingredient_total || [];
+
+                if (data.length === 0) {
+                    html = '<div style="background: white; padding: 40px; border-radius: 8px; text-align: center; color: #888;">데이터가 없습니다.</div>';
+                } else {
+                    html += `<div style="background: #d4edda; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 13px;">
+                        <i class="fas fa-info-circle"></i> 모든 식단표 날짜의 식자재를 품목별로 합산한 결과입니다. 창고 입고 시 활용하세요.
+                    </div>`;
+
+                    html += `
+                        <div style="background: white; border-radius: 8px; overflow: hidden;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <thead>
+                                    <tr style="background: #28a745; color: white;">
+                                        <th style="padding: 10px; border: 1px solid #e2e8f0;">코드</th>
+                                        <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">품목명</th>
+                                        <th style="padding: 10px; border: 1px solid #e2e8f0;">규격</th>
+                                        <th style="padding: 10px; border: 1px solid #e2e8f0;">협력업체</th>
+                                        <th style="padding: 10px; border: 1px solid #e2e8f0;">식단표 날짜</th>
+                                        <th style="padding: 10px; border: 1px solid #e2e8f0;">총 수량</th>
+                                        <th style="padding: 10px; border: 1px solid #e2e8f0;">총 금액</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    data.forEach((item, idx) => {
+                        const usageDatesDisplay = item.usage_dates?.length > 2
+                            ? `${item.usage_dates.slice(0, 2).join(', ')} 외 ${item.usage_dates.length - 2}일`
+                            : item.usage_dates?.join(', ') || '-';
+
+                        html += `
+                            <tr style="background: ${idx % 2 === 0 ? '#fff' : '#f8f9fa'};">
+                                <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #666;">${item.ingredient_code || '-'}</td>
+                                <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: left; font-weight: 500;">${item.ingredient_name || '-'}</td>
+                                <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">${item.specification || '-'}</td>
+                                <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;">${item.supplier_name || '-'}</td>
+                                <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;" title="${item.usage_dates?.join(', ')}">${usageDatesDisplay}</td>
+                                <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: center;"><strong style="color: #28a745;">${Number(item.order_qty || 0).toLocaleString()}</strong> ${item.unit || ''}</td>
+                                <td style="padding: 8px; border: 1px solid #e2e8f0; text-align: right;"><strong>${Number(item.total_price || 0).toLocaleString()}원</strong></td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            }
+
+            container.innerHTML = html;
+        }
+
+        function updateOrderFilter(orders) {
+            const select = document.getElementById('orderFilter');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">전체 발주서</option>';
+            orders.forEach(order => {
+                const option = document.createElement('option');
+                option.value = order.order_number;
+                option.textContent = `${order.order_number} (${order.order_date})`;
+                select.appendChild(option);
+            });
+            if (currentValue && orders.some(o => o.order_number === currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        function updateSupplierFilter(suppliers) {
+            const select = document.getElementById('supplierFilter');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">전체 거래처</option>';
+            suppliers.forEach(supplier => {
+                const option = document.createElement('option');
+                option.value = supplier;
+                option.textContent = supplier;
+                select.appendChild(option);
+            });
+            if (currentValue && suppliers.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        async function loadReceivingList() {
+            showLoading();
+
+            try {
+                // 실제 API에서 입고 데이터 가져오기
+                const receivingData = await generateReceivingData();
+                displayReceivingCards(receivingData);
+            } catch (error) {
+                console.error('입고 리스트 로드 오류:', error);
+                displayReceivingCards([]);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function generateReceivingData() {
+            // 실제 API에서 입고 데이터 가져오기
+            try {
+                const expectedDate = document.getElementById('expectedDate').value;
+                const supplier = document.getElementById('supplierFilter').value;
+                const status = document.getElementById('statusFilter').value;
+
+                const params = new URLSearchParams();
+                if (expectedDate) params.append('expected_date', expectedDate);
+                if (supplier) params.append('supplier', supplier);
+                if (status) params.append('status', status);
+
+                // 🏢 사업장 ID 추가
+                const siteId = typeof getCurrentSiteId === 'function' ? getCurrentSiteId() : null;
+                if (siteId) params.append('site_id', siteId);
+
+                const response = await fetch(`/api/receiving-records?${params.toString()}`);
+                const result = await response.json();
+
+                if (result.success && result.receiving_records) {
+                    const today = new Date();
+
+                    return result.receiving_records.map(record => {
+                        // 상태 결정
+                        let displayStatus = 'pending';
+                        const allReceived = record.received_items === record.total_items && record.total_items > 0;
+                        const expectedDate = new Date(record.expected_date);
+                        const isOverdue = expectedDate < today && !allReceived;
+
+                        if (allReceived) {
+                            displayStatus = 'received';
+                        } else if (isOverdue) {
+                            displayStatus = 'overdue';
+                        }
+
+                        return {
+                            id: record.id,
+                            orderDate: record.order_date,
+                            supplier: record.supplier,
+                            leadDays: record.lead_days,
+                            expectedDate: record.expected_date,
+                            status: displayStatus,
+                            totalAmount: record.total_amount,
+                            receivedItems: record.received_items,
+                            totalItems: record.total_items,
+                            orderNumber: record.order_number,
+                            items: record.items.map(item => ({
+                                id: item.id,
+                                name: item.name,
+                                quantity: item.ordered_quantity,
+                                unit: item.unit,
+                                unitPrice: item.unit_price,
+                                amount: item.amount,
+                                received: item.received
+                            }))
+                        };
+                    });
+                } else {
+                    console.error('입고 데이터 로드 실패:', result.message || 'Unknown error');
+                    return [];
+                }
+            } catch (error) {
+                console.error('입고 데이터 가져오기 오류:', error);
+                return [];
+            }
+        }
+
+        function displayReceivingCards(receivingData) {
+            const container = document.getElementById('receivingCards');
+            const emptyState = document.getElementById('emptyState');
+
+            // 필터 적용
+            const filteredData = applyFilters(receivingData);
+
+            if (filteredData.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.innerHTML = '';
+
+            filteredData.forEach((order, index) => {
+                const card = createReceivingCard(order, index);
+                container.appendChild(card);
+            });
+        }
+
+        function applyFilters(data) {
+            const expectedDate = document.getElementById('expectedDate').value;
+            const supplier = document.getElementById('supplierFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            return data.filter(order => {
+                const matchDate = !expectedDate || order.expectedDate === expectedDate;
+                const matchSupplier = !supplier || order.supplier === supplier;
+                const matchStatus = !status || order.status === status;
+
+                return matchDate && matchSupplier && matchStatus;
+            });
+        }
+
+        function createReceivingCard(order, index) {
+            const card = document.createElement('div');
+            card.className = 'supplier-card';
+            card.id = `card-${index}`;
+
+            const statusText = {
+                'pending': '입고 대기',
+                'received': '입고 완료',
+                'overdue': '입고 지연'
+            };
+
+            const statusClass = {
+                'pending': 'status-pending',
+                'received': 'status-received',
+                'overdue': 'status-overdue'
+            };
+
+            card.innerHTML = `
+                <div class="supplier-header">
+                    <div class="supplier-name">${order.supplier}</div>
+                    <div class="expected-date">
+                        📅 예상입고: ${order.expectedDate}
+                        <span class="status-cell ${statusClass[order.status]}">${statusText[order.status]}</span>
+                    </div>
+                </div>
+                
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>입고확인</th>
+                            <th>식자재코드</th>
+                            <th>식자재명</th>
+                            <th>주문수량</th>
+                            <th>단위</th>
+                            <th>단가</th>
+                            <th>금액</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${order.items.map((item, itemIndex) => `
+                            <tr>
+                                <td>
+                                    <input type="checkbox"
+                                           class="receive-checkbox"
+                                           data-item-id="${item.id || ''}"
+                                           ${item.received ? 'checked' : ''}
+                                           onchange="toggleItemReceived(${index}, ${itemIndex}, this)">
+                                </td>
+                                <td style="font-size: 0.7rem; color: #666;">${item.ingredient_code || item.code || '-'}</td>
+                                <td style="text-align: left; font-size: 0.8rem;">${item.name}</td>
+                                <td>${item.quantity}</td>
+                                <td>${item.unit}</td>
+                                <td>₩${item.unitPrice.toLocaleString()}</td>
+                                <td>₩${item.amount.toLocaleString()}</td>
+                                <td>
+                                    <span class="status-cell ${item.received ? 'status-received' : 'status-pending'}">
+                                        ${item.received ? '입고완료' : '대기중'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                
+                <div class="card-footer">
+                    <div class="total-info">
+                        총 ${order.totalItems}품목 중 ${order.receivedItems}품목 입고완료
+                    </div>
+                    <div class="total-amount">₩${order.totalAmount.toLocaleString()}</div>
+                    <button class="btn btn-success complete-receiving" 
+                            onclick="completeAllReceiving(${index})"
+                            ${order.status === 'received' ? 'disabled' : ''}>
+                        <i class="fas fa-check-circle"></i>
+                        전체 입고완료
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        async function toggleItemReceived(orderIndex, itemIndex, checkbox) {
+            try {
+                // 실제 API 호출하여 입고 상태 업데이트
+                const itemId = checkbox.dataset.itemId;
+                if (!itemId) {
+                    console.error('아이템 ID를 찾을 수 없습니다.');
+                    return;
+                }
+
+                // 🏢 사업장 ID 가져오기
+                const siteId = typeof getCurrentSiteId === 'function' ? getCurrentSiteId() : null;
+
+                const response = await fetch(`/api/receiving-items/${itemId}/receive`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        received: checkbox.checked,
+                        site_id: siteId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // UI 업데이트
+                    const row = checkbox.closest('tr');
+                    const statusCell = row.querySelector('.status-cell:last-child');
+
+                    if (checkbox.checked) {
+                        statusCell.textContent = '입고완료';
+                        statusCell.className = 'status-cell status-received';
+                    } else {
+                        statusCell.textContent = '대기중';
+                        statusCell.className = 'status-cell status-pending';
+                    }
+
+                    // 카드 전체 상태 업데이트
+                    updateCardStatus(orderIndex);
+                } else {
+                    // 실패 시 체크박스 상태 되돌리기
+                    checkbox.checked = !checkbox.checked;
+                    alert('입고 상태 업데이트에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('입고 상태 업데이트 오류:', error);
+                // 오류 시 체크박스 상태 되돌리기
+                checkbox.checked = !checkbox.checked;
+                alert('입고 상태 업데이트 중 오류가 발생했습니다.');
+            }
+        }
+
+        function updateCardStatus(orderIndex) {
+            const card = document.getElementById(`card-${orderIndex}`);
+            const checkboxes = card.querySelectorAll('.receive-checkbox');
+            const totalItems = checkboxes.length;
+            const receivedItems = Array.from(checkboxes).filter(cb => cb.checked).length;
+
+            // 하단 정보 업데이트
+            const totalInfo = card.querySelector('.total-info');
+            totalInfo.textContent = `총 ${totalItems}품목 중 ${receivedItems}품목 입고완료`;
+
+            // 전체 입고완료 버튼 상태
+            const completeButton = card.querySelector('.complete-receiving');
+            if (receivedItems === totalItems) {
+                completeButton.disabled = true;
+                completeButton.innerHTML = '<i class="fas fa-check"></i> 입고완료';
+            } else {
+                completeButton.disabled = false;
+                completeButton.innerHTML = '<i class="fas fa-check-circle"></i> 전체 입고완료';
+            }
+        }
+
+        function completeAllReceiving(orderIndex) {
+            const card = document.getElementById(`card-${orderIndex}`);
+            const checkboxes = card.querySelectorAll('.receive-checkbox:not(:checked)');
+
+            if (checkboxes.length === 0) {
+                alert('이미 모든 품목이 입고완료되었습니다.');
+                return;
+            }
+
+            if (confirm('모든 품목을 입고완료 처리하시겠습니까?')) {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                    toggleItemReceived(orderIndex, 0, checkbox); // 상태만 업데이트
+                });
+
+                alert('모든 품목이 입고완료 처리되었습니다.');
+            }
+        }
+
+        function displayReceivingDocuments(ordersData) {
+            const container = document.getElementById('receivingDocuments');
+            const emptyState = document.getElementById('emptyState');
+
+            if (!ordersData || ordersData.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.innerHTML = '';
+
+            // 발주서별로 표시
+            ordersData.forEach((orderData, orderIndex) => {
+                const orderSection = createOrderSection(orderData, orderIndex);
+                container.appendChild(orderSection);
+            });
+        }
+
+        function createOrderSection(orderData, orderIndex) {
+            const section = document.createElement('div');
+            section.className = 'order-section';
+            section.style.marginBottom = '2rem';
+
+            // 발주서 헤더
+            const orderHeader = document.createElement('div');
+            orderHeader.style.cssText = 'background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 1rem; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;';
+            orderHeader.innerHTML = `
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem;">📋 발주번호: ${orderData.order_number}</h3>
+                    <p style="margin: 0.3rem 0 0 0; font-size: 0.85rem; opacity: 0.9;">
+                        입고일: ${orderData.order_date} | 식단표 날짜: ${orderData.usage_date || '-'}
+                    </p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.8rem; opacity: 0.9;">${orderData.total_count}품목 / ₩${(orderData.total_amount || 0).toLocaleString()}</div>
+                    <button class="btn btn-sm" onclick="printOrderDocument('${orderData.order_number}')" style="margin-top: 0.3rem; background: white; color: #1a1a2e;">
+                        <i class="fas fa-print"></i> 출력
+                    </button>
+                </div>
+            `;
+            section.appendChild(orderHeader);
+
+            // 업체별 문서
+            orderData.suppliers.forEach((supplierData, supplierIndex) => {
+                const documentItem = createSupplierDocument(supplierData, `${orderIndex}-${supplierIndex}`, orderData.order_number);
+                section.appendChild(documentItem);
+            });
+
+            return section;
+        }
+
+        function createSupplierDocument(supplierData, index, orderNumber) {
+            const item = document.createElement('div');
+            item.className = 'document-item supplier-card';
+            item.id = `supplier-${index}`;
+
+            const receivedCount = supplierData.received_count || 0;
+            const totalCount = supplierData.total_count || 0;
+            const totalAmount = supplierData.total_amount || 0;
+
+            item.innerHTML = `
+                <div class="document-header" style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <div class="document-info">
+                        <h3 style="margin: 0; font-size: 1rem;">🏢 ${supplierData.supplier_name}</h3>
+                        <p style="margin: 0.2rem 0 0 0; font-size: 0.85rem; opacity: 0.9;">
+                            ${totalCount}품목 중 ${receivedCount}품목 입고확인
+                        </p>
+                    </div>
+                    <div class="document-summary" style="text-align: right;">
+                        <div style="font-size: 1.2rem; font-weight: 700;">₩${totalAmount.toLocaleString()}</div>
+                    </div>
+                </div>
+
+                <div class="items-table-container" style="padding: 0;">
+                    <table class="items-table" style="margin: 0;">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">NO</th>
+                                <th style="width: 90px;">식자재코드</th>
+                                <th style="width: 220px;">식자재명</th>
+                                <th style="width: 100px;">규격</th>
+                                <th style="width: 70px;">발주수량</th>
+                                <th style="width: 50px;">단위</th>
+                                <th style="width: 90px;">단가</th>
+                                <th style="width: 100px;">금액</th>
+                                <th style="width: 80px;">입고확인</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${supplierData.items.map((item, itemIndex) => `
+                                <tr data-item-id="${item.item_id}" data-original-item-ids="${JSON.stringify(item.original_item_ids || [item.item_id])}">
+                                    <td>${itemIndex + 1}</td>
+                                    <td style="font-size: 0.7rem; color: #666;">${item.ingredient_code || '-'}</td>
+                                    <td style="text-align: left; padding-left: 0.5rem;">
+                                        ${item.ingredient_name || '-'}
+                                        ${item.merged_count > 1 ? `<span style="background:#e2e8f0;color:#4a5568;padding:1px 5px;border-radius:3px;font-size:10px;margin-left:5px;">${item.merged_count}건 합산</span>` : ''}
+                                    </td>
+                                    <td style="font-size: 0.75rem;">${item.specification || '-'}</td>
+                                    <td>${(item.order_qty || 0).toFixed(2)}</td>
+                                    <td>${item.unit || '-'}</td>
+                                    <td>₩${(item.unit_price || 0).toLocaleString()}</td>
+                                    <td>₩${(item.total_price || 0).toLocaleString()}</td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox"
+                                               class="receive-checkbox"
+                                               data-item-id="${item.item_id}"
+                                               ${item.received ? 'checked' : ''}
+                                               onchange="toggleReceiveCheck(this, '${index}')">
+                                        <span class="status-label" style="margin-left: 0.3rem; font-size: 0.75rem; color: ${item.received ? '#28a745' : '#666'};">
+                                            ${item.received ? '완료' : '대기'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-top: 1px solid #e9ecef;">
+                    <button class="btn btn-success" onclick="confirmAllItems(${index})" ${receivedCount === totalCount ? 'disabled' : ''}>
+                        <i class="fas fa-check-circle"></i>
+                        전체 입고확인
+                    </button>
+                    <button class="btn btn-info" onclick="printSupplierDocument(${index})">
+                        <i class="fas fa-print"></i>
+                        이 업체만 출력
+                    </button>
+                </div>
+            `;
+
+            return item;
+        }
+
+        async function toggleReceiveCheck(checkbox, supplierIndex) {
+            const row = checkbox.closest('tr');
+            const statusLabel = row.querySelector('.status-label');
+
+            // 합산된 아이템의 모든 원본 ID를 가져옴
+            let itemIds = [];
+            try {
+                const originalItemIds = row.dataset.originalItemIds;
+                if (originalItemIds) {
+                    itemIds = JSON.parse(originalItemIds);
+                }
+            } catch (e) {
+                itemIds = [parseInt(checkbox.dataset.itemId)];
+            }
+            if (!itemIds || itemIds.length === 0) {
+                itemIds = [parseInt(checkbox.dataset.itemId)];
+            }
+
+            try {
+                const response = await fetch('/api/orders/receiving/confirm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        item_ids: itemIds
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (checkbox.checked) {
+                        statusLabel.textContent = '완료';
+                        statusLabel.style.color = '#28a745';
+                    } else {
+                        statusLabel.textContent = '대기';
+                        statusLabel.style.color = '#666';
+                    }
+                    updateSupplierSummary(supplierIndex);
+                } else {
+                    checkbox.checked = !checkbox.checked;
+                    alert('입고 확인 처리에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('입고 확인 오류:', error);
+                checkbox.checked = !checkbox.checked;
+                alert('입고 확인 중 오류가 발생했습니다.');
+            }
+        }
+
+        function updateSupplierSummary(supplierIndex) {
+            const container = document.getElementById(`supplier-${supplierIndex}`);
+            const checkboxes = container.querySelectorAll('.receive-checkbox');
+            const receivedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const totalCount = checkboxes.length;
+
+            // 헤더 정보 업데이트
+            const info = container.querySelector('.document-info p');
+            info.textContent = `총 ${totalCount}품목 중 ${receivedCount}품목 입고확인완료`;
+
+            // 버튼 상태 업데이트
+            const confirmBtn = container.querySelector('.btn-success');
+            confirmBtn.disabled = receivedCount === totalCount;
+        }
+
+        async function confirmAllItems(supplierIndex) {
+            const container = document.getElementById(`supplier-${supplierIndex}`);
+            const uncheckedBoxes = container.querySelectorAll('.receive-checkbox:not(:checked)');
+
+            if (uncheckedBoxes.length === 0) {
+                alert('이미 모든 품목이 입고확인되었습니다.');
+                return;
+            }
+
+            if (!confirm(`${uncheckedBoxes.length}개 품목을 모두 입고확인 처리하시겠습니까?`)) {
+                return;
+            }
+
+            const itemIds = Array.from(uncheckedBoxes).map(cb => parseInt(cb.dataset.itemId));
+
+            try {
+                const response = await fetch('/api/orders/receiving/confirm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item_ids: itemIds })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    uncheckedBoxes.forEach(cb => {
+                        cb.checked = true;
+                        const row = cb.closest('tr');
+                        const statusLabel = row.querySelector('.status-label');
+                        statusLabel.textContent = '완료';
+                        statusLabel.style.color = '#28a745';
+                    });
+                    updateSupplierSummary(supplierIndex);
+                    alert(`${result.updated_count}개 품목이 입고확인 처리되었습니다.`);
+                } else {
+                    alert('입고 확인 처리에 실패했습니다: ' + result.error);
+                }
+            } catch (error) {
+                console.error('전체 입고 확인 오류:', error);
+                alert('입고 확인 중 오류가 발생했습니다.');
+            }
+        }
+
+        function printSupplierDocument(supplierIndex) {
+            const container = document.getElementById(`supplier-${supplierIndex}`);
+            const supplierData = currentReceivingData[supplierIndex];
+
+            // 인쇄용 새 창 열기
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>${supplierData.supplier_name} 입고명세서</title>
+                    <style>
+                        body { font-family: 'Malgun Gothic', sans-serif; padding: 20px; }
+                        h1 { text-align: center; margin-bottom: 20px; }
+                        .header-info { margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #333; padding: 8px; text-align: center; }
+                        th { background: #f0f0f0; }
+                        .total-row { font-weight: bold; background: #f9f9f9; }
+                        @media print { body { margin: 0; } }
+                    </style>
+                </head>
+                <body>
+                    <h1>입고명세서</h1>
+                    <div class="header-info">
+                        <p><strong>거래처:</strong> ${supplierData.supplier_name}</p>
+                        <p><strong>주문일:</strong> ${supplierData.items[0]?.order_date || '-'}</p>
+                        <p><strong>입고예정일:</strong> ${document.getElementById('receivingDate').value}</p>
+                        <p><strong>출력일:</strong> ${new Date().toLocaleDateString()}</p>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>NO</th>
+                                <th>식자재코드</th>
+                                <th>식자재명</th>
+                                <th>규격</th>
+                                <th>수량</th>
+                                <th>단위</th>
+                                <th>단가</th>
+                                <th>금액</th>
+                                <th>확인</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${supplierData.items.map((item, idx) => `
+                                <tr>
+                                    <td>${idx + 1}</td>
+                                    <td style="font-size: 10px;">${item.ingredient_code || '-'}</td>
+                                    <td style="text-align: left;">${item.ingredient_name}${item.merged_count > 1 ? ` (${item.merged_count}건)` : ''}</td>
+                                    <td>${item.specification || '-'}</td>
+                                    <td>${(item.order_qty || 0).toFixed(2)}</td>
+                                    <td>${item.unit || '-'}</td>
+                                    <td>₩${(item.unit_price || 0).toLocaleString()}</td>
+                                    <td>₩${(item.total_price || 0).toLocaleString()}</td>
+                                    <td>□</td>
+                                </tr>
+                            `).join('')}
+                            <tr class="total-row">
+                                <td colspan="7">합계</td>
+                                <td colspan="2">₩${supplierData.total_amount.toLocaleString()}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 40px; display: flex; justify-content: space-around;">
+                        <div>담당자: _______________</div>
+                        <div>확인자: _______________</div>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function toggleItemCheck(docId, itemIndex, checkbox) {
+            // 담당자 확인 상태 업데이트
+            const row = checkbox.closest('tr');
+            const label = row.querySelector('label');
+
+            if (checkbox.checked) {
+                label.textContent = '확인완료';
+                label.style.color = '#28a745';
+                label.style.fontWeight = '600';
+            } else {
+                label.textContent = '미확인';
+                label.style.color = '#666';
+                label.style.fontWeight = 'normal';
+            }
+
+            // 문서 헤더의 확인완료 품목 수 업데이트
+            updateDocumentSummary(docId);
+        }
+
+        function updateDocumentSummary(docId) {
+            const documentItem = document.getElementById(`document-${docId}`);
+            const checkboxes = documentItem.querySelectorAll('.receive-checkbox');
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const totalCount = checkboxes.length;
+
+            const summaryText = documentItem.querySelector('.document-info p');
+            const currentText = summaryText.textContent;
+            const updatedText = currentText.replace(/총 \d+품목 중 \d+품목 확인완료/, `총 ${totalCount}품목 중 ${checkedCount}품목 확인완료`);
+            summaryText.textContent = updatedText;
+        }
+
+        // 직접 출력 함수
+        function printDirectly() {
+            // 출력 스타일 추가
+            addPrintStyles();
+
+            // 출력 실행
+            setTimeout(() => {
+                window.print();
+
+                // 출력 후 스타일 제거
+                removePrintStyles();
+            }, 500);
+        }
+
+        function addPrintStyles() {
+            // 출력용 스타일 추가 (결재란 없이)
+            const printStyle = document.createElement('style');
+            printStyle.id = 'print-style';
+            printStyle.innerHTML = `
+                @media print {
+                    /* 화면 전용 요소 숨기기 */
+                    .navigation-bar, .print-actions, .btn, .modal-backdrop, .loading-overlay {
+                        display: none !important;
+                    }
+                    
+                    /* 입고명세서 출력 최적화 */
+                    body { 
+                        font-size: 12px; 
+                        line-height: 1.4;
+                        margin: 0;
+                        background: white !important;
+                    }
+                    
+                    .main-container {
+                        max-width: none !important;
+                        margin: 0 !important;
+                        padding: 20px !important;
+                    }
+                    
+                    .document-item {
+                        page-break-after: always;
+                        box-shadow: none !important;
+                        border: 1px solid #ccc;
+                        margin-bottom: 30px;
+                    }
+                }
+            `;
+            document.head.appendChild(printStyle);
+        }
+
+        function removePrintStyles() {
+            // 출력 후 추가된 스타일 제거
+            const printStyle = document.getElementById('print-style');
+            if (printStyle) {
+                printStyle.remove();
+            }
+        }
+
+        // 특정 발주서 출력
+        function printOrderDocument(orderNumber) {
+            const orderData = currentReceivingData.find(o => o.order_number === orderNumber);
+            if (!orderData) {
+                alert('발주서를 찾을 수 없습니다.');
+                return;
+            }
+
+            const receivingDate = document.getElementById('receivingDate').value;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>입고명세서 - ${orderNumber}</title>
+                    <style>
+                        body { font-family: 'Malgun Gothic', sans-serif; padding: 20px; }
+                        .supplier-section { page-break-after: always; margin-bottom: 30px; }
+                        .supplier-section:last-child { page-break-after: avoid; }
+                        h1 { text-align: center; margin-bottom: 10px; font-size: 24px; }
+                        .order-info { text-align: center; margin-bottom: 20px; font-size: 14px; color: #666; }
+                        .header-info { margin-bottom: 15px; font-size: 14px; }
+                        .header-info p { margin: 5px 0; }
+                        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                        th, td { border: 1px solid #333; padding: 6px; text-align: center; }
+                        th { background: #f0f0f0; font-weight: bold; }
+                        .total-row { font-weight: bold; background: #f9f9f9; }
+                        .signature-area { margin-top: 40px; display: flex; justify-content: space-around; font-size: 14px; }
+                        @media print {
+                            body { margin: 0; padding: 15px; }
+                            .supplier-section { page-break-after: always; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${orderData.suppliers.map(supplier => `
+                        <div class="supplier-section">
+                            <h1>입고명세서</h1>
+                            <div class="order-info">발주번호: ${orderNumber}</div>
+                            <div class="header-info">
+                                <p><strong>거래처:</strong> ${supplier.supplier_name}</p>
+                                <p><strong>입고일:</strong> ${orderData.order_date}</p>
+                                <p><strong>검수일:</strong> ${receivingDate}</p>
+                                <p><strong>식단표 날짜:</strong> ${orderData.usage_date || '-'}</p>
+                                <p><strong>출력일:</strong> ${new Date().toLocaleDateString()}</p>
+                                <p><strong>총 품목:</strong> ${supplier.total_count}개</p>
+                            </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width:25px;">NO</th>
+                                        <th style="width:70px;">식자재코드</th>
+                                        <th style="width:160px;">식자재명</th>
+                                        <th style="width:90px;">규격</th>
+                                        <th style="width:50px;">수량</th>
+                                        <th style="width:40px;">단위</th>
+                                        <th style="width:70px;">단가</th>
+                                        <th style="width:80px;">금액</th>
+                                        <th style="width:40px;">확인</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${supplier.items.map((item, idx) => `
+                                        <tr>
+                                            <td>${idx + 1}</td>
+                                            <td style="font-size: 9px;">${item.ingredient_code || '-'}</td>
+                                            <td style="text-align: left;">${item.ingredient_name || '-'}${item.merged_count > 1 ? ` (${item.merged_count}건)` : ''}</td>
+                                            <td style="font-size: 11px;">${item.specification || '-'}</td>
+                                            <td>${(item.order_qty || 0).toFixed(2)}</td>
+                                            <td>${item.unit || '-'}</td>
+                                            <td style="text-align: right;">₩${(item.unit_price || 0).toLocaleString()}</td>
+                                            <td style="text-align: right;">₩${(item.total_price || 0).toLocaleString()}</td>
+                                            <td>□</td>
+                                        </tr>
+                                    `).join('')}
+                                    <tr class="total-row">
+                                        <td colspan="7">합계</td>
+                                        <td colspan="2" style="text-align: right;">₩${(supplier.total_amount || 0).toLocaleString()}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="signature-area">
+                                <div>담당자: _______________</div>
+                                <div>확인자: _______________</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function printAllDocuments() {
+            if (!currentReceivingData || currentReceivingData.length === 0) {
+                alert('출력할 데이터가 없습니다.');
+                return;
+            }
+
+            const receivingDate = document.getElementById('receivingDate').value;
+
+            // 발주서별로 분리하여 출력 (컴팩트 스타일)
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>입고명세서 - ${receivingDate}</title>
+                    <style>
+                        body { font-family: 'Malgun Gothic', sans-serif; padding: 8px; font-size: 9px; line-height: 1.2; }
+                        .supplier-section { page-break-after: always; margin-bottom: 10px; }
+                        .supplier-section:last-child { page-break-after: avoid; }
+                        h1 { text-align: center; margin: 5px 0; font-size: 14px; }
+                        .order-info { text-align: center; margin-bottom: 5px; font-size: 9px; color: #666; }
+                        .header-info { margin-bottom: 8px; font-size: 8px; display: flex; flex-wrap: wrap; gap: 5px 15px; }
+                        .header-info span { white-space: nowrap; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #999; padding: 2px 4px; text-align: center; font-size: 8px; }
+                        th { background: #e0e0e0; font-weight: bold; }
+                        .total-row { font-weight: bold; background: #f0f0f0; }
+                        .check-col { width: 20px; }
+                        .check-box { font-size: 10px; }
+                        .signature-area { margin-top: 15px; display: flex; justify-content: space-around; font-size: 9px; }
+                        @media print {
+                            body { margin: 0; padding: 5px; }
+                            @page { margin: 5mm; }
+                            .supplier-section { page-break-after: always; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${currentReceivingData.map(orderData => orderData.suppliers.map(supplier => `
+                        <div class="supplier-section">
+                            <h1>입고명세서</h1>
+                            <div class="order-info">발주번호: ${orderData.order_number}</div>
+                            <div class="header-info">
+                                <span><strong>거래처:</strong> ${supplier.supplier_name}</span>
+                                <span><strong>입고일:</strong> ${orderData.order_date}</span>
+                                <span><strong>검수일:</strong> ${receivingDate}</span>
+                                <span><strong>식단표 날짜:</strong> ${orderData.usage_date || '-'}</span>
+                                <span><strong>품목:</strong> ${supplier.total_count}개</span>
+                            </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="check-col">확인</th>
+                                        <th style="width:20px;">NO</th>
+                                        <th>코드</th>
+                                        <th>식자재명</th>
+                                        <th>규격</th>
+                                        <th>수량</th>
+                                        <th>단위</th>
+                                        <th>단가</th>
+                                        <th>금액</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${supplier.items.map((item, idx) => `
+                                        <tr>
+                                            <td class="check-col"><span class="check-box">□</span></td>
+                                            <td>${idx + 1}</td>
+                                            <td style="font-size:7px;">${item.ingredient_code || '-'}</td>
+                                            <td style="text-align: left;">${item.ingredient_name || '-'}${item.merged_count > 1 ? ` (${item.merged_count}건)` : ''}</td>
+                                            <td>${item.specification || '-'}</td>
+                                            <td>${Number(item.order_qty || 0).toLocaleString()}</td>
+                                            <td>${item.unit || '-'}</td>
+                                            <td style="text-align: right;">${(item.unit_price || 0).toLocaleString()}</td>
+                                            <td style="text-align: right;">${(item.total_price || 0).toLocaleString()}</td>
+                                        </tr>
+                                    `).join('')}
+                                    <tr class="total-row">
+                                        <td colspan="7">합계</td>
+                                        <td colspan="2" style="text-align: right;">${(supplier.total_amount || 0).toLocaleString()}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="signature-area">
+                                <div>담당자: ___________</div>
+                                <div>확인자: ___________</div>
+                            </div>
+                        </div>
+                    `).join('')).join('')}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        function refreshReceivingList() {
+            loadReceivingDocuments();
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // ============================================
+        // 인쇄 기능 (식단표날짜별 + 전체합산) - 컴팩트 버전
+        // ============================================
+        function printReceivingStatement() {
+            if (!receivingStatementData) {
+                alert('먼저 입고 명세서를 조회해주세요.');
+                return;
+            }
+
+            const receivingDate = document.getElementById('receivingDate').value;
+            const summary = receivingStatementData.summary;
+
+            // 인쇄용 HTML 생성 (컴팩트 스타일)
+            let printHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>입고 명세서 - ${receivingDate}</title>
+                    <style>
+                        body { font-family: 'Malgun Gothic', sans-serif; padding: 8px; font-size: 9px; line-height: 1.2; }
+                        h1 { text-align: center; margin: 5px 0 10px 0; font-size: 14px; }
+                        h2 { font-size: 11px; margin: 10px 0 5px 0; border-bottom: 1px solid #333; padding-bottom: 3px; }
+                        .summary { background: #f5f5f5; padding: 6px 10px; margin-bottom: 8px; font-size: 9px; }
+                        .summary-item { display: inline-block; margin-right: 15px; }
+                        .usage-section { margin-bottom: 8px; border: 1px solid #333; }
+                        .usage-header { background: #333; color: white; padding: 4px 8px; font-weight: bold; font-size: 9px; }
+                        .supplier-section { padding: 4px 6px; border-bottom: 1px solid #ddd; }
+                        .supplier-header { font-weight: bold; margin-bottom: 3px; font-size: 9px; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 3px; }
+                        th, td { border: 1px solid #999; padding: 2px 4px; font-size: 8px; }
+                        th { background: #e0e0e0; font-weight: bold; }
+                        .text-right { text-align: right; }
+                        .text-center { text-align: center; }
+                        .check-col { width: 22px; text-align: center; }
+                        .check-box { font-size: 10px; }
+                        @media print {
+                            body { padding: 5px; margin: 0; }
+                            @page { margin: 5mm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>입고 명세서</h1>
+                    <div class="summary">
+                        <div class="summary-item"><strong>입고일:</strong> ${receivingDate}</div>
+                        <div class="summary-item"><strong>식단표 날짜:</strong> ${summary.usage_dates?.join(', ') || '-'}</div>
+                        <div class="summary-item"><strong>총 품목:</strong> ${summary.total_items}개</div>
+                        <div class="summary-item"><strong>총 금액:</strong> ${Number(summary.total_amount).toLocaleString()}원</div>
+                    </div>
+            `;
+
+            // 식단표 날짜별 데이터 출력
+            (receivingStatementData.by_usage_date || []).forEach(usageGroup => {
+                const dateObj = new Date(usageGroup.usage_date);
+                const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                const dayName = dayNames[dateObj.getDay()];
+
+                printHtml += `
+                    <div class="usage-section">
+                        <div class="usage-header">
+                            식단표 날짜: ${usageGroup.usage_date} (${dayName}) - ${usageGroup.suppliers.length}개 업체, ${Number(usageGroup.total_amount).toLocaleString()}원
+                        </div>
+                `;
+
+                usageGroup.suppliers.forEach(supplier => {
+                    printHtml += `
+                        <div class="supplier-section">
+                            <div class="supplier-header">${supplier.supplier_name} (${supplier.items.length}개 품목)</div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="check-col">확인</th>
+                                        <th>코드</th>
+                                        <th style="text-align:left;">품목명</th>
+                                        <th>규격</th>
+                                        <th>수량</th>
+                                        <th>단가</th>
+                                        <th>금액</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    supplier.items.forEach(item => {
+                        printHtml += `
+                            <tr>
+                                <td class="check-col"><span class="check-box">□</span></td>
+                                <td style="font-size:7px;">${item.ingredient_code || '-'}</td>
+                                <td>${item.ingredient_name || '-'}</td>
+                                <td class="text-center">${item.specification || '-'}</td>
+                                <td class="text-center">${Number(item.order_qty || 0).toLocaleString()} ${item.unit || ''}</td>
+                                <td class="text-right">${Number(item.unit_price || 0).toLocaleString()}</td>
+                                <td class="text-right">${Number(item.total_price || 0).toLocaleString()}</td>
+                            </tr>
+                        `;
+                    });
+
+                    printHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+
+                printHtml += `</div>`;
+            });
+
+            // 전체 합산 표 (페이지 분리 없음)
+            printHtml += `
+                <h2>【전체 합산】</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="check-col">확인</th>
+                            <th>코드</th>
+                            <th style="text-align:left;">품목명</th>
+                            <th>규격</th>
+                            <th>협력업체</th>
+                            <th>총 수량</th>
+                            <th>총 금액</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            (receivingStatementData.by_ingredient_total || []).forEach(item => {
+                printHtml += `
+                    <tr>
+                        <td class="check-col"><span class="check-box">□</span></td>
+                        <td style="font-size:7px;">${item.ingredient_code || '-'}</td>
+                        <td>${item.ingredient_name || '-'}</td>
+                        <td class="text-center">${item.specification || '-'}</td>
+                        <td class="text-center">${item.supplier_name || '-'}</td>
+                        <td class="text-center">${Number(item.order_qty || 0).toLocaleString()} ${item.unit || ''}</td>
+                        <td class="text-right">${Number(item.total_price || 0).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            printHtml += `
+                    </tbody>
+                </table>
+                </body>
+                </html>
+            `;
+
+            // 새 창에서 인쇄
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printHtml);
+            printWindow.document.close();
+            printWindow.onload = function() {
+                printWindow.print();
+            };
+        }
+
+        // ============================================
+        // 엑셀 다운로드 기능
+        // ============================================
+        function downloadReceivingExcel() {
+            if (!receivingStatementData) {
+                alert('먼저 입고 명세서를 조회해주세요.');
+                return;
+            }
+
+            const receivingDate = document.getElementById('receivingDate').value;
+            const wb = XLSX.utils.book_new();
+
+            // 시트 1: 식단표 날짜별 상세
+            const detailData = [];
+            detailData.push(['입고 명세서 - ' + receivingDate]);
+            detailData.push([]);
+            detailData.push(['식단표 날짜', '협력업체', '식자재코드', '품목명', '규격', '수량', '단위', '단가', '금액']);
+
+            (receivingStatementData.by_usage_date || []).forEach(usageGroup => {
+                usageGroup.suppliers.forEach(supplier => {
+                    supplier.items.forEach(item => {
+                        detailData.push([
+                            usageGroup.usage_date,
+                            supplier.supplier_name,
+                            item.ingredient_code || '',
+                            item.ingredient_name,
+                            item.specification || '',
+                            item.order_qty,
+                            item.unit || '',
+                            item.unit_price,
+                            item.total_price
+                        ]);
+                    });
+                });
+            });
+
+            const ws1 = XLSX.utils.aoa_to_sheet(detailData);
+            XLSX.utils.book_append_sheet(wb, ws1, '식단표날짜별 상세');
+
+            // 시트 2: 식자재별 합산
+            const summaryData = [];
+            summaryData.push(['입고 명세서 (합산) - ' + receivingDate]);
+            summaryData.push([]);
+            summaryData.push(['식자재코드', '품목명', '규격', '협력업체', '식단표 날짜', '총 수량', '단위', '총 금액']);
+
+            (receivingStatementData.by_ingredient_total || []).forEach(item => {
+                summaryData.push([
+                    item.ingredient_code || '',
+                    item.ingredient_name,
+                    item.specification || '',
+                    item.supplier_name,
+                    item.usage_dates?.join(', ') || '',
+                    item.order_qty,
+                    item.unit || '',
+                    item.total_price
+                ]);
+            });
+
+            const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, ws2, '전체 합산');
+
+            // 다운로드
+            XLSX.writeFile(wb, `입고명세서_${receivingDate}.xlsx`);
+        }
+    </script>
+
+    <!-- 사업장 선택기 -->
+    <script src="/static/modules/core/site-selector.js"></script>
+    <script>
+        // 🏢 현재 선택된 사업장 ID 가져오기
+        function getCurrentSiteId() {
+            if (typeof SiteSelector !== 'undefined') {
+                const context = SiteSelector.getCurrentContext();
+                return context?.site_id || null;
+            }
+            return null;
+        }
+
+        // 사업장 선택기 초기화
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof SiteSelector !== 'undefined') {
+                SiteSelector.init('receiving-site-selector');
+                SiteSelector.on('siteChange', function (context) {
+                    console.log('🏢 사업장 변경:', context);
+                    // 입고 명세서 새로고침
+                    loadReceivingDocuments();
+                    alert(`${context.siteName || '전체'} 사업장으로 변경되었습니다.`);
+                });
+            }
+        });
+    </script>
+
+    <!-- 브랜딩 적용 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 브랜딩 시스템 적용
+            if (typeof BrandingManager !== 'undefined') {
+                BrandingManager.applyBranding('입고 관리');
+                console.log('✅ 브랜딩 시스템 적용 완료 (입고 관리)');
+            }
+        });
+    </script>
+</body>
+
+</html>

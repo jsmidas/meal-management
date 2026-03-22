@@ -1,0 +1,681 @@
+<!-- 고급 레시피 검색 패널 -->
+<div class="advanced-search-panel" id="advancedSearchPanel" style="display: none;">
+    <div class="search-header">
+        <h3>🔍 고급 레시피 검색</h3>
+        <small>30,000+ 레시피 대상 고성능 Full-text 검색</small>
+    </div>
+
+    <div class="search-form">
+        <div class="search-row">
+            <div class="search-field">
+                <label>검색어</label>
+                <input type="text" id="advancedSearchQuery" placeholder="레시피명, 재료명, 조리법..." />
+            </div>
+            <div class="search-field">
+                <label>카테고리</label>
+                <select id="advancedSearchCategory">
+                    <option value="">전체 카테고리</option>
+                    <option value="국">국</option>
+                    <option value="밥">밥</option>
+                    <option value="찌개">찌개</option>
+                    <option value="조림">조림</option>
+                    <option value="무침">무침</option>
+                    <option value="볶음">볶음</option>
+                    <option value="구이">구이</option>
+                    <option value="튀김">튀김</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="search-row">
+            <div class="search-field">
+                <label>최대 난이도</label>
+                <select id="advancedSearchDifficulty">
+                    <option value="">제한 없음</option>
+                    <option value="1">1 (매우 쉬움)</option>
+                    <option value="2">2 (쉬움)</option>
+                    <option value="3">3 (보통)</option>
+                    <option value="4">4 (어려움)</option>
+                    <option value="5">5 (매우 어려움)</option>
+                </select>
+            </div>
+            <div class="search-field">
+                <label>최대 조리시간 (분)</label>
+                <input type="number" id="advancedSearchTime" placeholder="예: 30" min="1" max="300" />
+            </div>
+        </div>
+
+        <div class="search-row">
+            <div class="search-field">
+                <label>태그</label>
+                <input type="text" id="advancedSearchTags" placeholder="예: 비건, 글루텐프리 (쉼표로 구분)" />
+            </div>
+            <div class="search-field">
+                <label>정렬 기준</label>
+                <select id="advancedSearchSort">
+                    <option value="popularity">인기도순</option>
+                    <option value="name">이름순</option>
+                    <option value="created_at">최신순</option>
+                    <option value="cost">비용순</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="search-actions">
+            <button type="button" class="btn btn-primary" onclick="performAdvancedSearch()">
+                <i class="fas fa-search"></i> 검색
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="clearAdvancedSearch()">
+                <i class="fas fa-eraser"></i> 초기화
+            </button>
+            <button type="button" class="btn btn-info" onclick="exportSearchResults()">
+                <i class="fas fa-download"></i> 결과 내보내기
+            </button>
+        </div>
+    </div>
+
+    <!-- 검색 결과 요약 -->
+    <div class="search-results-summary" id="searchResultsSummary" style="display: none;">
+        <div class="summary-stats">
+            <div class="stat-item">
+                <span class="stat-value" id="totalResults">0</span>
+                <span class="stat-label">총 결과</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="searchTime">0ms</span>
+                <span class="stat-label">검색 시간</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="avgCost">₩0</span>
+                <span class="stat-label">평균 비용</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 검색 결과 컨테이너 -->
+<div class="search-results-container" id="searchResultsContainer" style="display: none;">
+    <div class="results-header">
+        <h4>검색 결과</h4>
+        <div class="results-actions">
+            <button class="btn btn-sm btn-primary" onclick="calculateBulkCosts()">
+                <i class="fas fa-calculator"></i> 일괄 비용 계산
+            </button>
+            <button class="btn btn-sm btn-info" onclick="getMarketAnalysis()">
+                <i class="fas fa-chart-line"></i> 시장 분석
+            </button>
+        </div>
+    </div>
+
+    <div class="results-grid" id="resultsGrid">
+        <!-- 검색 결과가 여기에 표시됩니다 -->
+    </div>
+
+    <!-- 페이지네이션 -->
+    <div class="pagination-container" id="paginationContainer">
+        <!-- 페이지네이션이 여기에 표시됩니다 -->
+    </div>
+</div>
+
+<!-- 레시피 상세 모달 -->
+<div class="modal" id="recipeDetailModal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3 id="recipeDetailTitle">레시피 상세 정보</h3>
+            <button class="modal-close" onclick="closeRecipeDetailModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="recipeDetailBody">
+            <!-- 레시피 상세 내용이 여기에 표시됩니다 -->
+        </div>
+    </div>
+</div>
+
+<!-- 비용 계산 모달 -->
+<div class="modal" id="costCalculationModal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3>💰 레시피 비용 분석</h3>
+            <button class="modal-close" onclick="closeCostCalculationModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="costCalculationBody">
+            <!-- 비용 계산 결과가 여기에 표시됩니다 -->
+        </div>
+    </div>
+</div>
+
+<!-- 시장 분석 모달 -->
+<div class="modal" id="marketAnalysisModal">
+    <div class="modal-content extra-large">
+        <div class="modal-header">
+            <h3>📊 식자재 시장 분석</h3>
+            <button class="modal-close" onclick="closeMarketAnalysisModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="marketAnalysisBody">
+            <!-- 시장 분석 결과가 여기에 표시됩니다 -->
+        </div>
+    </div>
+</div>
+
+<!-- 글로벌 로더 -->
+<div class="global-loader" id="globalLoader" style="display: none;">
+    <div class="loader-spinner"></div>
+    <span class="loader-text">처리 중...</span>
+</div>
+
+<style>
+/* 고급 검색 스타일 */
+.advanced-search-panel {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.search-header h3 {
+    margin: 0 0 5px 0;
+    color: white;
+}
+
+.search-header small {
+    opacity: 0.9;
+}
+
+.search-form {
+    margin-top: 15px;
+}
+
+.search-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.search-field {
+    flex: 1;
+}
+
+.search-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.search-field input,
+.search-field select {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.search-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.search-results-summary {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 15px;
+}
+
+.summary-stats {
+    display: flex;
+    gap: 30px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.stat-label {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* 검색 결과 스타일 */
+.search-results-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.results-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.recipe-card {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.recipe-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.recipe-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.recipe-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.recipe-category {
+    background: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #495057;
+}
+
+.recipe-info {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    font-size: 12px;
+    color: #666;
+}
+
+.recipe-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.recipe-actions button {
+    flex: 1;
+    padding: 6px;
+    font-size: 11px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-view {
+    background: #007bff;
+    color: white;
+}
+
+.btn-cost {
+    background: #28a745;
+    color: white;
+}
+
+.btn-edit {
+    background: #ffc107;
+    color: #212529;
+}
+
+/* 모달 스타일 확장 */
+.modal-content.large {
+    width: 80%;
+    max-width: 800px;
+}
+
+.modal-content.extra-large {
+    width: 90%;
+    max-width: 1200px;
+}
+
+/* 글로벌 로더 */
+.global-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    color: white;
+}
+
+.loader-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loader-text {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* 성능 정보 스타일 */
+.performance-info {
+    background: #e8f5e8;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+.performance-info.good {
+    background: #d4edda;
+    color: #155724;
+}
+
+.performance-info .fas {
+    margin-right: 5px;
+}
+
+/* 비용 관련 스타일 */
+.cost-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.cost-item {
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.cost-item label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.cost-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.volatility.high {
+    color: #dc3545;
+}
+
+.trend.stable {
+    color: #28a745;
+}
+
+.trend.moderate {
+    color: #ffc107;
+}
+
+.trend.volatile {
+    color: #dc3545;
+}
+</style>
+
+<script>
+// 고급 검색 JavaScript 함수들
+
+function toggleAdvancedSearch() {
+    const panel = document.getElementById('advancedSearchPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+async function performAdvancedSearch() {
+    const searchParams = {
+        q: document.getElementById('advancedSearchQuery').value,
+        category: document.getElementById('advancedSearchCategory').value,
+        difficulty: document.getElementById('advancedSearchDifficulty').value,
+        max_time: document.getElementById('advancedSearchTime').value,
+        tags: document.getElementById('advancedSearchTags').value,
+        sort: document.getElementById('advancedSearchSort').value,
+        page: 1,
+        size: 20
+    };
+
+    try {
+        await recipeUI.updateSearchResults(searchParams);
+
+        // 검색 결과 컨테이너 표시
+        document.getElementById('searchResultsContainer').style.display = 'block';
+
+    } catch (error) {
+        console.error('검색 실패:', error);
+        alert('검색 중 오류가 발생했습니다: ' + error.message);
+    }
+}
+
+function clearAdvancedSearch() {
+    document.getElementById('advancedSearchQuery').value = '';
+    document.getElementById('advancedSearchCategory').value = '';
+    document.getElementById('advancedSearchDifficulty').value = '';
+    document.getElementById('advancedSearchTime').value = '';
+    document.getElementById('advancedSearchTags').value = '';
+    document.getElementById('advancedSearchSort').value = 'popularity';
+
+    // 검색 결과 숨기기
+    document.getElementById('searchResultsContainer').style.display = 'none';
+    document.getElementById('searchResultsSummary').style.display = 'none';
+}
+
+async function calculateBulkCosts() {
+    if (!recipeUI.currentRecipes.length) {
+        alert('계산할 레시피가 없습니다.');
+        return;
+    }
+
+    const recipeIds = recipeUI.currentRecipes.map(r => r.id);
+
+    try {
+        const result = await recipeAPI.calculateBulkCosts(recipeIds, 1);
+
+        // 일괄 계산 결과 표시
+        showBulkCostResults(result.data);
+
+    } catch (error) {
+        alert('일괄 비용 계산 실패: ' + error.message);
+    }
+}
+
+async function getMarketAnalysis() {
+    const category = document.getElementById('advancedSearchCategory').value;
+
+    try {
+        const result = await recipeAPI.getMarketAnalysis(category, 50);
+        showMarketAnalysis(result.data);
+
+    } catch (error) {
+        alert('시장 분석 실패: ' + error.message);
+    }
+}
+
+function showBulkCostResults(data) {
+    // 일괄 비용 계산 결과를 모달로 표시
+    const modal = document.getElementById('costCalculationModal');
+    const body = document.getElementById('costCalculationBody');
+
+    body.innerHTML = `
+        <div class="bulk-cost-summary">
+            <h4>📊 일괄 비용 계산 결과</h4>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <label>처리된 레시피</label>
+                    <span>${data.summary.total_recipes_processed}개</span>
+                </div>
+                <div class="summary-item">
+                    <label>총 합계 비용</label>
+                    <span>₩${data.summary.total_combined_cost.toLocaleString()}</span>
+                </div>
+                <div class="summary-item">
+                    <label>평균 레시피 비용</label>
+                    <span>₩${data.summary.average_cost_per_recipe.toLocaleString()}</span>
+                </div>
+                <div class="summary-item">
+                    <label>평균 가격 변동성</label>
+                    <span>${data.summary.average_price_volatility}%</span>
+                </div>
+            </div>
+
+            <div class="performance-note">
+                계산 시간: ${data.performance.calculation_time_ms}ms
+                (레시피당 평균 ${data.performance.average_time_per_recipe_ms}ms)
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'block';
+}
+
+function showMarketAnalysis(data) {
+    const modal = document.getElementById('marketAnalysisModal');
+    const body = document.getElementById('marketAnalysisBody');
+
+    const categoryBreakdown = Object.entries(data.category_breakdown)
+        .map(([category, stats]) => `
+            <tr>
+                <td>${category}</td>
+                <td>${stats.recipe_count}</td>
+                <td>₩${stats.avg_cost.toLocaleString()}</td>
+                <td>${stats.avg_volatility}%</td>
+                <td>${stats.high_volatility_count}</td>
+            </tr>
+        `).join('');
+
+    body.innerHTML = `
+        <div class="market-analysis">
+            <div class="analysis-summary">
+                <h4>📈 시장 분석 개요</h4>
+                <div class="summary-stats">
+                    <div class="stat">
+                        <label>분석 레시피 수</label>
+                        <span>${data.recipes_analyzed.toLocaleString()}</span>
+                    </div>
+                    <div class="stat">
+                        <label>총 시장 가치</label>
+                        <span>₩${data.total_market_value.toLocaleString()}</span>
+                    </div>
+                    <div class="stat">
+                        <label>평균 레시피 비용</label>
+                        <span>₩${data.average_recipe_cost.toLocaleString()}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-analysis">
+                <h4>📊 카테고리별 분석</h4>
+                <table class="analysis-table">
+                    <thead>
+                        <tr>
+                            <th>카테고리</th>
+                            <th>레시피 수</th>
+                            <th>평균 비용</th>
+                            <th>평균 변동성</th>
+                            <th>고변동 레시피</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${categoryBreakdown}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="market-insights">
+                <h4>💡 시장 인사이트</h4>
+                <ul>
+                    <li><strong>가장 비싼 카테고리:</strong> ${data.market_insights.most_expensive_category || 'N/A'}</li>
+                    <li><strong>가장 변동성이 큰 카테고리:</strong> ${data.market_insights.most_volatile_category || 'N/A'}</li>
+                    <li><strong>고변동성 레시피 총 개수:</strong> ${data.market_insights.total_high_volatility_recipes}</li>
+                </ul>
+            </div>
+
+            <div class="analysis-note">
+                <small>84,215개 식자재 데이터 기반 분석 (${data.analyzed_at})</small>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'block';
+}
+
+// 모달 닫기 함수들
+function closeRecipeDetailModal() {
+    document.getElementById('recipeDetailModal').style.display = 'none';
+}
+
+function closeCostCalculationModal() {
+    document.getElementById('costCalculationModal').style.display = 'none';
+}
+
+function closeMarketAnalysisModal() {
+    document.getElementById('marketAnalysisModal').style.display = 'none';
+}
+
+// 검색 결과 내보내기
+function exportSearchResults() {
+    if (!recipeUI.currentRecipes.length) {
+        alert('내보낼 검색 결과가 없습니다.');
+        return;
+    }
+
+    // CSV 형태로 내보내기
+    const headers = ['레시피명', '카테고리', '1인분 비용', '인기도', '재료 수'];
+    const csvContent = [
+        headers.join(','),
+        ...recipeUI.currentRecipes.map(recipe => [
+            `"${recipe.recipe_name}"`,
+            recipe.category,
+            recipe.cost_per_serving || 0,
+            recipe.popularity_score || 0,
+            recipe.ingredient_count || 0
+        ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `recipe_search_results_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+}
+</script>

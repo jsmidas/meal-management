@@ -1,0 +1,3015 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 관리자 권한 체크 (admin, operator만 접근 가능) -->
+    <script src="/static/js/admin-auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title> 식자재 관리 시스템 - 관리자 대시보드</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+
+    <!-- 외부 CSS (캐시 무력화) -->
+    <link rel="stylesheet" href="/static/css/admin-dashboard-main.css?v=20250921-007">
+    <link rel="stylesheet" href="/static/css/admin-dashboard-inline.css?v=20250921-007">
+
+    <!-- 공통 사이드바 CSS (마지막에 로드하여 기존 스타일 덮어쓰기) -->
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20250921-007">
+
+    <!-- 사업장 선택기 CSS -->
+    <link rel="stylesheet" href="/static/css/site-selector.css">
+
+    <!-- 구조 관리 CSS -->
+    <link rel="stylesheet" href="/static/css/site-structure.css">
+
+    <!-- 사용자 권한 관리 CSS -->
+    <link rel="stylesheet" href="/static/css/user-permission.css">
+
+    <!-- Handsontable CDN (메뉴/레시피 관리용) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+
+    <style>
+        /* 페이지 컨텐츠 표시/숨김 */
+        .page-content {
+            display: none;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        /* 네비게이션 메뉴 영역 - flex 확장 */
+        .nav-menu {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* 사이드바 푸터 고정 */
+        .sidebar-footer {
+            flex-shrink: 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    <!-- 전체 문서 드래그 앤 드롭 방지 (브라우저가 파일을 열지 않도록) - 즉시 실행 -->
+    <script>
+        // 업로드 영역 외부에서만 드롭 방지 (버블 단계 사용)
+        document.addEventListener('dragover', function(e) {
+            // 업로드 영역이 아닌 곳에서만 방지
+            if (!e.target.closest('#excel-upload-area')) {
+                e.preventDefault();
+            }
+        }, false);
+        document.addEventListener('drop', function(e) {
+            // 업로드 영역이 아닌 곳에서만 방지
+            if (!e.target.closest('#excel-upload-area')) {
+                e.preventDefault();
+                console.log('⚠️ 파일을 업로드 영역에 드롭해주세요.');
+            }
+        }, false);
+        console.log('✅ 전체 문서 드래그 방지 활성화됨 (업로드 영역 제외)');
+    </script>
+</head>
+
+<body>
+    <!-- 메인 컨테이너 -->
+    <div class="container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+
+            <div class="nav-menu">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <span class="icon">📊</span>대시보드
+                </a>
+                <a href="#" class="nav-item" data-page="users">
+                    <span class="icon">👥</span>사용자 관리
+                </a>
+                <a href="#" class="nav-item" data-page="sites-integrated">
+                    <span class="icon">🏢</span>급식사업장 관리
+                </a>
+                <a href="#" class="nav-item" data-page="suppliers-integrated">
+                    <span class="icon">🚚</span>협력업체 관리
+                </a>
+                <a href="#" class="nav-item" data-page="menu-recipes">
+                    <span class="icon">📋</span>메뉴/레시피
+                </a>
+                <a href="#" class="nav-item" data-page="operations">
+                    <span class="icon">🍽️</span>운영 설정
+                </a>
+                <a href="#" class="nav-item" data-page="blog-management">
+                    <span class="icon">📝</span>블로그/SNS 관리
+                </a>
+                <a href="#" class="nav-item" data-page="system-settings">
+                    <span class="icon">⚙️</span>시스템 설정
+                </a>
+                <a href="#" class="nav-item" data-page="notice-management">
+                    <span class="icon">📢</span>공지사항 관리
+                </a>
+            </div>
+
+            <div class="sidebar-footer" style="padding: 15px;">
+                <div style="padding-top: 10px;">
+                    <a href="dashboard.html"
+                        style="display: block; padding: 12px 20px; background: #e8f5e8; color: #4caf50; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 10px;">
+                        <span class="icon">🍽️</span>급식관리로 이동
+                    </a>
+                    <a href="order_check.html" target="_blank"
+                        style="display: block; padding: 12px 20px; background: #fff3e0; color: #ff9800; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 10px;">
+                        <span class="icon">📦</span>발주 확인
+                    </a>
+                    <a href="backup_management.html"
+                        style="display: block; padding: 12px 20px; background: #e3f2fd; color: #1976d2; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 10px;">
+                        <span class="icon">🛡️</span>백업 관리
+                    </a>
+                    <button onclick="logout()"
+                        style="display: block; width: 100%; padding: 12px 20px; background: #ff6b6b; color: white; border: none; border-radius: 8px; text-align: center; font-weight: 600; cursor: pointer;">
+                        <span class="icon">🚪</span>로그아웃
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="main-content">
+            <!-- 깔끔한 헤더 -->
+            <div class="header">
+                <div class="header-info" style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                    <span id="connection-status"
+                        style="font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 12px; background: #eee; color: #666;">
+                        ⚪ 연결 확인 중...
+                    </span>
+                    <span id="current-date"></span>
+                </div>
+                <div id="admin-site-selector" class="site-selector-standard site-selector-right"></div>
+            </div>
+
+            <!-- 페이지별 컨텐츠 영역 -->
+            <div id="content-area">
+                <!-- 대시보드 기본 컨텐츠 -->
+                <div id="dashboard-content" class="page-content active">
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <span class="icon">👥</span>
+                                <h3 class="card-title">전체 사용자</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="stat-number" id="total-users">-</div>
+                                <div class="stat-label">등록된 사용자 수</div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <span class="icon">🏢</span>
+                                <h3 class="card-title">사업장</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="stat-number" id="total-sites">-</div>
+                                <div class="stat-label">관리 중인 사업장</div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <span class="icon">📦</span>
+                                <h3 class="card-title">식자재</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="stat-number" id="total-ingredients">-</div>
+                                <div class="stat-label">등록된 식자재</div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <span class="icon">🚛</span>
+                                <h3 class="card-title">협력업체</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="stat-number" id="total-suppliers">-</div>
+                                <div class="stat-label">등록된 협력업체</div>
+                            </div>
+                        </div>
+
+                        <!-- 메뉴/레시피 카드 -->
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <span class="icon">📋</span>
+                                <h3 class="card-title">메뉴/레시피</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="stat-number" id="total-recipes">-</div>
+                                <div class="stat-label">등록된 레시피</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 최근 활동 로그 -->
+                    <div class="activity-log">
+                        <h3 style="margin-bottom: 20px;">📈 최근 활동</h3>
+                        <div id="activity-list">
+                            <div class="log-item">
+                                <div class="log-time">로딩 중...</div>
+                                <div class="log-message">시스템 데이터를 불러오고 있습니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 다른 페이지 컨텐츠들은 동적으로 로드 -->
+                <div id="users-content" class="page-content">
+                    <!-- 템플릿으로 동적 로드 (static/templates/users-section.html) -->
+                </div>
+
+                <!-- 사용자 모달은 동적으로 로드됨 (user-modal.html) -->
+                <div id="userModalContainer"></div>
+
+                <!-- 🏢 급식사업장 관리 통합 (사업장 + 구조) -->
+                <div id="sites-integrated-content" class="page-content" style="display: none;">
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="margin: 0 0 15px 0;">🏢 급식사업장 관리</h2>
+                        <div class="admin-tabs" style="display: flex; gap: 0; border-bottom: 2px solid #e2e8f0;">
+                            <button class="admin-tab active" data-tab="sites-list" onclick="switchSiteTab('sites-list')"
+                                style="padding: 12px 24px; border: none; background: #3b82f6; color: white; cursor: pointer; font-size: 14px; font-weight: 600; border-radius: 8px 8px 0 0;">
+                                📍 급식사업장 목록
+                            </button>
+                            <button class="admin-tab" data-tab="site-structure" onclick="switchSiteTab('site-structure')"
+                                style="padding: 12px 24px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; font-size: 14px; font-weight: 500; border-radius: 8px 8px 0 0;">
+                                🗂️ 그룹/카테고리 구조
+                            </button>
+                        </div>
+                    </div>
+                    <div id="sites-list-tab" class="tab-content">
+                        <!-- 기존 사업장 목록 로드 -->
+                    </div>
+                    <div id="site-structure-tab" class="tab-content" style="display: none;">
+                        <div id="site-structure-container"></div>
+                    </div>
+                </div>
+
+                <!-- 🚚 협력업체 관리 통합 (협력업체 + 매핑) -->
+                <div id="suppliers-integrated-content" class="page-content" style="display: none;">
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="margin: 0 0 15px 0;">🚚 협력업체 관리</h2>
+                        <div class="admin-tabs" style="display: flex; gap: 0; border-bottom: 2px solid #e2e8f0;">
+                            <button class="admin-tab active" data-tab="suppliers-list" onclick="switchSupplierTab('suppliers-list')"
+                                style="padding: 12px 24px; border: none; background: #3b82f6; color: white; cursor: pointer; font-size: 14px; font-weight: 600; border-radius: 8px 8px 0 0;">
+                                📋 협력업체 목록
+                            </button>
+                            <button class="admin-tab" data-tab="supplier-mapping" onclick="switchSupplierTab('supplier-mapping')"
+                                style="padding: 12px 24px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; font-size: 14px; font-weight: 500; border-radius: 8px 8px 0 0;">
+                                🔗 식자재 매핑
+                            </button>
+                            <button class="admin-tab" data-tab="supplier-holidays" onclick="switchSupplierTab('supplier-holidays')"
+                                style="padding: 12px 24px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; font-size: 14px; font-weight: 500; border-radius: 8px 8px 0 0;">
+                                📅 공휴일/휴무일 관리
+                            </button>
+                        </div>
+                    </div>
+                    <div id="suppliers-list-tab" class="tab-content">
+                        <!-- 기존 협력업체 목록 로드 -->
+                    </div>
+                    <div id="supplier-mapping-tab" class="tab-content" style="display: none;">
+                        <!-- 협력업체 매핑 로드 -->
+                    </div>
+                    <div id="supplier-holidays-tab" class="tab-content" style="display: none;">
+                        <!-- 공휴일/휴무일 관리 -->
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <!-- 좌측: 캘린더 -->
+                            <div style="flex: 1; min-width: 350px; max-width: 450px;">
+                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                        <button onclick="changeHolidayMonth(-1)" style="padding: 8px 12px; border: none; background: #e2e8f0; border-radius: 6px; cursor: pointer;">&lt;</button>
+                                        <h3 id="holidayMonthTitle" style="margin: 0; font-size: 18px;">2024년 12월</h3>
+                                        <button onclick="changeHolidayMonth(1)" style="padding: 8px 12px; border: none; background: #e2e8f0; border-radius: 6px; cursor: pointer;">&gt;</button>
+                                    </div>
+                                    <div id="holidayCalendar" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;"></div>
+                                    <div style="margin-top: 15px; display: flex; gap: 15px; font-size: 12px; color: #666;">
+                                        <span><span style="display: inline-block; width: 12px; height: 12px; background: #fecaca; border-radius: 3px; margin-right: 5px;"></span>국가공휴일</span>
+                                        <span><span style="display: inline-block; width: 12px; height: 12px; background: #fed7aa; border-radius: 3px; margin-right: 5px;"></span>업체휴무</span>
+                                        <span><span style="display: inline-block; width: 12px; height: 12px; background: #bfdbfe; border-radius: 3px; margin-right: 5px;"></span>선택됨</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 우측: 휴무일 관리 -->
+                            <div style="flex: 2; min-width: 400px;">
+                                <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <h3 style="margin: 0 0 15px 0;">휴무일 추가</h3>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+                                        <select id="holidaySupplierSelect" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; min-width: 150px;">
+                                            <option value="">협력업체 선택</option>
+                                            <option value="all">전체 (국가공휴일)</option>
+                                        </select>
+                                        <input type="date" id="holidayStartDate" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                        <input type="date" id="holidayEndDate" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                        <input type="text" id="holidayReason" placeholder="사유 (예: 성탄절)" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; flex: 1; min-width: 150px;">
+                                        <button onclick="addSupplierHoliday()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                            추가
+                                        </button>
+                                    </div>
+                                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                                        <button onclick="addKoreanHolidays()" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                            🇰🇷 대한민국 공휴일 자동 등록
+                                        </button>
+                                    </div>
+                                    <h4 style="margin: 0 0 10px 0;">등록된 휴무일</h4>
+                                    <div style="max-height: 400px; overflow-y: auto;">
+                                        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                            <thead style="background: #f8fafc; position: sticky; top: 0;">
+                                                <tr>
+                                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0;">협력업체</th>
+                                                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #e2e8f0;">시작일</th>
+                                                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #e2e8f0;">종료일</th>
+                                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0;">사유</th>
+                                                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #e2e8f0;">관리</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="holidayTableBody">
+                                                <tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">로딩 중...</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🍽️ 운영 설정 통합 (식단가, 식자재) -->
+                <div id="operations-content" class="page-content" style="display: none;">
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="margin: 0 0 15px 0;">🍽️ 운영 설정</h2>
+                        <div class="admin-tabs" style="display: flex; gap: 0; border-bottom: 2px solid #e2e8f0;">
+                            <button class="admin-tab active" data-tab="site-assignments" onclick="switchOperationsTab('site-assignments')"
+                                style="padding: 12px 24px; border: none; background: #3b82f6; color: white; cursor: pointer; font-size: 14px; font-weight: 600; border-radius: 8px 8px 0 0;">
+                                📍 사업장 배치 및 목표 설정
+                            </button>
+                            <button class="admin-tab" data-tab="ingredients" onclick="switchOperationsTab('ingredients')"
+                                style="padding: 12px 24px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; font-size: 14px; font-weight: 500; border-radius: 8px 8px 0 0;">
+                                📦 식자재 관리
+                            </button>
+                        </div>
+                    </div>
+                    <div id="site-assignments-tab" class="tab-content">
+                        <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <!-- 헤더 -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+                                <div>
+                                    <h3 style="margin: 0 0 8px 0; color: #333;">💰 끼니별 목표 식재료비 설정</h3>
+                                    <p style="margin: 0; color: #666; font-size: 13px;">카테고리별 끼니구분(중식 5찬저, 석식 도시락 등)의 목표 식재료비와 판매가를 설정합니다.</p>
+                                </div>
+                            </div>
+
+                            <!-- 그룹 + 카테고리 선택 + 비활성 포함 -->
+                            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <label style="font-weight: 600; color: #333;">사업장 그룹:</label>
+                                    <select id="mealSlotGroupSelect" onchange="onGroupFilterChange()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 160px;">
+                                        <option value="">전체 그룹</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <label style="font-weight: 600; color: #333;">카테고리:</label>
+                                    <select id="mealSlotCategorySelect" onchange="loadMealSlotsByCategory()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 200px;">
+                                        <option value="">전체 보기</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
+                                    <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 13px; color: #666;">
+                                        <input type="checkbox" id="showInactiveSlots" onchange="loadMealSlotsByCategory()" style="cursor: pointer;">
+                                        비활성 포함
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- 끼니구분 추가 폼 -->
+                            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                                <div style="font-weight: 600; margin-bottom: 12px; color: #333;">➕ 새 끼니구분 추가</div>
+                                <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+                                    <div style="flex: 1; min-width: 120px;">
+                                        <label style="display: block; font-size: 12px; color: #666; margin-bottom: 4px;">카테고리</label>
+                                        <select id="newSlotCategory" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                                            <option value="">선택</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 2; min-width: 150px;">
+                                        <label style="display: block; font-size: 12px; color: #666; margin-bottom: 4px;">끼니명 (예: 중식 5찬저)</label>
+                                        <input type="text" id="newSlotDisplayName" placeholder="중식 5찬저" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                                    </div>
+                                    <div style="flex: 0 0 100px;">
+                                        <label style="display: block; font-size: 12px; color: #666; margin-bottom: 4px;">목표 식재료비</label>
+                                        <input type="number" id="newSlotTargetCost" placeholder="2350" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                                    </div>
+                                    <div style="flex: 0 0 100px;">
+                                        <label style="display: block; font-size: 12px; color: #666; margin-bottom: 4px;">판매가(VAT제외)</label>
+                                        <input type="number" id="newSlotSellingPrice" placeholder="5500" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                                    </div>
+                                    <button onclick="addNewMealSlot()" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                                        추가
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 끼니구분 목록 -->
+                            <div id="mealSlotsListView" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                                <div style="text-align: center; color: #999; padding: 40px;">로딩 중...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 배치 추가/수정 모달 -->
+                    <div id="assignmentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+                        <div style="background: white; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+                            <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                                <h3 id="assignmentModalTitle" style="margin: 0;">배치 추가</h3>
+                                <button onclick="closeAssignmentModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+                            </div>
+                            <div style="padding: 20px;">
+                                <input type="hidden" id="editAssignmentId">
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: block; font-weight: 600; margin-bottom: 6px;">그룹 *</label>
+                                    <select id="assignmentGroupSelect" onchange="loadCategoriesForGroup()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                        <option value="">그룹 선택</option>
+                                    </select>
+                                </div>
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: block; font-weight: 600; margin-bottom: 6px;">카테고리 *</label>
+                                    <select id="assignmentCategorySelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                        <option value="">카테고리 선택</option>
+                                    </select>
+                                </div>
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: block; font-weight: 600; margin-bottom: 6px;">식사구분 *</label>
+                                    <select id="assignmentMealSlot" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                        <option value="">식사구분 선택</option>
+                                        <option value="조식">조식</option>
+                                        <option value="중식">중식</option>
+                                        <option value="석식">석식</option>
+                                        <option value="야식">야식</option>
+                                        <option value="간식">간식</option>
+                                    </select>
+                                </div>
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: block; font-weight: 600; margin-bottom: 6px;">사업장 *</label>
+                                    <select id="assignmentSiteSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                        <option value="">사업장 선택</option>
+                                    </select>
+                                </div>
+                                <div style="margin-bottom: 16px;">
+                                    <label style="display: block; font-weight: 600; margin-bottom: 6px;">메뉴 유형</label>
+                                    <input type="text" id="assignmentMenuType" value="일반" placeholder="일반, BASIC, PREMIUM 등" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                                </div>
+                                <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                                    <div style="flex: 1;">
+                                        <label style="display: block; font-weight: 600; margin-bottom: 6px;">목표 재료비</label>
+                                        <input type="number" id="assignmentTargetCost" placeholder="2350" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label style="display: block; font-weight: 600; margin-bottom: 6px;">판매가</label>
+                                        <input type="number" id="assignmentSellingPrice" placeholder="5500" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="padding: 16px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px;">
+                                <button onclick="closeAssignmentModal()" style="padding: 10px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 6px; cursor: pointer;">취소</button>
+                                <button onclick="saveAssignment()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">저장</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="ingredients-tab" class="tab-content" style="display: none;">
+                        <!-- 기존 식자재 관리 로드 -->
+                    </div>
+                </div>
+
+                <!-- 📝 블로그/SNS 관리 -->
+                <div id="blog-management-content" class="page-content" style="display: none;">
+                    <h2 style="margin-bottom: 20px;">📝 블로그/SNS 관리</h2>
+                    <div style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                        <iframe id="blog-iframe"
+                                style="width: 100%; height: calc(100vh - 140px); border: none;"
+                                allow="clipboard-read; clipboard-write"
+                                src="about:blank">
+                        </iframe>
+                    </div>
+                </div>
+
+                <!-- ⚙️ 시스템 설정 (브랜딩) -->
+                <div id="system-settings-content" class="page-content" style="display: none;">
+                    <h2 style="margin-bottom: 20px;">⚙️ 시스템 설정</h2>
+                    <div id="branding-settings-container">
+                        <!-- 브랜딩 설정 로드 -->
+                    </div>
+                </div>
+
+                <!-- 📢 공지사항 관리 -->
+                <div id="notice-management-content" class="page-content" style="display: none;">
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="margin: 0 0 15px 0;">📢 공지사항 관리</h2>
+                        <div class="admin-tabs" style="display: flex; gap: 0; border-bottom: 2px solid #e2e8f0;">
+                            <button class="admin-tab active" data-tab="business-notices" onclick="switchNoticeTab('business-notices')"
+                                style="padding: 12px 24px; border: none; background: #3b82f6; color: white; cursor: pointer; font-size: 14px; font-weight: 600; border-radius: 8px 8px 0 0;">
+                                📋 업무연락
+                            </button>
+                            <button class="admin-tab" data-tab="hygiene-notices" onclick="switchNoticeTab('hygiene-notices')"
+                                style="padding: 12px 24px; border: none; background: #f1f5f9; color: #64748b; cursor: pointer; font-size: 14px; font-weight: 500; border-radius: 8px 8px 0 0;">
+                                🛡️ 위생안전 알림
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 업무연락 탭 -->
+                    <div id="business-notices-tab" class="tab-content">
+                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h3 style="margin: 0;">업무연락 목록</h3>
+                                <button onclick="openNoticeModal('business')"
+                                    style="padding: 10px 20px; background: #f39c12; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                    <span style="margin-right: 5px;">➕</span> 새 업무연락 작성
+                                </button>
+                            </div>
+                            <div id="businessNoticesList" style="max-height: 500px; overflow-y: auto;">
+                                <p style="text-align: center; color: #999; padding: 40px;">로딩 중...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 위생안전 알림 탭 -->
+                    <div id="hygiene-notices-tab" class="tab-content" style="display: none;">
+                        <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h3 style="margin: 0;">위생안전 알림 목록</h3>
+                                <button onclick="openNoticeModal('hygiene')"
+                                    style="padding: 10px 20px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                    <span style="margin-right: 5px;">➕</span> 새 위생안전 알림 작성
+                                </button>
+                            </div>
+                            <div id="hygieneNoticesList" style="max-height: 500px; overflow-y: auto;">
+                                <p style="text-align: center; color: #999; padding: 40px;">로딩 중...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 공지사항 작성/수정 모달 -->
+                <div id="noticeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+                    <div style="background: white; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                        <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                            <h2 id="noticeModalTitle" style="margin: 0; font-size: 18px;">공지사항 작성</h2>
+                            <button onclick="closeNoticeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <input type="hidden" id="noticeEditId">
+                            <input type="hidden" id="noticeEditType">
+
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 8px;">제목 *</label>
+                                <input type="text" id="noticeEditTitle" placeholder="제목을 입력하세요"
+                                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                            </div>
+
+                            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                                <div style="flex: 1;">
+                                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">대상</label>
+                                    <select id="noticeTargetType" onchange="onNoticeTargetTypeChange()"
+                                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                                        <option value="all">전체</option>
+                                        <option value="group">특정 그룹</option>
+                                        <option value="site">특정 사업장</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 1; display: none;" id="noticeTargetIdGroup">
+                                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">대상 선택</label>
+                                    <select id="noticeTargetId"
+                                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="noticeIsUrgent" style="width: 18px; height: 18px;">
+                                    <span style="color: #e74c3c; font-weight: 600;">⚠️ 긴급 공지</span>
+                                </label>
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 8px;">내용</label>
+                                <!-- 이미지 삽입 툴바 -->
+                                <div style="display: flex; gap: 10px; margin-bottom: 8px; padding: 8px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; border-bottom: none; border-radius: 6px 6px 0 0;">
+                                    <button type="button" onclick="insertImageToContent()"
+                                        style="padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 5px;">
+                                        🖼️ 이미지 삽입
+                                    </button>
+                                    <input type="file" id="contentImageInput" accept="image/*" style="display: none;" onchange="handleContentImageUpload(event)">
+                                    <span style="color: #6b7280; font-size: 12px; display: flex; align-items: center;">💡 이미지를 본문 텍스트 사이에 삽입할 수 있습니다</span>
+                                </div>
+                                <div id="noticeContentEditor" contenteditable="true"
+                                    style="width: 100%; min-height: 200px; padding: 12px; border: 1px solid #ddd; border-radius: 0 0 6px 6px; font-size: 14px; line-height: 1.6; outline: none; background: white;"
+                                    oninput="syncContentToTextarea()"></div>
+                                <textarea id="noticeEditContent" style="display: none;"></textarea>
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 8px;">첨부파일</label>
+                                <div onclick="document.getElementById('noticeFileInput').click()"
+                                    style="border: 2px dashed #ddd; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.2s;"
+                                    onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#f0f9ff';"
+                                    onmouseout="this.style.borderColor='#ddd'; this.style.background='white';">
+                                    <div style="font-size: 32px; color: #bdc3c7; margin-bottom: 10px;">📎</div>
+                                    <p style="color: #666; margin: 0;">클릭하여 이미지 파일 선택 (최대 10MB)</p>
+                                </div>
+                                <input type="file" id="noticeFileInput" multiple accept="image/*" style="display: none;" onchange="handleNoticeFileSelect(event)">
+                                <div id="noticeUploadedFiles" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px;"></div>
+                            </div>
+                        </div>
+                        <div style="padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px;">
+                            <button onclick="closeNoticeModal()"
+                                style="padding: 10px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                                취소
+                            </button>
+                            <button onclick="saveNoticeFromAdmin()"
+                                style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                💾 저장
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 기존 컨텐츠 (호환성 유지, 숨김) -->
+                <div id="suppliers-content" class="page-content" style="display: none;"></div>
+                <div id="business-locations-content" class="page-content" style="display: none;"></div>
+                <div id="site-structure-content" class="page-content" style="display: none;"></div>
+                <div id="user-permissions-content" class="page-content" style="display: none;"></div>
+                <div id="supplier-mapping-content" class="page-content" style="display: none;"></div>
+                <div id="meal-pricing-content" class="page-content" style="display: none;"></div>
+                <div id="ingredients-content" class="page-content" style="display: none;"></div>
+
+                <div id="menu-recipes-content" class="page-content" style="display: none;">
+                    <h2 style="margin-bottom: 20px;">📋 메뉴/레시피 관리</h2>
+                    <div
+                        style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+
+                        <!-- 통계 -->
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                            <div
+                                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px;">
+                                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">총 메뉴 수</div>
+                                <div style="font-size: 32px; font-weight: bold;" id="total-menus-count">-</div>
+                            </div>
+                            <div
+                                style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 8px;">
+                                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">최근 등록</div>
+                                <div style="font-size: 16px; font-weight: 600;" id="latest-menu-name">-</div>
+                            </div>
+                        </div>
+
+                        <!-- 메뉴 목록 테이블 -->
+                        <div style="margin-bottom: 15px;">
+                            <input type="text" id="menu-search-input" placeholder="🔍 메뉴명 검색..."
+                                style="width: 300px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;"
+                                onkeyup="filterMenuList()">
+                        </div>
+
+                        <div style="overflow-x: auto;">
+                            <table id="menus-table"
+                                style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                                <thead>
+                                    <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                                        <th style="padding: 8px; text-align: center; font-size: 12px; width: 40px;">순번
+                                        </th>
+                                        <th style="padding: 8px; text-align: left; font-size: 12px; width: 50px;">ID
+                                        </th>
+                                        <th style="padding: 8px; text-align: left; font-size: 12px; width: 80px;">레시피코드
+                                        </th>
+                                        <th style="padding: 8px; text-align: left; font-size: 12px; width: auto;">메뉴명
+                                        </th>
+                                        <th style="padding: 8px; text-align: left; font-size: 12px; width: 80px;">분류
+                                        </th>
+                                        <th style="padding: 8px; text-align: left; font-size: 12px; width: 80px;">등록일
+                                        </th>
+                                        <th style="padding: 8px; text-align: center; font-size: 12px; width: 60px;">관리
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="menus-table-body">
+                                    <tr>
+                                        <td colspan="7" style="padding: 40px; text-align: center; color: #999;">
+                                            로딩 중...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- branding-content 제거됨: system-settings-content + dashboard-init-complete.js에서 동적 생성 -->
+
+            </div>
+        </main>
+    </div>
+
+    <!-- 초기화 스크립트 (HTTP 환경에서만 작동) -->
+    <!-- <script src="static/js/admin-dashboard-init.js"></script> -->
+
+    <!-- CONFIG 및 초기화 스크립트 -->
+    <script>
+        // 최소한의 CONFIG 설정 (폴백용)
+        window.CONFIG = {
+            API: {
+                BASE_URL: window.location.protocol + '//' + window.location.host,
+                TIMEOUT: 30000
+            },
+            // 호환성을 위한 기존 구조도 유지
+            API_BASE_URL: window.location.protocol + '//' + window.location.host,
+            API_TIMEOUT: 30000
+        };
+
+        // 서버 시작 함수
+        function startServer() {
+            const btn = document.querySelector('.server-btn');
+            btn.disabled = true;
+            btn.textContent = '서버 시작 중...';
+
+            // Windows 환경에서 새 콘솔 창으로 서버 실행
+            const cmd = 'start cmd /k python test_samsung_api.py';
+
+            // 실제 서버 시작 명령 실행 (로컬 환경에서만 동작)
+            fetch('/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: cmd })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        btn.style.background = '#8bc34a';
+                        btn.textContent = '서버 실행 중';
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        throw new Error('서버 시작 실패');
+                    }
+                })
+                .catch(error => {
+                    // 로컬에서 직접 실행 시도
+                    alert('서버를 직접 실행해주세요:\npython test_samsung_api.py');
+                    btn.disabled = false;
+                    btn.textContent = '서버 시작';
+                });
+        }
+    </script>
+
+    <!-- 브랜딩 시스템 -->
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+
+    <!-- 사업장 선택기 -->
+    <script src="/static/modules/core/site-selector.js"></script>
+
+    <!-- 구조 관리 모듈 -->
+    <script src="/static/modules/admin/site-structure-manager.js"></script>
+
+    <!-- 사용자 권한 관리 모듈 -->
+    <script src="/static/modules/admin/user-permission-manager.js"></script>
+
+    <script>
+        // 🏢 현재 선택된 사업장 ID 가져오기
+        function getCurrentSiteId() {
+            if (window.SiteSelector && typeof SiteSelector.getCurrentContext === 'function') {
+                const context = SiteSelector.getCurrentContext();
+                return context?.site_id || null;
+            }
+            return null;
+        }
+
+        // 🏢 현재 선택된 사업장 이름 가져오기
+        function getCurrentSiteName() {
+            if (window.SiteSelector && typeof SiteSelector.getCurrentContext === 'function') {
+                const context = SiteSelector.getCurrentContext();
+                return context?.site_name || null;
+            }
+            return null;
+        }
+
+        // 🏢 대시보드 통계 로드 (사업장 필터링 지원)
+        window.loadDashboardStats = async function() {
+            try {
+                const API_URL = window.CONFIG?.API?.BASE_URL || window.CONFIG?.API_BASE_URL || '';
+                const siteId = getCurrentSiteId();
+                const siteParam = siteId ? `?site_id=${siteId}` : '';
+
+                const response = await fetch(`${API_URL}/api/admin/dashboard-stats${siteParam}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const els = {
+                        'total-users': data.totalUsers || data.data?.total_users || '-',
+                        'total-sites': data.totalSites || data.data?.total_sites || '-',
+                        'total-ingredients': ((data.totalIngredients || data.data?.total_ingredients || 0)).toLocaleString(),
+                        'total-suppliers': data.totalSuppliers || data.data?.total_suppliers || '-',
+                        'total-recipes': ((data.totalRecipes || data.data?.total_recipes || 0)).toLocaleString()
+                    };
+                    for (const [id, value] of Object.entries(els)) {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = value;
+                    }
+                    console.log('✅ 대시보드 통계 로드 완료', siteId ? `(사업장: ${siteId})` : '(전체)');
+                }
+            } catch (err) {
+                console.error('대시보드 통계 로드 실패:', err);
+            }
+        };
+
+        // 사업장 선택기 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.SiteSelector) {
+                SiteSelector.init('admin-site-selector');
+                SiteSelector.on('siteChange', function(context) {
+                    console.log('관리자 대시보드 - 사업장 변경:', context);
+                    // 필요한 데이터 새로고침
+                    if (window.loadDashboardStats) loadDashboardStats();
+                });
+            }
+        });
+
+        // 구조 관리 탭 초기화 (한 번만)
+        let siteStructureInitialized = false;
+        function initSiteStructureIfNeeded() {
+            if (!siteStructureInitialized && window.SiteStructureManager) {
+                SiteStructureManager.init('site-structure-container');
+                siteStructureInitialized = true;
+            }
+        }
+
+        // 사용자 권한 관리 탭 초기화 (한 번만)
+        let userPermissionInitialized = false;
+        window.initUserPermissionIfNeeded = function() {
+            if (!userPermissionInitialized && window.UserPermissionManager) {
+                UserPermissionManager.init('user-permission-container');
+                userPermissionInitialized = true;
+            }
+        };
+    </script>
+
+    <!-- 로그인 검증 스크립트 -->
+    <script>
+        // 페이지 로드 시 로그인 상태 확인
+        function checkAuth() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                // 토큰이 없으면 로그인 페이지로 리다이렉트
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login.html';
+                return false;
+            }
+
+            // JWT 토큰 만료 확인 (간단한 체크)
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const now = Math.floor(Date.now() / 1000);
+                if (payload.exp < now) {
+                    localStorage.removeItem('auth_token');
+                    alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+                    window.location.href = '/login.html';
+                    return false;
+                }
+            } catch (e) {
+                localStorage.removeItem('auth_token');
+                alert('유효하지 않은 토큰입니다. 다시 로그인해주세요.');
+                window.location.href = '/login.html';
+                return false;
+            }
+
+            return true;
+        }
+
+        // 페이지 로드 즉시 실행 (임시 비활성화)
+        // if (!checkAuth()) {
+        //     document.body.style.display = 'none'; // 깜빡임 방지
+        // }
+        console.log('admin_dashboard.html 로드됨 - 인증 체크 임시 비활성화');
+
+        // 로그아웃 함수
+        function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                // 모든 인증 관련 데이터 삭제
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user_info');
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                localStorage.removeItem('supplier_token');
+                localStorage.removeItem('supplier_info');
+                localStorage.removeItem('supplier_session');
+                alert('로그아웃되었습니다.');
+                window.location.href = window.location.protocol + '//' + window.location.host + '/login.html?logout=true';
+            }
+        }
+
+        // ★ 블로그/SNS 메뉴 권한 체크
+        (function() {
+            try {
+                const userInfo = JSON.parse(localStorage.getItem('user_info') || localStorage.getItem('user') || '{}');
+                const role = userInfo.role || '';
+                const permissions = userInfo.permissions || {};
+                const hasBlogAccess = role === 'admin' || permissions.blog_access === true;
+                if (!hasBlogAccess) {
+                    const blogNav = document.querySelector('[data-page="blog-management"]');
+                    if (blogNav) blogNav.style.display = 'none';
+                }
+            } catch(e) { console.warn('권한 체크 실패:', e); }
+        })();
+
+        // ★ 현재 로그인한 사용자명 반환 (수정자 추적용)
+        function getCurrentUsername() {
+            try {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    return user.username || '';
+                }
+            } catch (e) {}
+            return '';
+        }
+    </script>
+
+    <!-- 메인 초기화 스크립트 -->
+    <script src="/static/js/dashboard-init-complete.js?v=20260308-blog-app"></script>
+
+    <!-- 브랜딩 적용 -->
+    <script>
+        // LoadingManager 강제 중단 함수
+        function forceStopAllLoadings() {
+            console.log('🛑 LoadingManager 강제 중단 시작...');
+
+            // LoadingManager가 있으면 모든 로딩 중단
+            if (window.LoadingManager && typeof window.LoadingManager.stopAllLoadings === 'function') {
+                window.LoadingManager.stopAllLoadings();
+                console.log('✅ LoadingManager 모든 로딩 중단 완료');
+            }
+
+            // 전역 로딩 오버레이 직접 제거
+            const loadingOverlays = document.querySelectorAll('.loading-overlay');
+            loadingOverlays.forEach(overlay => {
+                overlay.style.display = 'none';
+                overlay.remove();
+                console.log('🗑️ 로딩 오버레이 제거됨');
+            });
+
+            // card-loading 클래스 제거
+            const cardLoadings = document.querySelectorAll('.card-loading');
+            cardLoadings.forEach(card => {
+                card.classList.remove('card-loading');
+                card.style.pointerEvents = 'auto';
+                card.style.opacity = '1';
+                console.log('🔓 카드 로딩 상태 해제됨');
+            });
+
+            // 모든 요소의 pointer-events 활성화
+            const allElements = document.querySelectorAll('*');
+            allElements.forEach(el => {
+                if (el.style.pointerEvents === 'none') {
+                    el.style.pointerEvents = 'auto';
+                }
+            });
+
+            console.log('✅ 모든 차단 요소 해제 완료');
+        }
+
+        // 즉시 실행
+        forceStopAllLoadings();
+
+        // 페이지 로드 완료 후 브랜딩 적용
+        document.addEventListener('DOMContentLoaded', function () {
+            // 로딩 매니저 재차 중단
+            forceStopAllLoadings();
+
+            if (typeof BrandingManager !== 'undefined') {
+                BrandingManager.applyBranding('관리자 대시보드');
+                console.log('✅ 브랜딩 시스템 적용 완료');
+            } else {
+                console.warn('⚠️ BrandingManager를 찾을 수 없습니다.');
+            }
+
+            // 클릭 이벤트 디버깅 제거됨 (정상 작동)
+        });
+
+        // 시스템 연결 정보 조회 및 표시
+        async function updateConnectionStatus() {
+            try {
+                const statusEl = document.getElementById('connection-status');
+                if (!statusEl) return;
+
+                const response = await fetch('/api/admin/system-info');
+                const data = await response.json();
+
+                if (data.success) {
+                    const env = data.environment;
+                    const host = data.db_host;
+
+                    if (env === 'Railway' || env === 'GCP' || env === 'Fly.io') {
+                        statusEl.innerHTML = `🟢 ${env} DB 연결됨 <span style="font-size:11px; opacity:0.8">(${host})</span>`;
+                        statusEl.style.background = '#e8f5e8';
+                        statusEl.style.color = '#2e7d32';
+                        statusEl.style.border = '1px solid #c8e6c9';
+                    } else {
+                        statusEl.innerHTML = `🟡 ${env} DB <span style="font-size:11px; opacity:0.8">(${host})</span>`;
+                        statusEl.style.background = '#fff3e0';
+                        statusEl.style.color = '#ef6c00';
+                        statusEl.style.border = '1px solid #ffe0b2';
+                    }
+                } else {
+                    statusEl.innerText = '🔴 연결 정보 오류';
+                    statusEl.style.background = '#ffebee';
+                    statusEl.style.color = '#c62828';
+                }
+            } catch (e) {
+                console.error("Connection check failed", e);
+            }
+        }
+
+        // 초기화 시 실행
+        document.addEventListener('DOMContentLoaded', function () {
+            updateConnectionStatus();
+        });
+
+        // 1초 후 다시 한번 강제 중단
+        setTimeout(forceStopAllLoadings, 1000);
+
+        // 5초 후에도 다시 한번 강제 중단
+        setTimeout(forceStopAllLoadings, 5000);
+
+    </script>
+
+    <!-- 브랜딩 관리 스크립트 -->
+    <script>
+        const LOGO_ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+        const LOGO_MAX_SIZE = 10 * 1024 * 1024; // 10MB
+
+        // 파일 유효성 검사
+        function validateLogoFile(file) {
+            if (!LOGO_ALLOWED_TYPES.includes(file.type)) {
+                return 'PNG, JPG, GIF, WebP 형식만 허용됩니다.';
+            }
+            if (file.size > LOGO_MAX_SIZE) {
+                return `파일 크기가 ${(file.size / 1024 / 1024).toFixed(1)}MB입니다. 최대 10MB까지 허용됩니다.`;
+            }
+            return null;
+        }
+
+        // 드래그 앤 드롭 처리
+        function handleLogoDrop(event) {
+            const file = event.dataTransfer.files[0];
+            if (file) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                document.getElementById('logo-file').files = dt.files;
+                uploadLogo(document.getElementById('logo-file'));
+            }
+        }
+
+        // 로고 업로드
+        async function uploadLogo(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const statusEl = document.getElementById('logo-upload-status');
+
+            // 유효성 검사
+            const error = validateLogoFile(file);
+            if (error) {
+                statusEl.textContent = error;
+                statusEl.style.color = '#f44336';
+                input.value = '';
+                return;
+            }
+
+            statusEl.textContent = '업로드 중...';
+            statusEl.style.color = '#2196F3';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const resp = await fetch('/api/upload/image', { method: 'POST', body: formData });
+                const result = await resp.json();
+
+                if (result.success && result.data && result.data.url) {
+                    const url = result.data.url;
+                    document.getElementById('logo-path').value = url;
+                    const preview = document.getElementById('logo-preview');
+                    preview.src = url;
+                    preview.style.display = '';
+                    const emptyState = document.getElementById('logo-empty-state');
+                    if (emptyState) emptyState.style.display = 'none';
+                    const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+                    statusEl.innerHTML = `<span style="color:#4CAF50">${file.name} (${sizeMB}MB)</span>`;
+                } else {
+                    statusEl.textContent = '업로드 실패: ' + (result.detail || result.error || '알 수 없는 오류');
+                    statusEl.style.color = '#f44336';
+                }
+            } catch (err) {
+                statusEl.textContent = '업로드 실패: ' + err.message;
+                statusEl.style.color = '#f44336';
+            }
+            input.value = '';
+        }
+
+        // 색상 미리보기 업데이트 헬퍼
+        function updateColorPreview() {
+            const pc = document.getElementById('primary-color');
+            const sc = document.getElementById('secondary-color');
+            if (!pc || !sc) return;
+            const p = pc.value, s = sc.value;
+            const pH = document.getElementById('primary-color-hex');
+            const sH = document.getElementById('secondary-color-hex');
+            const bar = document.getElementById('color-preview-bar');
+            if (pH) pH.textContent = p;
+            if (sH) sH.textContent = s;
+            if (bar) bar.style.background = `linear-gradient(135deg, ${p}, ${s})`;
+        }
+
+        // 테마 프리셋 적용
+        function applyThemePreset(primary, secondary) {
+            const pc = document.getElementById('primary-color');
+            const sc = document.getElementById('secondary-color');
+            if (pc) pc.value = primary;
+            if (sc) sc.value = secondary;
+            updateColorPreview();
+            // 선택된 프리셋 하이라이트
+            document.querySelectorAll('.theme-preset').forEach(el => el.style.borderColor = 'transparent');
+            event.currentTarget.style.borderColor = primary;
+        }
+
+        // 브랜딩 설정 로드 (DB에서)
+        async function loadBranding() {
+            try {
+                const resp = await fetch('/api/admin/branding');
+                const result = await resp.json();
+
+                const config = result.success ? result.branding : {
+                    COMPANY_NAME: '다함푸드',
+                    SYSTEM_NAME: '급식관리',
+                    LOGO_PATH: '/static/images/logo.png?v=20251027',
+                    COLORS: { PRIMARY: '#2a5298', SECONDARY: '#667eea' }
+                };
+                if (!config.COLORS) config.COLORS = { PRIMARY: '#2a5298', SECONDARY: '#667eea' };
+
+                document.getElementById('company-name').value = config.COMPANY_NAME || '';
+                document.getElementById('system-name').value = config.SYSTEM_NAME || '';
+                document.getElementById('logo-path').value = config.LOGO_PATH || '';
+                document.getElementById('primary-color').value = config.COLORS.PRIMARY || '#2a5298';
+                document.getElementById('secondary-color').value = config.COLORS.SECONDARY || '#667eea';
+
+                // 로고 미리보기 업데이트
+                const preview = document.getElementById('logo-preview');
+                if (preview && config.LOGO_PATH) {
+                    preview.src = config.LOGO_PATH;
+                    preview.style.display = '';
+                }
+
+                // 색상 미리보기 동기화
+                updateColorPreview();
+
+                document.getElementById('current-branding').textContent = JSON.stringify(config, null, 2);
+                console.log('✅ 브랜딩 설정 로드 완료 (DB)');
+            } catch (error) {
+                console.error('브랜딩 로드 실패:', error);
+            }
+        }
+
+        // 브랜딩 설정 저장 (DB로)
+        async function saveBranding() {
+            try {
+                const branding = {
+                    COMPANY_NAME: document.getElementById('company-name').value,
+                    SYSTEM_NAME: document.getElementById('system-name').value,
+                    LOGO_PATH: document.getElementById('logo-path').value,
+                    COLORS: {
+                        PRIMARY: document.getElementById('primary-color').value,
+                        SECONDARY: document.getElementById('secondary-color').value
+                    }
+                };
+
+                const resp = await fetch('/api/admin/branding', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ branding })
+                });
+                const result = await resp.json();
+
+                if (result.success) {
+                    document.getElementById('current-branding').textContent = JSON.stringify(branding, null, 2);
+                    // sessionStorage 캐시 업데이트
+                    sessionStorage.setItem('branding_cache', JSON.stringify(branding));
+                    // 즉시 사이드바 반영
+                    if (typeof BrandingManager !== 'undefined') {
+                        const header = document.querySelector('.branded-header');
+                        if (header) header.remove();
+                        BrandingManager.applySidebarBranding();
+                        BrandingManager.updatePageTitle('관리자 대시보드');
+                        BrandingManager.applyBrandingColors();
+                    }
+                    alert('✅ 브랜딩 설정이 저장되었습니다! 모든 사용자에게 적용됩니다.');
+                } else {
+                    alert('❌ 저장 실패: ' + (result.error || ''));
+                }
+            } catch (error) {
+                console.error('브랜딩 저장 실패:', error);
+                alert('❌ 브랜딩 설정 저장에 실패했습니다.');
+            }
+        }
+
+        // 브랜딩 기본값 복원
+        async function resetBranding() {
+            if (confirm('브랜딩 설정을 기본값으로 복원하시겠습니까?')) {
+                const defaults = {
+                    COMPANY_NAME: '다함푸드',
+                    SYSTEM_NAME: '급식관리',
+                    LOGO_PATH: '/static/images/logo.png?v=20251027',
+                    COLORS: { PRIMARY: '#2a5298', SECONDARY: '#667eea' }
+                };
+                try {
+                    await fetch('/api/admin/branding', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ branding: defaults })
+                    });
+                    sessionStorage.removeItem('branding_cache');
+                    loadBranding();
+                    alert('✅ 기본값으로 복원되었습니다.');
+                } catch (e) {
+                    alert('❌ 복원 실패');
+                }
+            }
+        }
+
+        // 브랜딩 페이지 진입 시 자동 로드
+        document.addEventListener('DOMContentLoaded', function () {
+            const brandingNav = document.querySelector('[data-page="branding"]');
+            if (brandingNav) {
+                brandingNav.addEventListener('click', function () {
+                    loadBranding();
+                });
+            }
+
+            // 메뉴/레시피 페이지 진입 시 자동 로드
+            const menuRecipesNav = document.querySelector('[data-page="menu-recipes"]');
+            if (menuRecipesNav) {
+                menuRecipesNav.addEventListener('click', function () {
+                    loadMenuRecipes();
+                });
+            }
+        });
+
+        // 메뉴/레시피 관리 함수들
+        let allMenusData = [];
+
+        // 전역으로 노출 (dashboard-init-complete.js에서 호출)
+        window.loadMenuRecipes = async function loadMenuRecipes() {
+            try {
+                const response = await fetch('/api/search_recipes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.recipes) {
+                    allMenusData = data.recipes;
+                    displayMenuRecipes(allMenusData);
+
+                    // 통계 업데이트
+                    document.getElementById('total-menus-count').textContent = data.recipes.length;
+                    if (data.recipes.length > 0) {
+                        document.getElementById('latest-menu-name').textContent = data.recipes[0].recipe_name || '-';
+                    }
+                } else {
+                    document.getElementById('menus-table-body').innerHTML = `
+                        <tr><td colspan="7" style="padding: 40px; text-align: center; color: #999;">
+                            메뉴 데이터를 불러올 수 없습니다.
+                        </td></tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('메뉴 목록 로드 실패:', error);
+                document.getElementById('menus-table-body').innerHTML = `
+                    <tr><td colspan="7" style="padding: 40px; text-align: center; color: #dc3545;">
+                        오류가 발생했습니다: ${error.message}
+                    </td></tr>
+                `;
+            }
+        }
+
+        function displayMenuRecipes(menus) {
+            const tbody = document.getElementById('menus-table-body');
+
+            if (!menus || menus.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="7" style="padding: 40px; text-align: center; color: #999;">
+                        등록된 메뉴가 없습니다.
+                    </td></tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = menus.map((menu, index) => {
+                // display_name 사용 (사용자 페이지와 일관성 유지)
+                const displayName = menu.display_name || menu.recipe_name || menu.name || '-';
+                const rowNumber = menus.length - index; // 최신순 정렬이므로 역순 번호
+                return `
+                <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 8px; font-size: 11px; text-align: center; color: #888;">${rowNumber}</td>
+                    <td style="padding: 8px; font-size: 12px;">${menu.id}</td>
+                    <td style="padding: 8px; font-size: 11px; color: #667eea; font-weight: 600;">${menu.recipe_code || 'R' + menu.id.toString().padStart(4, '0')}</td>
+                    <td style="padding: 8px; font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${displayName}">
+                        <a href="javascript:void(0)" onclick="viewRecipeDetail(${menu.id})" style="color: #3b82f6; text-decoration: none; cursor: pointer;">${displayName}</a>
+                    </td>
+                    <td style="padding: 8px; font-size: 11px;">
+                        <span style="background: #e7f3ff; color: #0066cc; padding: 3px 6px; border-radius: 3px; font-size: 10px;">
+                            ${menu.category || '미분류'}
+                        </span>
+                    </td>
+                    <td style="padding: 8px; font-size: 11px; color: #666;">
+                        ${menu.created_at ? new Date(menu.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }) : '-'}
+                    </td>
+                    <td style="padding: 8px; text-align: center;">
+                        <button onclick="deleteMenu(${menu.id}, '${displayName.replace(/'/g, "\\'")}')"
+                                style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: 500;">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // 레시피 상세 드릴다운
+        async function viewRecipeDetail(recipeId) {
+            const existingRow = document.getElementById(`recipe-detail-${recipeId}`);
+            if (existingRow) {
+                existingRow.remove();
+                return; // 토글: 이미 열려있으면 닫기
+            }
+
+            // 클릭한 행 찾기
+            const rows = document.querySelectorAll('#menus-table-body tr');
+            let targetRow = null;
+            for (const row of rows) {
+                if (row.querySelector(`a[onclick="viewRecipeDetail(${recipeId})"]`)) {
+                    targetRow = row;
+                    break;
+                }
+            }
+            if (!targetRow) return;
+
+            // 로딩 행 삽입
+            const loadingRow = document.createElement('tr');
+            loadingRow.id = `recipe-detail-${recipeId}`;
+            loadingRow.innerHTML = '<td colspan="7" style="padding: 20px; text-align: center; background: #f8fafc; color: #666;">로딩 중...</td>';
+            targetRow.after(loadingRow);
+
+            try {
+                const response = await fetch(`/api/recipe/${recipeId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    loadingRow.innerHTML = '<td colspan="7" style="padding: 20px; text-align: center; color: #dc3545;">레시피 정보를 불러올 수 없습니다.</td>';
+                    return;
+                }
+
+                const recipe = data.recipe;
+                const ingredients = recipe.ingredients || [];
+
+                let ingHtml = '';
+                if (ingredients.length === 0) {
+                    ingHtml = '<div style="color: #999; padding: 10px;">등록된 재료가 없습니다.</div>';
+                } else {
+                    ingHtml = `
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="background: #e2e8f0;">
+                                    <th style="padding: 6px 8px; text-align: left;">재료명</th>
+                                    <th style="padding: 6px 8px; text-align: left;">규격</th>
+                                    <th style="padding: 6px 8px; text-align: left;">단위</th>
+                                    <th style="padding: 6px 8px; text-align: right;">단가</th>
+                                    <th style="padding: 6px 8px; text-align: right;">1인량(g)</th>
+                                    <th style="padding: 6px 8px; text-align: left;">협력업체</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${ingredients.map(ing => `
+                                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                                        <td style="padding: 5px 8px;">${ing.ingredient_name || '-'}</td>
+                                        <td style="padding: 5px 8px; color: #666;">${ing.specification || '-'}</td>
+                                        <td style="padding: 5px 8px; color: #666;">${ing.unit || '-'}</td>
+                                        <td style="padding: 5px 8px; text-align: right;">${ing.selling_price ? Number(ing.selling_price).toLocaleString() + '원' : '-'}</td>
+                                        <td style="padding: 5px 8px; text-align: right;">${ing.quantity || '-'}</td>
+                                        <td style="padding: 5px 8px; color: #666;">${ing.supplier_name || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+
+                loadingRow.innerHTML = `
+                    <td colspan="7" style="padding: 0; background: #f8fafc; border-left: 4px solid #3b82f6;">
+                        <div style="padding: 16px 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <div style="font-weight: 600; color: #1e40af; font-size: 14px;">
+                                    📋 ${recipe.recipe_name || recipe.name} — 재료 ${ingredients.length}개
+                                </div>
+                                <button onclick="document.getElementById('recipe-detail-${recipeId}').remove()"
+                                        style="background: none; border: none; cursor: pointer; color: #999; font-size: 18px;">✕</button>
+                            </div>
+                            ${recipe.cooking_note ? `<div style="margin-bottom: 10px; padding: 8px 12px; background: #fffbeb; border-radius: 6px; font-size: 12px; color: #92400e;">📝 ${recipe.cooking_note}</div>` : ''}
+                            ${ingHtml}
+                        </div>
+                    </td>
+                `;
+            } catch (error) {
+                loadingRow.innerHTML = `<td colspan="7" style="padding: 20px; text-align: center; color: #dc3545;">오류: ${error.message}</td>`;
+            }
+        }
+
+        async function deleteMenu(menuId, menuName) {
+            if (!confirm(`"${menuName}" 메뉴를 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/menu-recipes/${menuId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`✅ "${menuName}" 메뉴가 삭제되었습니다.`);
+                    loadMenuRecipes(); // 목록 새로고침
+                } else {
+                    alert(`❌ 삭제 실패: ${data.error || '알 수 없는 오류'}`);
+                }
+            } catch (error) {
+                console.error('메뉴 삭제 실패:', error);
+                alert(`❌ 삭제 중 오류가 발생했습니다: ${error.message}`);
+            }
+        }
+
+        function filterMenuList() {
+            const searchTerm = document.getElementById('menu-search-input').value.toLowerCase();
+
+            if (!searchTerm) {
+                displayMenuRecipes(allMenusData);
+                return;
+            }
+
+            const filtered = allMenusData.filter(menu => {
+                const displayName = (menu.display_name || '').toLowerCase();
+                const name = (menu.recipe_name || menu.name || '').toLowerCase();
+                const category = (menu.category || '').toLowerCase();
+                const code = (menu.recipe_code || '').toLowerCase();
+                const id = String(menu.id || '');
+
+                return displayName.includes(searchTerm) ||
+                    name.includes(searchTerm) ||
+                    category.includes(searchTerm) ||
+                    code.includes(searchTerm) ||
+                    id.includes(searchTerm);
+            });
+
+            displayMenuRecipes(filtered);
+        }
+
+        // ============================================
+        // 협력업체 탭 전환
+        // ============================================
+        function switchSupplierTab(tabName) {
+            // 모든 탭 버튼 비활성화
+            document.querySelectorAll('#suppliers-integrated-content .admin-tab').forEach(btn => {
+                btn.style.background = '#f1f5f9';
+                btn.style.color = '#64748b';
+                btn.classList.remove('active');
+            });
+
+            // 선택된 탭 버튼 활성화
+            const activeBtn = document.querySelector(`#suppliers-integrated-content .admin-tab[data-tab="${tabName}"]`);
+            if (activeBtn) {
+                activeBtn.style.background = '#3b82f6';
+                activeBtn.style.color = 'white';
+                activeBtn.classList.add('active');
+            }
+
+            // 모든 탭 콘텐츠 숨기기
+            document.querySelectorAll('#suppliers-integrated-content .tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+
+            // 선택된 탭 콘텐츠 표시
+            const tabContent = document.getElementById(`${tabName}-tab`);
+            if (tabContent) {
+                tabContent.style.display = 'block';
+            }
+
+            // 공휴일 탭인 경우 데이터 로드
+            if (tabName === 'supplier-holidays') {
+                loadHolidayData();
+            }
+        }
+
+        // ============================================
+        // 공휴일 관리 기능
+        // ============================================
+        let holidayCurrentDate = new Date();
+        let holidayData = [];
+        let suppliersForHoliday = [];
+
+        async function loadHolidayData() {
+            try {
+                // 협력업체 목록 로드
+                const suppliersRes = await fetch('/api/admin/suppliers');
+                const suppliersResult = await suppliersRes.json();
+                if (suppliersResult.success) {
+                    suppliersForHoliday = suppliersResult.suppliers || [];
+                    updateHolidaySupplierSelect();
+                }
+
+                // 휴무일 목록 로드
+                const periodsRes = await fetch('/api/suppliers/blackout-periods/all');
+                const periodsResult = await periodsRes.json();
+                if (periodsResult.success) {
+                    holidayData = periodsResult.data || [];
+                    renderHolidayCalendar();
+                    renderHolidayTable();
+                }
+            } catch (error) {
+                console.error('공휴일 데이터 로드 실패:', error);
+            }
+        }
+
+        function updateHolidaySupplierSelect() {
+            const select = document.getElementById('holidaySupplierSelect');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">협력업체 선택</option><option value="all">전체 (국가공휴일)</option>';
+            suppliersForHoliday.forEach(supplier => {
+                const option = document.createElement('option');
+                option.value = supplier.id;
+                option.textContent = supplier.name;
+                select.appendChild(option);
+            });
+        }
+
+        function changeHolidayMonth(delta) {
+            holidayCurrentDate.setMonth(holidayCurrentDate.getMonth() + delta);
+            renderHolidayCalendar();
+        }
+
+        function renderHolidayCalendar() {
+            const calendar = document.getElementById('holidayCalendar');
+            const title = document.getElementById('holidayMonthTitle');
+            if (!calendar || !title) return;
+
+            const year = holidayCurrentDate.getFullYear();
+            const month = holidayCurrentDate.getMonth();
+
+            title.textContent = `${year}년 ${month + 1}월`;
+
+            // 요일 헤더
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            let html = days.map((d, i) =>
+                `<div style="padding: 8px; text-align: center; font-weight: 600; color: ${i === 0 ? '#dc2626' : i === 6 ? '#2563eb' : '#333'}; font-size: 12px;">${d}</div>`
+            ).join('');
+
+            // 첫 날의 요일
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+
+            // 빈 칸 추가
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div></div>';
+            }
+
+            // 날짜 추가
+            for (let d = 1; d <= lastDate; d++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dayOfWeek = new Date(year, month, d).getDay();
+
+                // 해당 날짜의 휴무일 찾기
+                const holidaysOnDate = holidayData.filter(h => {
+                    const start = h.start_date;
+                    const end = h.end_date;
+                    return dateStr >= start && dateStr <= end;
+                });
+
+                let bgColor = '#fff';
+                let textColor = dayOfWeek === 0 ? '#dc2626' : dayOfWeek === 6 ? '#2563eb' : '#333';
+                let tooltip = '';
+
+                if (holidaysOnDate.length > 0) {
+                    // 전체 업체 휴무(국가공휴일) 확인
+                    const nationalHoliday = holidaysOnDate.find(h => !h.supplier_id || h.supplier_name === '전체');
+                    if (nationalHoliday) {
+                        bgColor = '#fecaca';
+                        tooltip = nationalHoliday.reason || '국가공휴일';
+                    } else {
+                        bgColor = '#fed7aa';
+                        tooltip = holidaysOnDate.map(h => `${h.supplier_name}: ${h.reason || '휴무'}`).join('\n');
+                    }
+                }
+
+                html += `
+                    <div onclick="selectHolidayDate('${dateStr}')"
+                         title="${tooltip}"
+                         style="padding: 8px; text-align: center; cursor: pointer; border-radius: 6px;
+                                background: ${bgColor}; color: ${textColor}; font-size: 13px;
+                                transition: all 0.2s ease;"
+                         onmouseover="this.style.transform='scale(1.1)'"
+                         onmouseout="this.style.transform='scale(1)'">
+                        ${d}
+                    </div>
+                `;
+            }
+
+            calendar.innerHTML = html;
+        }
+
+        function selectHolidayDate(dateStr) {
+            document.getElementById('holidayStartDate').value = dateStr;
+            document.getElementById('holidayEndDate').value = dateStr;
+        }
+
+        function renderHolidayTable() {
+            const tbody = document.getElementById('holidayTableBody');
+            if (!tbody) return;
+
+            if (holidayData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">등록된 휴무일이 없습니다.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = holidayData.map(h => `
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${h.supplier_name || '전체'}</td>
+                    <td style="padding: 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">${h.start_date}</td>
+                    <td style="padding: 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">${h.end_date}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${h.reason || '-'}</td>
+                    <td style="padding: 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                        <button onclick="deleteHoliday(${h.id})"
+                                style="padding: 5px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                            삭제
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function addSupplierHoliday() {
+            const supplierSelect = document.getElementById('holidaySupplierSelect');
+            const startDate = document.getElementById('holidayStartDate').value;
+            const endDate = document.getElementById('holidayEndDate').value;
+            const reason = document.getElementById('holidayReason').value;
+
+            if (!startDate || !endDate) {
+                alert('시작일과 종료일을 선택해주세요.');
+                return;
+            }
+
+            const supplierValue = supplierSelect.value;
+
+            if (supplierValue === 'all') {
+                // 전체 업체에 추가 (국가공휴일)
+                for (const supplier of suppliersForHoliday) {
+                    try {
+                        await fetch(`/api/suppliers/${supplier.id}/blackout-periods`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                start_date: startDate,
+                                end_date: endDate,
+                                reason: reason || '국가공휴일'
+                            })
+                        });
+                    } catch (e) {
+                        console.error(`업체 ${supplier.name} 휴무일 추가 실패:`, e);
+                    }
+                }
+                alert('전체 업체에 휴무일이 추가되었습니다.');
+            } else if (supplierValue) {
+                // 특정 업체에 추가
+                try {
+                    const res = await fetch(`/api/suppliers/${supplierValue}/blackout-periods`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            start_date: startDate,
+                            end_date: endDate,
+                            reason: reason || '업체 휴무'
+                        })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        alert('휴무일이 추가되었습니다.');
+                    } else {
+                        alert('추가 실패: ' + (result.error || '알 수 없는 오류'));
+                    }
+                } catch (e) {
+                    alert('추가 중 오류 발생');
+                }
+            } else {
+                alert('협력업체를 선택해주세요.');
+                return;
+            }
+
+            // 입력 필드 초기화 및 새로고침
+            document.getElementById('holidayReason').value = '';
+            loadHolidayData();
+        }
+
+        async function deleteHoliday(periodId) {
+            if (!confirm('이 휴무일을 삭제하시겠습니까?')) return;
+
+            try {
+                const res = await fetch(`/api/suppliers/blackout-periods/${periodId}`, {
+                    method: 'DELETE'
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert('삭제되었습니다.');
+                    loadHolidayData();
+                } else {
+                    alert('삭제 실패: ' + (result.error || '알 수 없는 오류'));
+                }
+            } catch (e) {
+                alert('삭제 중 오류 발생');
+            }
+        }
+
+        // 대한민국 공휴일 자동 등록
+        async function addKoreanHolidays() {
+            const year = holidayCurrentDate.getFullYear();
+
+            const koreanHolidays = [
+                { date: `${year}-01-01`, name: '신정' },
+                { date: `${year}-03-01`, name: '삼일절' },
+                { date: `${year}-05-05`, name: '어린이날' },
+                { date: `${year}-06-06`, name: '현충일' },
+                { date: `${year}-08-15`, name: '광복절' },
+                { date: `${year}-10-03`, name: '개천절' },
+                { date: `${year}-10-09`, name: '한글날' },
+                { date: `${year}-12-25`, name: '성탄절' }
+            ];
+
+            // 음력 공휴일 (매년 변동 - 대략적인 날짜, 실제로는 음력 계산 필요)
+            // 2025년 기준 설날, 추석
+            if (year === 2025) {
+                koreanHolidays.push(
+                    { date: '2025-01-28', name: '설날 연휴' },
+                    { date: '2025-01-29', name: '설날' },
+                    { date: '2025-01-30', name: '설날 연휴' },
+                    { date: '2025-05-05', name: '부처님오신날' },
+                    { date: '2025-10-05', name: '추석 연휴' },
+                    { date: '2025-10-06', name: '추석' },
+                    { date: '2025-10-07', name: '추석 연휴' }
+                );
+            } else if (year === 2024) {
+                koreanHolidays.push(
+                    { date: '2024-02-09', name: '설날 연휴' },
+                    { date: '2024-02-10', name: '설날' },
+                    { date: '2024-02-11', name: '설날 연휴' },
+                    { date: '2024-05-15', name: '부처님오신날' },
+                    { date: '2024-09-16', name: '추석 연휴' },
+                    { date: '2024-09-17', name: '추석' },
+                    { date: '2024-09-18', name: '추석 연휴' }
+                );
+            }
+
+            if (!confirm(`${year}년 대한민국 공휴일을 전체 업체에 등록하시겠습니까?\n\n등록될 공휴일:\n${koreanHolidays.map(h => `- ${h.date}: ${h.name}`).join('\n')}`)) {
+                return;
+            }
+
+            let successCount = 0;
+            let failCount = 0;
+
+            for (const holiday of koreanHolidays) {
+                for (const supplier of suppliersForHoliday) {
+                    try {
+                        await fetch(`/api/suppliers/${supplier.id}/blackout-periods`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                start_date: holiday.date,
+                                end_date: holiday.date,
+                                reason: holiday.name
+                            })
+                        });
+                        successCount++;
+                    } catch (e) {
+                        failCount++;
+                    }
+                }
+            }
+
+            alert(`공휴일 등록 완료!\n성공: ${successCount}건, 실패: ${failCount}건`);
+            loadHolidayData();
+        }
+    </script>
+
+    <!-- 개선된 사용자 관리 모듈은 dashboard-init-complete.js에서 자동 로드됨 -->
+
+    <!-- 공지사항 관리 스크립트 -->
+    <script>
+        // 공지사항 관리 변수
+        let adminNoticeUploadedFiles = [];
+        let adminNoticesData = { business: [], hygiene: [] };
+
+        // 공지사항 탭 전환
+        function switchNoticeTab(tabName) {
+            // 모든 탭 버튼 비활성화
+            document.querySelectorAll('#notice-management-content .admin-tab').forEach(btn => {
+                btn.style.background = '#f1f5f9';
+                btn.style.color = '#64748b';
+                btn.classList.remove('active');
+            });
+
+            // 선택된 탭 버튼 활성화
+            const activeBtn = document.querySelector(`#notice-management-content .admin-tab[data-tab="${tabName}"]`);
+            if (activeBtn) {
+                activeBtn.style.background = '#3b82f6';
+                activeBtn.style.color = 'white';
+                activeBtn.classList.add('active');
+            }
+
+            // 모든 탭 콘텐츠 숨기기
+            document.querySelectorAll('#notice-management-content .tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+
+            // 선택된 탭 콘텐츠 표시
+            const tabContent = document.getElementById(`${tabName}-tab`);
+            if (tabContent) {
+                tabContent.style.display = 'block';
+            }
+        }
+
+        // 공지사항 목록 로드
+        async function loadAdminNotices(noticeType) {
+            try {
+                const response = await fetch(`/api/notices?notice_type=${noticeType}&limit=100`);
+                const result = await response.json();
+
+                if (result.success) {
+                    adminNoticesData[noticeType] = result.data.notices;
+                    renderAdminNotices(noticeType, result.data.notices);
+                }
+            } catch (error) {
+                console.error('공지사항 로드 실패:', error);
+            }
+        }
+
+        // 공지사항 목록 렌더링
+        function renderAdminNotices(noticeType, notices) {
+            const containerId = noticeType === 'business' ? 'businessNoticesList' : 'hygieneNoticesList';
+            const container = document.getElementById(containerId);
+
+            if (!container) return;
+
+            if (!notices || notices.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">등록된 공지사항이 없습니다.</p>';
+                return;
+            }
+
+            container.innerHTML = notices.map(notice => `
+                <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                            ${notice.is_urgent ? '<span style="background: #fecaca; color: #dc2626; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">긴급</span>' : ''}
+                            <span style="font-weight: 600; color: #2c3e50;">${notice.title}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #95a5a6;">
+                            ${formatNoticeDate(notice.created_at)} · ${notice.author_name || '본사'} ·
+                            ${notice.target_type === 'all' ? '전체' : notice.target_type === 'group' ? '그룹 지정' : '사업장 지정'}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="editNoticeFromAdmin(${notice.id}, '${noticeType}')"
+                            style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                            ✏️ 수정
+                        </button>
+                        <button onclick="deleteNoticeFromAdmin(${notice.id}, '${noticeType}')"
+                            style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                            🗑️ 삭제
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 공지사항 모달 열기
+        function openNoticeModal(noticeType) {
+            document.getElementById('noticeEditId').value = '';
+            document.getElementById('noticeEditType').value = noticeType;
+            document.getElementById('noticeEditTitle').value = '';
+            document.getElementById('noticeEditContent').value = '';
+            document.getElementById('noticeContentEditor').innerHTML = '';  // 에디터 초기화
+            document.getElementById('noticeTargetType').value = 'all';
+            document.getElementById('noticeIsUrgent').checked = false;
+            document.getElementById('noticeTargetIdGroup').style.display = 'none';
+            adminNoticeUploadedFiles = [];
+            renderNoticeUploadedFiles();
+
+            const title = noticeType === 'business' ? '업무연락 작성' : '위생안전 알림 작성';
+            document.getElementById('noticeModalTitle').textContent = title;
+
+            const modal = document.getElementById('noticeModal');
+            modal.style.display = 'flex';
+        }
+
+        // 공지사항 수정 모달 열기
+        async function editNoticeFromAdmin(noticeId, noticeType) {
+            try {
+                const response = await fetch(`/api/notices/${noticeId}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert('공지사항을 불러오지 못했습니다.');
+                    return;
+                }
+
+                const notice = result.data;
+
+                document.getElementById('noticeEditId').value = noticeId;
+                document.getElementById('noticeEditType').value = noticeType;
+                document.getElementById('noticeEditTitle').value = notice.title || '';
+                document.getElementById('noticeEditContent').value = notice.content || '';
+                document.getElementById('noticeContentEditor').innerHTML = notice.content || '';  // 에디터에 내용 로드
+                document.getElementById('noticeTargetType').value = notice.target_type || 'all';
+                document.getElementById('noticeIsUrgent').checked = notice.is_urgent || false;
+
+                if (notice.target_type !== 'all') {
+                    await onNoticeTargetTypeChange();
+                    document.getElementById('noticeTargetId').value = notice.target_id;
+                } else {
+                    document.getElementById('noticeTargetIdGroup').style.display = 'none';
+                }
+
+                adminNoticeUploadedFiles = (notice.attachments || []).map(att => ({
+                    url: att.file_path,
+                    filename: att.file_name,
+                    size: att.file_size
+                }));
+                renderNoticeUploadedFiles();
+
+                const title = noticeType === 'business' ? '업무연락 수정' : '위생안전 알림 수정';
+                document.getElementById('noticeModalTitle').textContent = title;
+
+                document.getElementById('noticeModal').style.display = 'flex';
+
+            } catch (error) {
+                console.error('공지사항 로드 실패:', error);
+                alert('공지사항을 불러오는 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 공지사항 모달 닫기
+        function closeNoticeModal() {
+            document.getElementById('noticeModal').style.display = 'none';
+        }
+
+        // 대상 타입 변경
+        async function onNoticeTargetTypeChange() {
+            const targetType = document.getElementById('noticeTargetType').value;
+            const targetIdGroup = document.getElementById('noticeTargetIdGroup');
+            const targetIdSelect = document.getElementById('noticeTargetId');
+
+            if (targetType === 'all') {
+                targetIdGroup.style.display = 'none';
+                return;
+            }
+
+            targetIdGroup.style.display = 'block';
+
+            try {
+                if (targetType === 'group') {
+                    const response = await fetch('/api/admin/groups');
+                    const result = await response.json();
+                    if (result.success) {
+                        targetIdSelect.innerHTML = result.data.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+                    }
+                } else if (targetType === 'site') {
+                    const response = await fetch('/api/admin/sites');
+                    const result = await response.json();
+                    if (result.success) {
+                        targetIdSelect.innerHTML = result.data.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('대상 목록 로드 실패:', error);
+            }
+        }
+
+        // 파일 선택 처리
+        async function handleNoticeFileSelect(event) {
+            const files = event.target.files;
+
+            for (const file of files) {
+                if (!file.type.startsWith('image/')) {
+                    alert('이미지 파일만 업로드 가능합니다.');
+                    continue;
+                }
+
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('파일 크기는 10MB 이하여야 합니다.');
+                    continue;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch('/api/upload/image', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        adminNoticeUploadedFiles.push(result.data);
+                        renderNoticeUploadedFiles();
+                    } else {
+                        alert('파일 업로드 실패: ' + result.detail);
+                    }
+                } catch (error) {
+                    console.error('파일 업로드 실패:', error);
+                    alert('파일 업로드에 실패했습니다.');
+                }
+            }
+
+            event.target.value = '';
+        }
+
+        // 업로드된 파일 렌더링
+        function renderNoticeUploadedFiles() {
+            const container = document.getElementById('noticeUploadedFiles');
+            container.innerHTML = adminNoticeUploadedFiles.map((file, idx) => `
+                <div style="background: #f8f9fa; padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                    📷 ${file.filename || file.original_filename}
+                    <span onclick="removeNoticeFile(${idx})" style="cursor: pointer; color: #ef4444; font-weight: bold;">✕</span>
+                </div>
+            `).join('');
+        }
+
+        // 파일 제거
+        function removeNoticeFile(index) {
+            adminNoticeUploadedFiles.splice(index, 1);
+            renderNoticeUploadedFiles();
+        }
+
+        // 에디터 내용을 숨겨진 textarea에 동기화
+        function syncContentToTextarea() {
+            const editor = document.getElementById('noticeContentEditor');
+            const textarea = document.getElementById('noticeEditContent');
+            if (editor && textarea) {
+                textarea.value = editor.innerHTML;
+            }
+        }
+
+        // 이미지 삽입 버튼 클릭
+        function insertImageToContent() {
+            document.getElementById('contentImageInput').click();
+        }
+
+        // 본문에 이미지 업로드 및 삽입
+        async function handleContentImageUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            const editor = document.getElementById('noticeContentEditor');
+
+            for (const file of files) {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`파일 크기가 10MB를 초과합니다: ${file.name}`);
+                    continue;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // 커서 위치에 이미지 삽입
+                        const imageUrl = result.data.url || result.data.file_path;
+                        const imgHtml = `<img src="${imageUrl}" alt="${file.name}" style="max-width: 100%; height: auto; margin: 10px 0; border-radius: 8px; display: block;">`;
+
+                        // 현재 포커스된 위치에 이미지 삽입
+                        editor.focus();
+                        document.execCommand('insertHTML', false, imgHtml);
+
+                        // textarea에 동기화
+                        syncContentToTextarea();
+                    } else {
+                        alert('이미지 업로드 실패: ' + (result.detail || '알 수 없는 오류'));
+                    }
+                } catch (error) {
+                    console.error('이미지 업로드 실패:', error);
+                    alert('이미지 업로드에 실패했습니다.');
+                }
+            }
+
+            event.target.value = '';
+        }
+
+        // 공지사항 저장
+        async function saveNoticeFromAdmin() {
+            const noticeId = document.getElementById('noticeEditId').value;
+            const noticeType = document.getElementById('noticeEditType').value;
+            const title = document.getElementById('noticeEditTitle').value.trim();
+            // contenteditable 에디터에서 내용 가져오기
+            const editor = document.getElementById('noticeContentEditor');
+            const content = editor ? editor.innerHTML.trim() : '';
+            const targetType = document.getElementById('noticeTargetType').value;
+            const targetId = targetType !== 'all' ? document.getElementById('noticeTargetId').value : null;
+            const isUrgent = document.getElementById('noticeIsUrgent').checked;
+
+            if (!title) {
+                alert('제목을 입력하세요.');
+                return;
+            }
+
+            // 현재 사용자 정보 가져오기
+            let authorId = null;
+            try {
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    authorId = user.id;
+                }
+            } catch (e) {}
+
+            const data = {
+                notice_type: noticeType,
+                title,
+                content,
+                target_type: targetType,
+                target_id: targetId ? parseInt(targetId) : null,
+                is_urgent: isUrgent,
+                author_id: authorId,
+                attachments: adminNoticeUploadedFiles
+            };
+
+            try {
+                const url = noticeId ? `/api/notices/${noticeId}` : '/api/notices';
+                const method = noticeId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(noticeId ? '수정되었습니다.' : '등록되었습니다.');
+                    closeNoticeModal();
+                    loadAdminNotices(noticeType);
+                } else {
+                    alert('저장 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('저장 실패:', error);
+                alert('저장에 실패했습니다.');
+            }
+        }
+
+        // 공지사항 삭제
+        async function deleteNoticeFromAdmin(noticeId, noticeType) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+
+            try {
+                const response = await fetch(`/api/notices/${noticeId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('삭제되었습니다.');
+                    loadAdminNotices(noticeType);
+                } else {
+                    alert('삭제 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('삭제 실패:', error);
+                alert('삭제에 실패했습니다.');
+            }
+        }
+
+        // 날짜 포맷팅
+        function formatNoticeDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        }
+
+        // 공지사항 페이지 진입 시 데이터 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            const noticeNav = document.querySelector('[data-page="notice-management"]');
+            if (noticeNav) {
+                noticeNav.addEventListener('click', function() {
+                    loadAdminNotices('business');
+                    loadAdminNotices('hygiene');
+                });
+            }
+        });
+
+        // 전역으로 노출 (dashboard-init-complete.js에서 호출)
+        window.loadAdminNotices = loadAdminNotices;
+
+        // ============================================
+        // 식단가 관리 (Meal Pricing) 함수들
+        // ============================================
+        let mealPricingData = {};  // 현재 로드된 슬롯 설정
+
+        // 운영설정 탭 전환
+        function switchOperationsTab(tabName) {
+            // 모든 탭 버튼 비활성화
+            document.querySelectorAll('#operations-content .admin-tab').forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = '#f1f5f9';
+                btn.style.color = '#64748b';
+            });
+
+            // 모든 탭 컨텐츠 숨김
+            document.querySelectorAll('#operations-content .tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+
+            // 선택된 탭 활성화
+            const selectedBtn = document.querySelector(`#operations-content .admin-tab[data-tab="${tabName}"]`);
+            if (selectedBtn) {
+                selectedBtn.classList.add('active');
+                selectedBtn.style.background = '#3b82f6';
+                selectedBtn.style.color = 'white';
+            }
+
+            // 선택된 컨텐츠 표시
+            const selectedContent = document.getElementById(`${tabName}-tab`);
+            if (selectedContent) {
+                selectedContent.style.display = 'block';
+            }
+
+            // 탭별 데이터 로드
+            if (tabName === 'site-assignments') {
+                loadSiteAssignmentsTree();
+            } else if (tabName === 'meal-pricing') {
+                initMealPricingSiteSelector();
+            }
+        }
+
+        // ============================================
+        // 끼니별 목표 식재료비 설정 함수들
+        // ============================================
+        let mealSlotsData = [];
+        let categoriesForSlots = [];
+
+        // 끼니구분 목록 로드
+        async function loadSiteAssignmentsTree() {
+            // 카테고리 드롭다운 초기화
+            await initCategorySelectors();
+            // 끼니구분 목록 로드
+            await loadMealSlotsByCategory();
+        }
+
+        // 그룹 + 카테고리 선택기 초기화
+        async function initCategorySelectors() {
+            try {
+                // 그룹 드롭다운 초기화
+                const groupSelect = document.getElementById('mealSlotGroupSelect');
+                if (groupSelect) {
+                    const groupRes = await fetch('/api/site-groups');
+                    const groupData = await groupRes.json();
+                    if (groupData.success) {
+                        groupSelect.innerHTML = '<option value="">전체 그룹</option>';
+                        (groupData.groups || []).forEach(g => {
+                            groupSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+                        });
+                    }
+                }
+
+                // 카테고리 드롭다운 초기화
+                const response = await fetch('/api/admin/categories');
+                const data = await response.json();
+                if (data.success) {
+                    categoriesForSlots = data.data;
+                    updateCategoryDropdowns();
+                }
+            } catch (error) {
+                console.error('카테고리 로드 실패:', error);
+            }
+        }
+
+        // 그룹 필터 변경 시
+        function onGroupFilterChange() {
+            updateCategoryDropdowns();
+            loadMealSlotsByCategory();
+        }
+
+        // 카테고리 드롭다운 업데이트 (선택된 그룹 기준)
+        function updateCategoryDropdowns() {
+            const selectedGroupId = document.getElementById('mealSlotGroupSelect')?.value || '';
+            const filterSelect = document.getElementById('mealSlotCategorySelect');
+            const addSelect = document.getElementById('newSlotCategory');
+
+            filterSelect.innerHTML = '<option value="">전체 보기</option>';
+            addSelect.innerHTML = '<option value="">선택</option>';
+
+            // 그룹별로 카테고리 분류
+            let filtered = categoriesForSlots || [];
+            if (selectedGroupId) {
+                filtered = filtered.filter(c => String(c.group_id) === String(selectedGroupId));
+            }
+
+            const groupedCategories = {};
+            filtered.forEach(c => {
+                const groupName = c.group_name || '미분류';
+                if (!groupedCategories[groupName]) {
+                    groupedCategories[groupName] = [];
+                }
+                groupedCategories[groupName].push(c);
+            });
+
+            // optgroup으로 그룹별 구분하여 표시
+            Object.keys(groupedCategories).forEach(groupName => {
+                const filterOptgroup = document.createElement('optgroup');
+                filterOptgroup.label = groupName;
+                const addOptgroup = document.createElement('optgroup');
+                addOptgroup.label = groupName;
+
+                groupedCategories[groupName].forEach(c => {
+                    const filterOption = document.createElement('option');
+                    filterOption.value = c.id;
+                    filterOption.textContent = c.category_name;
+                    filterOptgroup.appendChild(filterOption);
+
+                    const addOption = document.createElement('option');
+                    addOption.value = c.id;
+                    addOption.textContent = c.category_name;
+                    addOptgroup.appendChild(addOption);
+                });
+
+                filterSelect.appendChild(filterOptgroup);
+                addSelect.appendChild(addOptgroup);
+            });
+        }
+
+        // 카테고리별 끼니구분 로드 (★ v2 API 사용)
+        async function loadMealSlotsByCategory() {
+            const container = document.getElementById('mealSlotsListView');
+            container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">로딩 중...</div>';
+
+            const groupId = document.getElementById('mealSlotGroupSelect')?.value || '';
+            const categoryId = document.getElementById('mealSlotCategorySelect')?.value || '';
+            const showInactive = document.getElementById('showInactiveSlots')?.checked || false;
+
+            try {
+                // ★★★ v2 API 사용 - category_slots 테이블에서 직접 조회 ★★★
+                const params = new URLSearchParams();
+                if (categoryId) params.append('category_id', categoryId);
+                else if (groupId) params.append('group_id', groupId);
+                if (showInactive) params.append('include_inactive', 'true');
+                let url = '/api/v2/slots' + (params.toString() ? '?' + params.toString() : '');
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success) {
+                    // v2 API는 data 배열을 반환
+                    mealSlotsData = data.data || [];
+                    renderMealSlotsList(mealSlotsData, categoryId);
+                } else {
+                    container.innerHTML = `<div style="text-align: center; color: #e74c3c; padding: 40px;">오류: ${data.error}</div>`;
+                }
+            } catch (error) {
+                console.error('끼니구분 로드 실패:', error);
+                container.innerHTML = '<div style="text-align: center; color: #e74c3c; padding: 40px;">데이터 로드 실패</div>';
+            }
+        }
+
+        // 끼니구분 목록 렌더링 (★ v2 API 데이터 구조)
+        function renderMealSlotsList(slots, filterCategoryId) {
+            const container = document.getElementById('mealSlotsListView');
+
+            // 필터링 (v2 API는 category_id 사용)
+            let filteredSlots = slots;
+            if (filterCategoryId) {
+                filteredSlots = slots.filter(s => s.category_id == filterCategoryId);
+            }
+
+            if (!filteredSlots || filteredSlots.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">등록된 끼니구분이 없습니다.</div>';
+                return;
+            }
+
+            // 카테고리별로 그룹핑 (v2 API: category_id, category_name 사용)
+            const grouped = {};
+            filteredSlots.forEach(slot => {
+                const catId = slot.category_id;
+                if (!grouped[catId]) {
+                    grouped[catId] = {
+                        category_name: slot.category_name || `카테고리 ${catId}`,
+                        slots: []
+                    };
+                }
+                grouped[catId].slots.push(slot);
+            });
+
+            let html = '';
+            Object.entries(grouped).forEach(([catId, group]) => {
+                // 슬롯을 display_order로 정렬
+                group.slots.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+
+                const activeCount = group.slots.filter(s => s.is_active).length;
+                const inactiveCount = group.slots.length - activeCount;
+                const countLabel = inactiveCount > 0
+                    ? `${activeCount}개 활성 / ${inactiveCount}개 비활성`
+                    : `${group.slots.length}개 끼니구분`;
+
+                html += `
+                    <div class="slot-category-group" style="border-bottom: 1px solid #e2e8f0;">
+                        <div onclick="toggleTreeNode(this)" style="padding: 14px 16px; background: #f8fafc; cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 600; color: #1e40af;">
+                            <span class="tree-icon">▼</span>
+                            <span>📂 ${group.category_name}</span>
+                            <span style="margin-left: auto; font-size: 12px; color: #64748b; font-weight: normal;">${countLabel}</span>
+                        </div>
+                        <div class="tree-children" style="display: block;">
+                `;
+
+                group.slots.forEach(slot => {
+                    const isInactive = !slot.is_active;
+                    const rowBg = isInactive ? '#f9fafb' : 'white';
+                    const textColor = isInactive ? '#aaa' : 'inherit';
+                    const nameStyle = isInactive ? 'text-decoration: line-through; color: #aaa;' : '';
+                    // v2 API: slot.id, slot.slot_name 사용
+                    html += `
+                        <div class="slot-item" style="padding: 12px 16px; display: flex; align-items: center; gap: 12px; background: ${rowBg}; border-bottom: 1px solid #f0f0f0; margin-left: 24px; color: ${textColor};">
+                            <span style="color: ${isInactive ? '#ccc' : '#f59e0b'};">${isInactive ? '⊘' : '🍽️'}</span>
+                            <span style="min-width: 150px; font-weight: 500; ${nameStyle}">${slot.slot_name}</span>
+                            <div style="display: flex; align-items: center; gap: 4px; margin-left: auto;">
+                                <label style="font-size: 10px; color: #666; white-space: nowrap;">목표 식재료비:</label>
+                                <input type="number" value="${slot.target_cost || ''}" placeholder="0"
+                                       onchange="updateMealSlotField(${slot.id}, 'target_cost', this.value)"
+                                       style="width: 80px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: right;"
+                                       ${isInactive ? 'disabled' : ''}>
+                                <span style="font-size: 11px; color: #888;">원</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <label style="font-size: 10px; color: #666; white-space: nowrap;">판매가(VAT제외):</label>
+                                <input type="number" value="${slot.selling_price || ''}" placeholder="0"
+                                       onchange="updateMealSlotField(${slot.id}, 'selling_price', this.value)"
+                                       style="width: 80px; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: right;"
+                                       ${isInactive ? 'disabled' : ''}>
+                                <span style="font-size: 11px; color: #888;">원</span>
+                            </div>
+                            ${isInactive
+                                ? `<button onclick="toggleSlotActive(${slot.id}, true, '${slot.slot_name}')"
+                                        style="padding: 4px 10px; background: #22c55e; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;" title="재활성화">활성화</button>`
+                                : `<button onclick="toggleSlotActive(${slot.id}, false, '${slot.slot_name}')"
+                                        style="padding: 4px 10px; background: #94a3b8; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;" title="비활성화">비활성</button>`
+                            }
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 트리 노드 토글
+        function toggleTreeNode(element) {
+            const icon = element.querySelector('.tree-icon');
+            const children = element.nextElementSibling;
+            if (children && children.classList.contains('tree-children')) {
+                if (children.style.display === 'none') {
+                    children.style.display = 'block';
+                    icon.textContent = '▼';
+                } else {
+                    children.style.display = 'none';
+                    icon.textContent = '▶';
+                }
+            }
+        }
+
+        // 끼니구분 필드 업데이트 (★ v2 API 사용)
+        async function updateMealSlotField(slotId, field, value) {
+            try {
+                const response = await fetch(`/api/v2/slots/${slotId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        [field]: value ? parseInt(value) : 0,
+                        modified_by: getCurrentUsername()  // ★ 수정자 추적
+                    })
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    alert('저장 실패: ' + data.error);
+                }
+            } catch (error) {
+                console.error('저장 실패:', error);
+                alert('저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 새 끼니구분 추가 (★ v2 API 사용 - category_slots 테이블에 추가)
+        async function addNewMealSlot() {
+            const categoryId = document.getElementById('newSlotCategory').value;
+            const slotName = document.getElementById('newSlotDisplayName').value.trim();
+            const targetCost = document.getElementById('newSlotTargetCost').value;
+            const sellingPrice = document.getElementById('newSlotSellingPrice').value;
+
+            if (!categoryId || !slotName) {
+                alert('카테고리와 끼니명을 입력해주세요.');
+                return;
+            }
+
+            try {
+                // ★★★ v2 API 사용 - category_slots 테이블에 직접 추가 ★★★
+                const response = await fetch('/api/v2/slots', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        category_id: parseInt(categoryId),
+                        slot_name: slotName,
+                        target_cost: targetCost ? parseInt(targetCost) : 0,
+                        selling_price: sellingPrice ? parseInt(sellingPrice) : 0,
+                        modified_by: getCurrentUsername()  // ★ 수정자 추적
+                    })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert(`"${slotName}" 끼니구분이 추가되었습니다.`);
+                    // 입력 필드 초기화
+                    document.getElementById('newSlotDisplayName').value = '';
+                    document.getElementById('newSlotTargetCost').value = '';
+                    document.getElementById('newSlotSellingPrice').value = '';
+                    // 목록 새로고침
+                    loadMealSlotsByCategory();
+                } else {
+                    alert('추가 실패: ' + data.error);
+                }
+            } catch (error) {
+                console.error('추가 실패:', error);
+                alert('추가 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 끼니구분 삭제 (★ v2 API 사용)
+        async function toggleSlotActive(slotId, activate, slotName) {
+            const action = activate ? '활성화' : '비활성화';
+            if (!confirm(`"${slotName}" 끼니구분을 ${action}하시겠습니까?`)) return;
+
+            try {
+                if (activate) {
+                    // PUT으로 재활성화
+                    const response = await fetch(`/api/v2/slots/${slotId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ is_active: true, modified_by: getCurrentUsername() })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert(`"${slotName}" 활성화 완료`);
+                        loadMealSlotsByCategory();
+                    } else {
+                        alert('활성화 실패: ' + data.error);
+                    }
+                } else {
+                    // DELETE로 비활성화
+                    const response = await fetch(`/api/v2/slots/${slotId}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert(data.message);
+                        loadMealSlotsByCategory();
+                    } else {
+                        alert('비활성화 실패: ' + data.error);
+                    }
+                }
+            } catch (error) {
+                console.error(`${action} 실패:`, error);
+                alert(`${action} 중 오류가 발생했습니다.`);
+            }
+        }
+
+        // 레거시 호환 (기존 호출 대비)
+        async function deleteMealSlot(slotId, slotName) {
+            toggleSlotActive(slotId, false, slotName);
+        }
+
+        // 사업장 선택기 초기화 (그룹 → 카테고리만 표시)
+        // 카테고리별로 끼니(슬롯) 정의를 관리
+        async function initMealPricingSiteSelector() {
+            const select = document.getElementById('mealPricingSiteSelect');
+            if (!select) return;
+
+            // 이미 로드된 경우 스킵 (disabled가 아닌 옵션이 있는지 확인)
+            const hasSelectableOptions = Array.from(select.options).some(opt => !opt.disabled && opt.value);
+            if (hasSelectableOptions) {
+                // ★ 이미 드롭다운이 채워져 있어도 데이터 로드 (탭 재진입 시)
+                loadMealPricingSettings();
+                return;
+            }
+
+            // 기존 옵션 제거
+            select.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/admin/structure/tree');
+                const data = await response.json();
+
+                let firstSelectableValue = null;
+
+                if (data.success && data.data) {
+                    data.data.forEach(group => {
+                        // 그룹 헤더 (선택 불가)
+                        const groupHeader = document.createElement('option');
+                        groupHeader.value = '';
+                        groupHeader.textContent = `══ ${group.name} ══`;
+                        groupHeader.disabled = true;
+                        groupHeader.style.fontWeight = 'bold';
+                        groupHeader.style.background = '#f0f0f0';
+                        select.appendChild(groupHeader);
+
+                        // 카테고리만 표시 (개별 사이트/그룹 전체 설정 제거)
+                        if (group.categories) {
+                            group.categories.forEach(cat => {
+                                // 카테고리 옵션
+                                const catOption = document.createElement('option');
+                                catOption.value = `c_${cat.id}`;
+                                catOption.textContent = `  📂 ${cat.name}`;
+                                select.appendChild(catOption);
+
+                                // 첫 번째 선택 가능한 옵션 기록
+                                if (!firstSelectableValue) {
+                                    firstSelectableValue = `c_${cat.id}`;
+                                }
+                            });
+                        }
+                    });
+
+                    // 첫 번째 카테고리 자동 선택
+                    if (firstSelectableValue) {
+                        select.value = firstSelectableValue;
+                    }
+
+                    // ★ 드롭다운 초기화 완료 후 데이터 로드 (race condition 방지)
+                    loadMealPricingSettings();
+                }
+            } catch (error) {
+                console.error('사업장 목록 로드 실패:', error);
+            }
+        }
+
+        // 접두사에서 entity_type/entity_id 파싱
+        function parseEntityFromPrefix(prefixedValue) {
+            if (!prefixedValue) return { entity_type: null, entity_id: null };
+            const match = prefixedValue.match(/^([gcs])_(\d+)$/);
+            if (match) {
+                const typeMap = { 'g': 'group', 'c': 'category', 's': 'site' };
+                return { entity_type: typeMap[match[1]], entity_id: parseInt(match[2]) };
+            }
+            return { entity_type: null, entity_id: null };
+        }
+
+        // 식단가 설정 로드
+        async function loadMealPricingSettings() {
+            const siteSelect = document.getElementById('mealPricingSiteSelect');
+            const prefixedValue = siteSelect ? siteSelect.value : '';
+            const { entity_type, entity_id } = parseEntityFromPrefix(prefixedValue);
+            const listContainer = document.getElementById('mealPricingList');
+
+            listContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">로딩 중...</div>';
+
+            try {
+                let url = '/api/meal-slot-settings';
+                if (entity_type && entity_id) {
+                    url += `?entity_type=${entity_type}&entity_id=${entity_id}`;
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success) {
+                    mealPricingData = data.settings || {};
+                    renderMealPricingList();
+                } else {
+                    listContainer.innerHTML = `<div style="text-align: center; color: #dc3545; padding: 40px;">로드 실패: ${data.error}</div>`;
+                }
+            } catch (error) {
+                console.error('식단가 설정 로드 실패:', error);
+                listContainer.innerHTML = `<div style="text-align: center; color: #dc3545; padding: 40px;">오류: ${error.message}</div>`;
+            }
+        }
+
+        // 슬롯 목록 렌더링 (판매가 포함)
+        function renderMealPricingList() {
+            const listContainer = document.getElementById('mealPricingList');
+            const slotKeys = Object.keys(mealPricingData);
+
+            if (slotKeys.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="text-align: center; color: #999; padding: 40px; grid-column: 1 / -1;">
+                        <div style="font-size: 48px; margin-bottom: 12px;">📝</div>
+                        <p>등록된 슬롯이 없습니다.</p>
+                        <p style="font-size: 12px;">위의 추가 폼을 사용하여 새 슬롯을 등록해주세요.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            slotKeys.sort((a, b) => (mealPricingData[a].sort_order || 0) - (mealPricingData[b].sort_order || 0));
+
+            listContainer.innerHTML = slotKeys.map(slotKey => {
+                const config = mealPricingData[slotKey];
+                const targetCost = config.target_cost || 0;
+                const sellingPrice = config.selling_price || 0;
+                const effectiveFrom = config.effective_from || null;
+                const isScheduled = !!effectiveFrom;
+
+                // 적용 상태 표시
+                let effectiveLabel = '';
+                if (effectiveFrom) {
+                    const today = new Date().toISOString().split('T')[0];
+                    if (effectiveFrom > today) {
+                        effectiveLabel = `<span style="font-size: 10px; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">${effectiveFrom}부터</span>`;
+                    }
+                }
+
+                return `
+                    <div class="meal-pricing-card" style="background: #f8f9fa; border-radius: 8px; padding: 16px; border-left: 4px solid ${isScheduled ? '#f59e0b' : '#3b82f6'};">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                            <div>
+                                <div style="font-weight: 600; color: #333; font-size: 14px;">${config.display_name || slotKey}${effectiveLabel}</div>
+                            </div>
+                            <button onclick="removeMealPricingSlot('${slotKey}')"
+                                style="background: none; border: none; color: #dc3545; cursor: pointer; font-size: 16px; padding: 4px;"
+                                title="삭제">🗑️</button>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                            <label style="font-size: 12px; color: #666; white-space: nowrap;">목표 재료비:</label>
+                            <input type="number" value="${targetCost}"
+                                onchange="updateMealPricingField('${slotKey}', 'target_cost', this.value)"
+                                style="flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                            <span style="font-size: 12px; color: #666;">원</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                            <label style="font-size: 12px; color: #666; white-space: nowrap;">판매가:</label>
+                            <input type="number" value="${sellingPrice}"
+                                onchange="updateMealPricingField('${slotKey}', 'selling_price', this.value)"
+                                style="flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                            <span style="font-size: 12px; color: #666;">원</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                            <label style="font-size: 12px; color: #666; white-space: nowrap;">정렬:</label>
+                            <input type="number" value="${config.sort_order || 0}"
+                                onchange="updateMealPricingField('${slotKey}', 'sort_order', this.value)"
+                                style="width: 60px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                        </div>
+                        <div style="padding-top: 8px; border-top: 1px solid #e2e8f0;">
+                            <label style="font-size: 11px; color: #666; display: block; margin-bottom: 4px;">적용 시작일</label>
+                            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="radio" name="effectiveType_${slotKey}" value="immediate"
+                                        ${!isScheduled ? 'checked' : ''} onchange="toggleSlotEffectiveDate('${slotKey}')">
+                                    <span style="font-size: 12px;">즉시</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                                    <input type="radio" name="effectiveType_${slotKey}" value="scheduled"
+                                        ${isScheduled ? 'checked' : ''} onchange="toggleSlotEffectiveDate('${slotKey}')">
+                                    <span style="font-size: 12px;">특정일</span>
+                                </label>
+                                <input type="date" id="effectiveDate_${slotKey}" value="${effectiveFrom || ''}"
+                                    style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; ${isScheduled ? '' : 'display: none;'}"
+                                    onchange="updateMealPricingField('${slotKey}', 'effective_from', this.value)">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 슬롯 필드 업데이트 (통합)
+        function updateMealPricingField(slotKey, field, value) {
+            if (mealPricingData[slotKey]) {
+                // effective_from은 문자열 또는 null로 처리
+                if (field === 'effective_from') {
+                    mealPricingData[slotKey][field] = value || null;
+                } else {
+                    mealPricingData[slotKey][field] = parseInt(value) || 0;
+                }
+            }
+        }
+
+        // 적용 시작일 입력 토글
+        function toggleEffectiveDateInput() {
+            const effectiveType = document.querySelector('input[name="newSlotEffectiveType"]:checked').value;
+            const dateInput = document.getElementById('newSlotEffectiveFrom');
+            const hint = document.getElementById('effectiveDateHint');
+
+            if (effectiveType === 'scheduled') {
+                dateInput.style.display = 'inline-block';
+                hint.style.display = 'inline';
+                // 기본값으로 내일 날짜 설정
+                if (!dateInput.value) {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    dateInput.value = tomorrow.toISOString().split('T')[0];
+                }
+            } else {
+                dateInput.style.display = 'none';
+                hint.style.display = 'none';
+            }
+        }
+
+        // 슬롯 카드 내 적용 시작일 토글
+        function toggleSlotEffectiveDate(slotKey) {
+            const effectiveType = document.querySelector(`input[name="effectiveType_${slotKey}"]:checked`).value;
+            const dateInput = document.getElementById(`effectiveDate_${slotKey}`);
+
+            if (effectiveType === 'scheduled') {
+                dateInput.style.display = 'inline-block';
+                if (!dateInput.value) {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    dateInput.value = tomorrow.toISOString().split('T')[0];
+                }
+                updateMealPricingField(slotKey, 'effective_from', dateInput.value);
+            } else {
+                dateInput.style.display = 'none';
+                updateMealPricingField(slotKey, 'effective_from', null);
+            }
+        }
+
+        // 새 슬롯 추가
+        function addMealPricingSlot() {
+            const displayName = document.getElementById('newSlotDisplayName').value.trim();
+            // ★ 구조 개선: slot_key는 임시 ID로 생성 (서버에서 자동 생성됨)
+            const slotKey = 'new_' + Date.now();
+            const targetCost = parseInt(document.getElementById('newSlotTargetCost').value) || 0;
+            const sellingPrice = parseInt(document.getElementById('newSlotSellingPrice').value) || 0;
+            const siteSelect = document.getElementById('mealPricingSiteSelect');
+            const prefixedValue = siteSelect ? siteSelect.value : '';
+            const { entity_type, entity_id } = parseEntityFromPrefix(prefixedValue);
+
+            // 적용 시작일 처리
+            const effectiveType = document.querySelector('input[name="newSlotEffectiveType"]:checked').value;
+            const effectiveFrom = effectiveType === 'scheduled'
+                ? document.getElementById('newSlotEffectiveFrom').value || null
+                : null;
+
+            if (!displayName) {
+                alert('끼니명을 입력해주세요.');
+                return;
+            }
+
+            // ★ 중복 체크: display_name으로 확인 (같은 카테고리 내에서)
+            const isDuplicate = Object.values(mealPricingData).some(slot =>
+                slot.display_name === displayName &&
+                slot.entity_type === entity_type &&
+                slot.entity_id === entity_id
+            );
+            if (isDuplicate) {
+                alert('이미 존재하는 끼니명입니다.');
+                return;
+            }
+
+            const maxOrder = Object.values(mealPricingData).reduce((max, c) => Math.max(max, c.sort_order || 0), 0);
+
+            mealPricingData[slotKey] = {
+                display_name: displayName,
+                sort_order: maxOrder + 1,
+                is_active: true,
+                target_cost: targetCost,
+                selling_price: sellingPrice,
+                entity_type: entity_type,
+                entity_id: entity_id,
+                effective_from: effectiveFrom
+            };
+
+            // 입력 필드 초기화
+            document.getElementById('newSlotDisplayName').value = '';
+            document.getElementById('newSlotTargetCost').value = '';
+            document.getElementById('newSlotSellingPrice').value = '';
+            document.querySelector('input[name="newSlotEffectiveType"][value="immediate"]').checked = true;
+            document.getElementById('newSlotEffectiveFrom').value = '';
+            toggleEffectiveDateInput();
+
+            renderMealPricingList();
+        }
+
+        // 슬롯 삭제 - 현재 선택된 카테고리의 슬롯만 삭제
+        async function removeMealPricingSlot(slotKey) {
+            const slotData = mealPricingData[slotKey];
+            const displayName = slotData ? slotData.display_name : slotKey;
+            if (!confirm(`"${displayName}" 슬롯을 삭제하시겠습니까?`)) return;
+
+            // 현재 선택된 entity_type/entity_id 가져오기
+            const siteSelect = document.getElementById('mealPricingSiteSelect');
+            const prefixedValue = siteSelect ? siteSelect.value : '';
+            const { entity_type, entity_id } = parseEntityFromPrefix(prefixedValue);
+
+            try {
+                // ★ entity_type/entity_id를 쿼리 파라미터로 전달하여 해당 카테고리의 슬롯만 삭제
+                let url = `/api/meal-slot-settings/${encodeURIComponent(slotKey)}`;
+                if (entity_type && entity_id) {
+                    url += `?entity_type=${entity_type}&entity_id=${entity_id}`;
+                }
+                await fetch(url, { method: 'DELETE' });
+            } catch (error) {
+                console.error('삭제 API 실패:', error);
+            }
+            delete mealPricingData[slotKey];
+            renderMealPricingList();
+        }
+
+        // 설정 저장
+        async function saveMealPricingSettings() {
+            const siteSelect = document.getElementById('mealPricingSiteSelect');
+            const prefixedValue = siteSelect ? siteSelect.value : '';
+            const { entity_type, entity_id } = parseEntityFromPrefix(prefixedValue);
+
+            // 현재 선택된 entity_type/entity_id를 모든 슬롯에 적용
+            Object.keys(mealPricingData).forEach(slotKey => {
+                mealPricingData[slotKey].entity_type = entity_type;
+                mealPricingData[slotKey].entity_id = entity_id;
+            });
+
+            try {
+                const response = await fetch('/api/meal-slot-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ settings: mealPricingData })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(`✅ ${data.saved_count || Object.keys(mealPricingData).length}개의 슬롯 설정이 저장되었습니다.`);
+                    // ★ 저장 후 데이터 새로고침 (새 slot_key 반영)
+                    await loadMealPricingSettings();
+                } else {
+                    alert('❌ 저장 실패: ' + data.error);
+                }
+            } catch (error) {
+                console.error('저장 실패:', error);
+                alert('❌ 저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 운영설정 페이지 진입 시 데이터 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            const operationsNav = document.querySelector('[data-page="operations"]');
+            if (operationsNav) {
+                operationsNav.addEventListener('click', function() {
+                    // 약간의 딜레이 후 초기화 (페이지 전환 후)
+                    setTimeout(() => {
+                        // 첫 번째 탭(사업장 배치)이 기본이므로 해당 데이터 로드
+                        loadSiteAssignmentsTree();
+                    }, 100);
+                });
+            }
+        });
+    </script>
+
+</body>
+
+</html>

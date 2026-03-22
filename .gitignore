@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.db
+*.db-shm
+*.db-wal
+*.sql
+node_modules/
+.vscode/
+*.bat
+backups/
+_SQLITE_ARCHIVES/
+prod_backup*
+*.dump

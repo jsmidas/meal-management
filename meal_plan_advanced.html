@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js" defer></script>
+    <title>스마트 식단관리 시스템 - 급식관리</title>
+
+    <!-- FontAwesome 아이콘 (비동기 로딩 - 렌더링 차단 방지) -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251027">
+    <script src="/config.js" defer></script>
+    <script src="/static/js/branding.js" defer></script>
+    <script src="/static/js/sidebar-dropdown.js" defer></script>
+    <!-- 사업장 선택기 CSS -->
+    <link rel="stylesheet" href="/static/css/site-selector.css">
+
+    <!-- 아이콘은 유니코드 이모지 사용으로 변경 -->
+
+    <!-- 공통 설정 - 인라인으로 포함 -->
+    <script>
+        // CONFIG 설정 (인라인)
+        const CONFIG = {
+            API: {
+                BASE_URL: window.location.protocol + '//' + window.location.host,
+                ENDPOINTS: {
+                    RECIPES: '/api/recipes',
+                    CALCULATE_MENU_COSTS: '/api/calculate_menu_costs',
+                    MENUS_INGREDIENTS: '/api/menus_ingredients',
+                    CHECK_MENU_ORDERABILITY: '/api/check_menu_orderability'
+                }
+            },
+            BRANDING: {
+                COMPANY_NAME: '다함푸드',
+                SYSTEM_NAME: '급식관리',
+                COLORS: {
+                    PRIMARY: '#2a5298',
+                    SECONDARY: '#667eea'
+                }
+            }
+        };
+
+        window.CONFIG = CONFIG;
+        // ★ BrandingManager는 branding.js(defer)에서 전체 버전으로 정의됨
+    </script>
+
+    <!-- 🏗️ 코어 모듈 로딩 (defer: 병렬 다운로드, 순서 보장) -->
+    <script src="/static/modules/core/app-state.js" defer></script>
+    <script src="/static/modules/core/api-manager.js" defer></script>
+    <script src="/static/modules/core/ui-manager.js" defer></script>
+    <script src="/static/modules/core/dom-manager.js" defer></script>
+    <!-- 사업장 선택기 -->
+    <script src="/static/modules/core/site-selector.js" defer></script>
+
+    <!-- ★ 페이지 CSS 외부 파일 (캐싱 가능) -->
+    <link rel="stylesheet" href="/static/css/meal-plan-advanced.css">
+
+    <style>
+        /* 인라인 스타일 → static/css/meal-plan-advanced.css로 분리 완료 */
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- 📱 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item active"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 🎛️ 메인 워크스페이스 -->
+        <div class="workspace">
+            <!-- 🎯 상단 툴바 -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <h1>🍽️ 스마트 식단관리 시스템</h1>
+                    <div class="subtitle">가격 변동 추적 • 지능형 복사 • 통합 발주</div>
+                </div>
+                <!-- 사업장 선택기 -->
+                <div id="meal-plan-site-selector" class="site-selector-standard" style="margin: 0 20px;"></div>
+                <div class="toolbar-right">
+                    <button class="btn btn-primary" onclick="changeView('month')">
+                        📅 월간
+                    </button>
+                    <button class="btn btn-primary" onclick="changeView('week')">
+                        📆 주간
+                    </button>
+                    <button class="btn btn-primary" onclick="changeView('day')">
+                        📋 일간
+                    </button>
+                    <button class="btn btn-warning" onclick="openPriceAnalysis()">
+                        📊 가격분석
+                    </button>
+                    <button class="btn btn-info" onclick="openCopySystem()">
+                        🔄 복사도구
+                    </button>
+                    <button class="btn btn-success" onclick="openOrderIntegration()">
+                        🚚 발주통합
+                    </button>
+                </div>
+            </div>
+
+            <!-- 🏷️ 카테고리 탭 (도시락/운반/학교/요양원 등) -->
+            <div class="category-toolbar" id="categoryToolbar">
+                <div class="category-tabs-wrapper">
+                    <span class="category-label">카테고리:</span>
+                    <div class="meal-category-tabs" id="mealCategoryTabs">
+                        <button class="meal-category-tab active" data-category="전체" onclick="selectMealCategory('전체')">
+                            📋 전체
+                        </button>
+                        <button class="meal-category-tab" data-category="도시락" onclick="selectMealCategory('도시락')">
+                            🍱 도시락
+                        </button>
+                        <button class="meal-category-tab" data-category="운반" onclick="selectMealCategory('운반')">
+                            🚚 운반
+                        </button>
+                        <button class="meal-category-tab" data-category="학교" onclick="selectMealCategory('학교')">
+                            🏫 학교
+                        </button>
+                        <button class="meal-category-tab" data-category="요양원" onclick="selectMealCategory('요양원')">
+                            🏥 요양원
+                        </button>
+                    </div>
+                </div>
+                <div class="category-info">
+                    <span id="currentCategoryInfo">전체 카테고리 보기</span>
+                </div>
+            </div>
+
+            <!-- 📊 메인 컨텐츠 영역 -->
+            <div class="content-area">
+                <!-- 📅 캘린더 영역 -->
+                <div class="calendar-section">
+                    <!-- 📊 통계 위젯 (한 줄) -->
+                    <div class="stats-widget" style="padding: 8px 12px;">
+                        <div class="stats-grid">
+                            <span class="stats-title" style="margin: 0; font-size: 11px;">📈 이번 주</span>
+                            <div class="stat-item">
+                                <span class="stat-label">메뉴</span>
+                                <span class="stat-value" id="totalMenus">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">평균원가</span>
+                                <span class="stat-value" id="avgCost">0원</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">가격변동</span>
+                                <span class="stat-value" id="priceChanges">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">발주준비</span>
+                                <span class="stat-value" id="orderReady">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 📅 캘린더 헤더 -->
+                    <div class="calendar-header">
+                        <div class="calendar-nav">
+                            <button class="nav-btn" onclick="previousPeriod()" title="이전">
+                                ◀
+                            </button>
+                            <div class="current-date" id="currentDate">2025년 9월</div>
+                            <button class="nav-btn" onclick="nextPeriod()" title="다음">
+                                ▶
+                            </button>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <!-- 주 단위 이동 버튼 -->
+                            <button class="btn btn-outline-secondary" onclick="jumpWeek(-1)" title="이전 주" style="padding: 6px 10px; font-size: 12px;">
+                                ◀◀ 주
+                            </button>
+                            <button class="btn btn-primary" onclick="goToToday()">
+                                📌 오늘
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="jumpWeek(1)" title="다음 주" style="padding: 6px 10px; font-size: 12px;">
+                                주 ▶▶
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 🚚 발주불가 경고 범례 -->
+                    <div style="display: flex; gap: 16px; padding: 6px 12px; background: #f8f9fa; border-radius: 6px; margin-bottom: 8px; font-size: 11px; color: #666;">
+                        <span style="display: flex; align-items: center; gap: 4px;">
+                            <span style="color: #dc3545;">⚠️</span> 발주불가 재료 포함
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 4px;">
+                            <span style="color: #ffc107;">⚠️</span> 거래중단 협력업체
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 4px;">
+                            <span style="background: #e8f5e9; color: #2e7d32; padding: 1px 4px; border-radius: 4px; font-size: 9px;">👥N</span> 식수
+                        </span>
+                    </div>
+
+                    <!-- 📊 캘린더 그리드 -->
+                    <div class="calendar-grid" id="calendarGrid">
+                        <!-- 동적으로 생성될 캘린더 -->
+                    </div>
+                </div>
+
+                <!-- 📚 메뉴 라이브러리 -->
+                <div class="menu-library">
+                    <!-- 🔍 검색 헤더 -->
+                    <div class="search-header">
+                        <div class="search-box">
+                            <input type="text" class="search-input" placeholder="메뉴명 검색..." id="menuSearchInput"
+                                onkeyup="searchMenus()">
+                            <button class="search-btn" onclick="searchMenus()">
+                                🔍
+                            </button>
+                        </div>
+                        <div class="category-tabs" id="categoryTabs">
+                            <div class="category-tab active" data-category="all">전체</div>
+                            <div class="category-tab" data-category="국">국/찌개</div>
+                            <div class="category-tab" data-category="주찬">주찬</div>
+                            <div class="category-tab" data-category="부찬">부찬</div>
+                            <div class="category-tab" data-category="밥">밥류</div>
+                            <div class="category-tab" data-category="디저트">디저트</div>
+                        </div>
+                    </div>
+
+                    <!-- 📋 메뉴 목록 -->
+                    <div class="menu-list" id="menuList">
+                        <!-- 동적으로 생성될 메뉴 목록 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/modules/meal-plan/meal-plan.js" defer></script>
+    <script src="/static/modules/meal-plan/menu-ingredient-modal.js" defer></script>
+
+    <!-- 🎯 식단 입력 모달 -->
+    <div class="meal-input-modal-overlay" id="mealInputModalOverlay" onclick="closeMealInputModal()">
+        <div class="meal-input-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalDateTitle">식단 편집</h3>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button onclick="openBulkSlotCopyModal()" style="
+                        background: linear-gradient(135deg, #9b59b6, #8e44ad);
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        padding: 6px 12px;
+                        font-size: 13px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                    " title="선택한 슬롯을 다른 날짜/사업장/카테고리에 복사">📋 선택 복사</button>
+                    <button onclick="openBulkSlotDeleteModal()" style="
+                        background: linear-gradient(135deg, #e74c3c, #c0392b);
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        padding: 6px 12px;
+                        font-size: 13px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                    " title="선택한 슬롯을 일괄 삭제">🗑️ 선택 삭제</button>
+                    <button onclick="openFullDayCopyModal()" style="
+                        background: linear-gradient(135deg, #e67e22, #d35400);
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        padding: 6px 12px;
+                        font-size: 13px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                    " title="이 날짜의 모든 메뉴를 다른 날짜에 복사">📅 전체 복사</button>
+                    <button class="modal-close-btn" onclick="closeMealInputModal()">×</button>
+                </div>
+            </div>
+
+            <div class="modal-content">
+                <!-- 🏷️ 카테고리 탭 (모달 상단) -->
+                <div class="modal-category-tabs" id="modalCategoryTabs">
+                    <button class="modal-category-tab active" data-category="도시락" onclick="selectModalCategory('도시락')">
+                        🍱 도시락
+                    </button>
+                    <button class="modal-category-tab" data-category="운반" onclick="selectModalCategory('운반')">
+                        🚚 운반
+                    </button>
+                    <button class="modal-category-tab" data-category="학교" onclick="selectModalCategory('학교')">
+                        🏫 학교
+                    </button>
+                    <button class="modal-category-tab" data-category="요양원" onclick="selectModalCategory('요양원')">
+                        🏥 요양원
+                    </button>
+                </div>
+
+                <div class="meal-planning-layout">
+                    <!-- 좌측: 식단 슬롯들 -->
+                    <div class="meal-slots-section">
+                        <h4>📋 식단 구성 <small style="font-weight: normal; color: #718096;">(슬롯명 클릭 시 변경 가능)</small></h4>
+
+                        <!-- 📊 식수 데이터 안내 (식수가 없을 때 표시) -->
+                        <div id="noMealCountsNotice" class="no-meal-counts-notice" style="display: none; padding: 12px 16px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; margin-bottom: 12px;">
+                            <span style="color: #856404;">⚠️ 이 날짜/카테고리에 식수 데이터가 없습니다. <a href="meal_count_management.html" style="color: #0066cc; text-decoration: underline;">식수관리</a>에서 먼저 입력해주세요.</span>
+                        </div>
+
+                        <!-- 📊 식수 관리와 비교 결과 (불일치가 있을 때 표시) -->
+                        <div id="mealCountCompareNotice" style="display: none; padding: 12px 16px; background: #e3f2fd; border: 1px solid #2196f3; border-radius: 8px; margin-bottom: 12px;">
+                            <div style="color: #1565c0; font-weight: 600; margin-bottom: 8px;">📊 식수 관리 비교 결과</div>
+                            <div id="mealCountCompareContent" style="color: #1976d2; font-size: 13px;"></div>
+                        </div>
+
+                        <!-- 템플릿 액션 (식단관리에서는 전체 비우기만 표시) -->
+                        <div class="template-actions">
+                            <!-- 템플릿 선택은 식수관리에서만 사용 (식단관리에서는 숨김) -->
+                            <select id="templateSelect" class="template-select" style="display: none;">
+                                <option value="">-- 템플릿 선택 --</option>
+                            </select>
+                            <button class="template-btn" onclick="clearAllSlots()" style="margin-left: auto;">🧹 전체
+                                비우기</button>
+                        </div>
+
+                        <div class="modal-meal-input-grid" id="modalMealInputGrid">
+                            <!-- 동적으로 생성 -->
+                        </div>
+                    </div>
+
+                    <!-- 우측: 메뉴 검색 -->
+                    <div class="menu-search-section">
+                        <h4>🔍 메뉴 검색</h4>
+                        <input type="text" class="modal-search-input" id="modalMenuSearchInput" placeholder="메뉴명 검색..."
+                            onkeyup="searchModalMenus()">
+                        <div class="modal-menu-list" id="modalMenuList">
+                            <!-- 동적으로 생성 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-modal btn-modal-secondary" onclick="closeMealInputModal()">취소</button>
+                <button id="modalSaveBtn" class="btn-modal btn-modal-primary" onclick="saveMealInputModal()">💾 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🆕 슬롯 추가 모달 (식단 편집 모달 위에 표시) -->
+    <div id="addSlotModalOverlay" onclick="if(event.target === this) closeAddSlotModal();" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 99999;
+        align-items: center;
+        justify-content: center;
+    ">
+        <div style="
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 420px;
+            width: 90%;
+            max-height: 90vh;
+            overflow: hidden;
+        " onclick="event.stopPropagation();">
+            <div style="
+                background: linear-gradient(135deg, #48bb78, #38a169);
+                color: white;
+                padding: 16px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            ">
+                <h3 style="margin: 0; font-size: 16px;">🆕 새 슬롯 추가</h3>
+                <button onclick="closeAddSlotModal()" style="
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 24px;
+                    cursor: pointer;
+                    line-height: 1;
+                ">×</button>
+            </div>
+            <div style="padding: 20px;">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #2d3748;">슬롯명 <span style="color: #e53e3e;">*</span></label>
+                    <input type="text" id="newSlotName" placeholder="예: A도시락, B반찬, 점심특선..."
+                        style="width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+                        onkeyup="if(event.key === 'Enter') createNewSlotFromModal();">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #2d3748;">끼니 타입 <span style="color: #e53e3e;">*</span></label>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <label class="meal-type-option" style="display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; transition: all 0.2s;">
+                            <input type="radio" name="newSlotMealType" value="조식"> 🌅 조식
+                        </label>
+                        <label class="meal-type-option" style="display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; transition: all 0.2s;">
+                            <input type="radio" name="newSlotMealType" value="중식" checked> ☀️ 중식
+                        </label>
+                        <label class="meal-type-option" style="display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; transition: all 0.2s;">
+                            <input type="radio" name="newSlotMealType" value="석식"> 🌙 석식
+                        </label>
+                        <label class="meal-type-option" style="display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; transition: all 0.2s;">
+                            <input type="radio" name="newSlotMealType" value="야식"> 🌃 야식
+                        </label>
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #2d3748;">목표 식재료비 (선택)</label>
+                    <input type="number" id="newSlotTargetCost" placeholder="예: 3500"
+                        style="width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                    <small style="color: #718096; font-size: 12px;">비워두면 설정하지 않습니다</small>
+                </div>
+                <div style="background: #f7fafc; padding: 12px; border-radius: 6px;">
+                    <div style="font-size: 12px; color: #4a5568;">
+                        <strong>📍 카테고리:</strong> <span id="newSlotCategoryDisplay" style="color: #667eea; font-weight: 600;">-</span>
+                    </div>
+                    <div style="font-size: 11px; color: #718096; margin-top: 4px;">
+                        현재 선택된 카테고리에 슬롯이 생성됩니다.
+                    </div>
+                </div>
+            </div>
+            <div style="padding: 16px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+                <button onclick="closeAddSlotModal()" style="
+                    padding: 10px 20px;
+                    border: 1px solid #e2e8f0;
+                    background: white;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">취소</button>
+                <button onclick="createNewSlotFromModal()" style="
+                    padding: 10px 20px;
+                    border: none;
+                    background: linear-gradient(135deg, #48bb78, #38a169);
+                    color: white;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 600;
+                ">🆕 생성</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

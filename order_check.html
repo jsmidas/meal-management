@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title>협력업체별 발주 확인 - 급식관리 시스템</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .date-picker {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+        .btn-primary:hover {
+            background: #f0f0f0;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .summary-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+        }
+        .summary-card .label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .panel-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .panel-body {
+            padding: 0;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .supplier-list {
+            list-style: none;
+        }
+        .supplier-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .supplier-item:hover {
+            background: #f8f9fa;
+        }
+        .supplier-item.active {
+            background: #e8f4ff;
+            border-left: 4px solid #667eea;
+        }
+        .supplier-info {
+            flex: 1;
+        }
+        .supplier-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #333;
+        }
+        .supplier-code {
+            font-size: 12px;
+            color: #888;
+            margin-top: 3px;
+        }
+        .supplier-stats {
+            text-align: right;
+        }
+        .supplier-amount {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 16px;
+        }
+        .supplier-count {
+            font-size: 12px;
+            color: #888;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .items-table th, .items-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+        .items-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        .items-table tr:hover {
+            background: #fafafa;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-pending { background: #fff3e0; color: #ff9800; }
+        .status-confirmed { background: #e8f5e9; color: #4caf50; }
+        .status-completed { background: #e3f2fd; color: #2196f3; }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        .date-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .date-arrow {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.9);
+            color: #667eea;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .date-arrow:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+        .date-arrow:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 협력업체별 발주 확인</h1>
+            <div class="header-actions">
+                <label style="color: white; margin-right: 5px;">입고일:</label>
+                <div class="date-nav">
+                    <button class="date-arrow" onclick="changeDate(-1)" title="이전 날짜">◀</button>
+                    <input type="date" id="orderDate" class="date-picker">
+                    <button class="date-arrow" onclick="changeDate(1)" title="다음 날짜">▶</button>
+                </div>
+                <button class="btn btn-primary" onclick="loadData()">조회</button>
+                <button class="btn btn-secondary" onclick="location.href='admin_dashboard.html'">관리자 페이지</button>
+            </div>
+        </div>
+
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="value" id="supplierCount">-</div>
+                <div class="label">협력업체 수</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" id="orderCount">-</div>
+                <div class="label">발주 건수</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" id="itemCount">-</div>
+                <div class="label">품목 수</div>
+            </div>
+            <div class="summary-card">
+                <div class="value" id="totalAmount">-</div>
+                <div class="label">총 발주금액</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="panel">
+                <div class="panel-header">협력업체별 발주 현황</div>
+                <div class="panel-body">
+                    <ul class="supplier-list" id="supplierList">
+                        <li class="loading">데이터를 불러오는 중...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header" id="itemsHeader">발주 상세 품목</div>
+                <div class="panel-body">
+                    <div class="empty-state" id="itemsEmpty">
+                        <div class="icon">👈</div>
+                        <div>협력업체를 선택하세요</div>
+                    </div>
+                    <table class="items-table" id="itemsTable" style="display: none;">
+                        <thead>
+                            <tr>
+                                <th>사업장</th>
+                                <th>품목명</th>
+                                <th>규격</th>
+                                <th>수량</th>
+                                <th>단가</th>
+                                <th>금액</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 오늘 날짜로 초기화
+        document.getElementById('orderDate').value = new Date().toISOString().split('T')[0];
+
+        // 페이지 로드 시 데이터 조회
+        document.addEventListener('DOMContentLoaded', loadData);
+
+        // 날짜 변경 함수 (이전/다음)
+        function changeDate(days) {
+            const dateInput = document.getElementById('orderDate');
+            const currentDate = new Date(dateInput.value);
+            currentDate.setDate(currentDate.getDate() + days);
+            dateInput.value = currentDate.toISOString().split('T')[0];
+            loadData();
+        }
+
+        async function loadData() {
+            const orderDate = document.getElementById('orderDate').value;
+            const supplierList = document.getElementById('supplierList');
+
+            supplierList.innerHTML = '<li class="loading">데이터를 불러오는 중...</li>';
+
+            try {
+                const response = await fetch(`/api/orders/by-supplier?order_date=${orderDate}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    updateSummary(result.summary);
+                    renderSupplierList(result.data, orderDate);
+                } else {
+                    supplierList.innerHTML = `<li class="empty-state"><div class="icon">❌</div><div>${result.error}</div></li>`;
+                }
+            } catch (error) {
+                supplierList.innerHTML = `<li class="empty-state"><div class="icon">❌</div><div>데이터 로드 실패</div></li>`;
+            }
+        }
+
+        function updateSummary(summary) {
+            document.getElementById('supplierCount').textContent = summary.supplier_count || 0;
+            document.getElementById('orderCount').textContent = summary.total_orders || 0;
+            document.getElementById('itemCount').textContent = summary.total_items || 0;
+            document.getElementById('totalAmount').textContent = formatCurrency(summary.total_amount || 0);
+        }
+
+        function renderSupplierList(suppliers, orderDate) {
+            const supplierList = document.getElementById('supplierList');
+
+            if (!suppliers || suppliers.length === 0) {
+                supplierList.innerHTML = `
+                    <li class="empty-state">
+                        <div class="icon">📭</div>
+                        <div>해당 날짜에 발주 내역이 없습니다</div>
+                    </li>`;
+                return;
+            }
+
+            supplierList.innerHTML = suppliers.map(s => `
+                <li class="supplier-item" onclick="selectSupplier(this, ${s.supplier_id || 0}, '${orderDate}', '${escapeHtml(s.supplier_name)}')">
+                    <div class="supplier-info">
+                        <div class="supplier-name">${escapeHtml(s.supplier_name)}</div>
+                        <div class="supplier-code">
+                            ${s.supplier_code ? `코드: ${s.supplier_code}` : ''}
+                            ${s.delivery_code ? ` | 배송: ${s.delivery_code}` : ''}
+                            ${s.site_names ? ` | ${s.site_names}` : ''}
+                        </div>
+                    </div>
+                    <div class="supplier-stats">
+                        <div class="supplier-amount">${formatCurrency(s.total_amount || 0)}</div>
+                        <div class="supplier-count">${s.item_count || 0}개 품목</div>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        async function selectSupplier(element, supplierId, orderDate, supplierName) {
+            // 선택 상태 변경
+            document.querySelectorAll('.supplier-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            // 헤더 업데이트
+            document.getElementById('itemsHeader').textContent = `${supplierName} - 발주 상세`;
+
+            const itemsEmpty = document.getElementById('itemsEmpty');
+            const itemsTable = document.getElementById('itemsTable');
+            const itemsBody = document.getElementById('itemsBody');
+
+            itemsEmpty.style.display = 'none';
+            itemsTable.style.display = 'none';
+            itemsBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">로딩 중...</td></tr>';
+            itemsTable.style.display = 'table';
+
+            if (!supplierId) {
+                itemsBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">협력업체 ID 없음</td></tr>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/orders/by-supplier/${supplierId}/items?order_date=${orderDate}`);
+                const result = await response.json();
+
+                if (result.success && result.data.length > 0) {
+                    itemsBody.innerHTML = result.data.map(item => `
+                        <tr>
+                            <td>${escapeHtml(item.site_name || '-')}</td>
+                            <td><strong>${escapeHtml(item.ingredient_name || '-')}</strong></td>
+                            <td>${escapeHtml(item.specification || '-')}</td>
+                            <td>${item.order_qty || 0} ${escapeHtml(item.unit || '')}</td>
+                            <td>${formatCurrency(item.unit_price || 0)}</td>
+                            <td><strong>${formatCurrency(item.total_price || 0)}</strong></td>
+                        </tr>
+                    `).join('');
+                } else {
+                    itemsBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#888;">상세 품목이 없습니다</td></tr>';
+                }
+            } catch (error) {
+                itemsBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#f44336;">데이터 로드 실패</td></tr>';
+            }
+        }
+
+        function formatCurrency(amount) {
+            if (!amount) return '0원';
+            return Math.round(amount).toLocaleString() + '원';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

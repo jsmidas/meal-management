@@ -1,0 +1,256 @@
+<!-- 관리자용 메뉴/레시피 관리 섹션 -->
+<div class="content-header">
+    <h2>메뉴/레시피 관리</h2>
+    <p class="page-description">메뉴와 레시피를 관리하고 재료비를 계산합니다.</p>
+</div>
+
+<!-- 관리자 전용 안내 -->
+<div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div style="font-size: 48px; opacity: 0.7;">🍽️</div>
+        <div>
+            <h3 style="margin: 0 0 8px 0; color: #495057;">메뉴/레시피 관리 시스템</h3>
+            <p style="margin: 0 0 15px 0; color: #6c757d;">
+                관리자는 전용 메뉴/레시피 관리 페이지를 통해 더욱 상세한 기능을 이용할 수 있습니다.
+            </p>
+            <div style="display: flex; gap: 10px;">
+                <a href="menu_recipe_management.html" target="_blank"
+                   style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                    <span>🚀</span>전용 메뉴/레시피 관리 열기
+                </a>
+                <button onclick="refreshMenuStats()"
+                        style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer;">
+                    <span>🔄</span>통계 새로고침
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 메뉴/레시피 통계 카드 -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+    <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="font-size: 32px; opacity: 0.8;">📋</div>
+            <div>
+                <div style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 4px;" id="totalMenus">-</div>
+                <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">등록된 메뉴</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="font-size: 32px; opacity: 0.8;">🥘</div>
+            <div>
+                <div style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 4px;" id="totalRecipes">-</div>
+                <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">완성된 레시피</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="font-size: 32px; opacity: 0.8;">📊</div>
+            <div>
+                <div style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 4px;" id="avgCost">-원</div>
+                <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">평균 재료비</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="font-size: 32px; opacity: 0.8;">⭐</div>
+            <div>
+                <div style="font-size: 24px; font-weight: bold; color: #333; margin-bottom: 4px;" id="popularCategory">-</div>
+                <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">인기 카테고리</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 최근 메뉴 목록 -->
+<div style="background: white; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+    <div style="padding: 20px; border-bottom: 1px solid #e9ecef; background: #f8f9fa;">
+        <h3 style="margin: 0; color: #495057; display: flex; align-items: center; gap: 8px;">
+            <span>📝</span>최근 등록된 메뉴
+        </h3>
+    </div>
+    <div id="recentMenusList" style="max-height: 400px; overflow-y: auto;">
+        <div style="padding: 20px; text-align: center; color: #6c757d;">
+            <div style="font-size: 48px; opacity: 0.3; margin-bottom: 10px;">🍽️</div>
+            <p>메뉴 데이터를 불러오는 중...</p>
+        </div>
+    </div>
+</div>
+
+<!-- 간단한 관리 기능 -->
+<div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+    <h4 style="margin: 0 0 15px 0; color: #495057;">빠른 관리</h4>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button onclick="exportAllMenus()"
+                style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            📥 전체 메뉴 내보내기
+        </button>
+        <button onclick="importMenus()"
+                style="padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            📤 메뉴 가져오기
+        </button>
+        <button onclick="validateAllRecipes()"
+                style="padding: 8px 15px; background: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;">
+            ✅ 레시피 검증
+        </button>
+    </div>
+</div>
+
+<script>
+// 관리자용 메뉴/레시피 관리 기능들
+function refreshMenuStats() {
+    console.log('메뉴 통계 새로고침...');
+
+    // 기존 search_recipes API 사용
+    fetch('/api/search_recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.recipes) {
+                const recipes = data.recipes;
+                document.getElementById('totalMenus').textContent = recipes.length;
+                document.getElementById('totalRecipes').textContent = recipes.filter(r => r.category).length;
+                document.getElementById('avgCost').textContent = '0원';
+
+                // 카테고리 통계
+                const categories = {};
+                recipes.forEach(r => {
+                    const cat = r.category || '미분류';
+                    categories[cat] = (categories[cat] || 0) + 1;
+                });
+                const popularCat = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
+                document.getElementById('popularCategory').textContent = popularCat ? popularCat[0] : '-';
+
+                loadRecentMenus(recipes);
+            }
+        })
+        .catch(err => {
+            console.warn('메뉴 통계 로드 실패:', err);
+            document.getElementById('totalMenus').textContent = '0';
+            document.getElementById('totalRecipes').textContent = '0';
+            document.getElementById('avgCost').textContent = '0원';
+            document.getElementById('popularCategory').textContent = '없음';
+        });
+}
+
+function loadRecentMenus(recipes) {
+    const listContainer = document.getElementById('recentMenusList');
+
+    // recipes가 인자로 전달되지 않으면 API 호출
+    if (!recipes) {
+        fetch('/api/search_recipes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.recipes) {
+                    renderRecentMenus(data.recipes);
+                }
+            })
+            .catch(err => {
+                console.warn('최근 메뉴 로드 실패:', err);
+                showMenuError();
+            });
+    } else {
+        renderRecentMenus(recipes);
+    }
+}
+
+function renderRecentMenus(recipes) {
+    const listContainer = document.getElementById('recentMenusList');
+
+    if (recipes && recipes.length > 0) {
+        // 최신순으로 정렬 (이미 정렬되어 있지만 확인)
+        const sortedRecipes = recipes.slice(0, 10);
+
+        listContainer.innerHTML = sortedRecipes.map(menu => `
+            <div style="padding: 15px; border-bottom: 1px solid #e9ecef; display: flex; align-items: center; gap: 15px;">
+                <div style="font-size: 24px;">${getCategoryIcon(menu.category)}</div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; color: #333; margin-bottom: 4px;">${menu.recipe_name || menu.name}</div>
+                    <div style="font-size: 12px; color: #666;">
+                        ${menu.category || '미분류'} •
+                        ${new Date(menu.created_at).toLocaleDateString('ko-KR')}
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 11px; color: #667eea;">ID: ${menu.id}</div>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        listContainer.innerHTML = `
+            <div style="padding: 40px; text-align: center; color: #6c757d;">
+                <div style="font-size: 48px; opacity: 0.3; margin-bottom: 10px;">📝</div>
+                <p>등록된 메뉴가 없습니다.</p>
+                <a href="menu_recipe_management.html" target="_blank"
+                   style="color: #667eea; text-decoration: none; font-weight: 500;">
+                    첫 메뉴 만들기 →
+                </a>
+            </div>
+        `;
+    }
+}
+
+function showMenuError() {
+    const listContainer = document.getElementById('recentMenusList');
+    listContainer.innerHTML = `
+        <div style="padding: 40px; text-align: center; color: #dc3545;">
+            <div style="font-size: 48px; opacity: 0.3; margin-bottom: 10px;">⚠️</div>
+            <p>메뉴 데이터를 불러올 수 없습니다.</p>
+            <button onclick="refreshMenuStats()"
+                    style="margin-top: 10px; padding: 8px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                다시 시도
+            </button>
+        </div>
+    `;
+}
+
+function getCategoryIcon(category) {
+    const icons = {
+        '국': '🍲',
+        '밥': '🍚',
+        '찌개': '🥘',
+        '조림': '🍖',
+        '무침': '🥗',
+        '겉절이': '🥬',
+        '생채': '🥒',
+        '볶음': '🍳',
+        '찜': '🥟',
+        '튀김': '🍤',
+        '구이': '🔥',
+        '전': '🥞'
+    };
+    return icons[category] || '🍽️';
+}
+
+function exportAllMenus() {
+    alert('전체 메뉴 내보내기 기능은 준비 중입니다.');
+}
+
+function importMenus() {
+    alert('메뉴 가져오기 기능은 준비 중입니다.');
+}
+
+function validateAllRecipes() {
+    alert('레시피 검증 기능은 준비 중입니다.');
+}
+
+// 페이지 로드 시 통계 로드
+setTimeout(() => {
+    refreshMenuStats();
+}, 500);
+</script>

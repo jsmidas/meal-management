@@ -1,0 +1,3524 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <!-- 사업장 선택기 CSS -->
+    <link rel="stylesheet" href="/static/css/site-selector.css">
+    <title>식단표 출력 - 급식관리</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251225">
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <script src="/static/js/sidebar-dropdown.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+        }
+
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .workspace {
+            flex: 1;
+            margin-left: 180px;
+            padding: 20px;
+        }
+
+        /* 페이지 헤더 */
+        .page-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 25px 30px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 100;
+        }
+
+        .page-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* 컨트롤 패널 */
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .control-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #a5b4fc;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .control-group input,
+        .control-group select {
+            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            font-size: 14px;
+            min-width: 180px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .control-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .control-group select option {
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .control-group input:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #a5b4fc;
+            box-shadow: 0 0 0 4px rgba(165, 180, 252, 0.2);
+        }
+
+        /* 버튼 */
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        /* 배경 이미지 선택 */
+        .bg-selector {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .bg-option {
+            width: 120px;
+            height: 80px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid transparent;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .bg-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .bg-option.active {
+            border-color: #a5b4fc;
+            box-shadow: 0 0 0 4px rgba(165, 180, 252, 0.3);
+        }
+
+        .bg-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bg-option .bg-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 15px 8px 6px;
+            text-align: center;
+        }
+
+        .custom-bg-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .custom-bg-item {
+            position: relative;
+            width: 80px;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .custom-bg-item:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .custom-bg-item.active {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+        }
+
+        .custom-bg-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .custom-bg-item .delete-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 18px;
+            height: 18px;
+            background: rgba(255, 0, 0, 0.8);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .custom-bg-item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .bg-size-info {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #aaa;
+        }
+
+        /* 출력 형식 탭 */
+        .format-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .format-tab {
+            padding: 14px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .format-tab:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .format-tab.active {
+            background: rgba(165, 180, 252, 0.2);
+            border-color: #a5b4fc;
+            color: #a5b4fc;
+        }
+
+        /* 액션 버튼 */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* 미리보기 영역 */
+        .preview-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 24px;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 750px;
+            overflow: auto;
+        }
+
+        /* ========== 식단표 스타일 ========== */
+
+        .meal-table-wrapper {
+            width: 260mm;
+            min-height: 180mm;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 30px 100px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .meal-table-wrapper.portrait {
+            width: 190mm;
+            min-height: 260mm;
+        }
+
+        .meal-table-wrapper.mobile {
+            width: 390px;
+            min-height: 750px;
+            border-radius: 30px;
+        }
+
+        /* 배경 이미지 */
+        .meal-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-size: cover;
+            background-position: center;
+            z-index: 1;
+        }
+
+        /* 배경 오버레이 */
+        .meal-bg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2;
+        }
+
+        /* ★ 로고 오버레이 (항상 맨 앞) */
+        .logo-overlay {
+            position: absolute;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .logo-overlay img {
+            opacity: 0.4;
+            max-width: 120px;
+            height: auto;
+        }
+        .logo-overlay.top-left { top: 5mm; left: 5mm; }
+        .logo-overlay.top-right { top: 15mm; right: 15mm; }
+        .logo-overlay.bottom-left { bottom: 15mm; left: 15mm; }
+        .logo-overlay.bottom-right { bottom: 15mm; right: 15mm; }
+        .logo-overlay.center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        /* 컨텐츠 */
+        .meal-content {
+            position: relative;
+            z-index: 3;
+            padding: 15mm;
+        }
+
+        .meal-table-wrapper.mobile .meal-content {
+            padding: 24px;
+        }
+
+        /* 헤더 - 글래스모피즘 */
+        .table-header {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        .table-header .site-name {
+            font-size: 28px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+            margin-bottom: 5px;
+            letter-spacing: -1px;
+        }
+
+        .table-header .period {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .table-header .edit-btn {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .table-header .edit-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 주간 테이블 - 글래스모피즘 */
+        .weekly-grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 4px;
+        }
+
+        .weekly-grid th,
+        .weekly-grid td {
+            padding: 10px 6px;
+            text-align: center;
+            vertical-align: top;
+            border-radius: 10px;
+        }
+
+        .weekly-grid thead th {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            padding: 12px 6px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .weekly-grid thead th .day-name {
+            font-size: 15px;
+            margin-bottom: 3px;
+        }
+
+        .weekly-grid thead th .day-date {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* 요일별 색상 */
+        .weekly-grid thead th:first-child {
+            background: rgba(100, 100, 120, 0.4);
+        }
+        .weekly-grid thead th.day-mon { background: rgba(99, 102, 241, 0.5); }
+        .weekly-grid thead th.day-tue { background: rgba(16, 185, 129, 0.5); }
+        .weekly-grid thead th.day-wed { background: rgba(244, 63, 94, 0.5); }
+        .weekly-grid thead th.day-thu { background: rgba(245, 158, 11, 0.5); }
+        .weekly-grid thead th.day-fri { background: rgba(59, 130, 246, 0.5); }
+        .weekly-grid thead th.day-sat { background: rgba(20, 184, 166, 0.5); }
+        .weekly-grid thead th.day-sun { background: rgba(239, 68, 68, 0.5); }
+
+        .weekly-grid tbody td {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 80px;
+        }
+
+        .weekly-grid tbody .meal-type-cell {
+            background: rgba(255, 255, 255, 0.25);
+            font-weight: 700;
+            color: white;
+            font-size: 13px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+            width: 55px;
+            vertical-align: middle;
+        }
+
+        .menu-list {
+            text-align: left;
+            line-height: 1.5;
+        }
+
+        .menu-item {
+            padding: 2px 0;
+            font-size: 11px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-item.main-dish {
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        /* ★ 편집 가능한 요소 스타일 */
+        .editable-name,
+        .editable-menu,
+        .site-name[contenteditable="true"],
+        .period[contenteditable="true"] {
+            cursor: text;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+
+        .editable-name:hover,
+        .editable-menu:hover,
+        .site-name[contenteditable="true"]:hover,
+        .period[contenteditable="true"]:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .editable-name:focus,
+        .editable-menu:focus,
+        .site-name[contenteditable="true"]:focus,
+        .period[contenteditable="true"]:focus {
+            background-color: rgba(255, 255, 255, 0.3);
+            outline: 2px solid rgba(255, 255, 255, 0.5);
+            outline-offset: 1px;
+        }
+
+        /* ★ 밝은 배경용 라이트 테마 */
+        .light-theme .table-header {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .light-theme .table-header .site-name {
+            color: #1a365d;
+            text-shadow: none;
+        }
+        .light-theme .table-header .period {
+            color: #4a5568;
+        }
+        .light-theme .table-header .edit-btn {
+            background: rgba(0, 0, 0, 0.05);
+            color: #2d3748;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        .light-theme .weekly-grid thead th {
+            color: #1a202c;
+            text-shadow: none;
+        }
+        .light-theme .weekly-grid thead th:first-child {
+            background: rgba(100, 100, 120, 0.2);
+        }
+        .light-theme .weekly-grid thead th.day-mon { background: rgba(99, 102, 241, 0.25); }
+        .light-theme .weekly-grid thead th.day-tue { background: rgba(16, 185, 129, 0.25); }
+        .light-theme .weekly-grid thead th.day-wed { background: rgba(244, 63, 94, 0.25); }
+        .light-theme .weekly-grid thead th.day-thu { background: rgba(245, 158, 11, 0.25); }
+        .light-theme .weekly-grid thead th.day-fri { background: rgba(59, 130, 246, 0.25); }
+        .light-theme .weekly-grid thead th.day-sat { background: rgba(20, 184, 166, 0.25); }
+        .light-theme .weekly-grid thead th.day-sun { background: rgba(239, 68, 68, 0.25); }
+        .light-theme .weekly-grid tbody td {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .light-theme .weekly-grid tbody .meal-type-cell {
+            background: rgba(0, 0, 0, 0.08);
+            color: #1a365d;
+            text-shadow: none;
+        }
+        .light-theme .menu-item {
+            color: #2d3748;
+            text-shadow: none;
+        }
+        .light-theme .menu-item.main-dish {
+            color: #1a202c;
+        }
+        .light-theme .editable-name:hover,
+        .light-theme .editable-menu:hover,
+        .light-theme .site-name[contenteditable="true"]:hover,
+        .light-theme .period[contenteditable="true"]:hover {
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+        .light-theme .editable-name:focus,
+        .light-theme .editable-menu:focus,
+        .light-theme .site-name[contenteditable="true"]:focus,
+        .light-theme .period[contenteditable="true"]:focus {
+            background-color: rgba(0, 0, 0, 0.1);
+            outline: 2px solid rgba(0, 0, 0, 0.2);
+        }
+        .light-theme .table-footer .company-info {
+            background: rgba(0, 0, 0, 0.05);
+            color: #4a5568;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        /* 모바일 라이트 테마 */
+        .light-theme .mobile-header {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .light-theme .mobile-header .site-name {
+            color: #1a365d;
+            text-shadow: none;
+        }
+        .light-theme .mobile-header .period {
+            color: #4a5568;
+        }
+        .light-theme .mobile-day-card {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .light-theme .mobile-day-card .day-header {
+            color: #1a365d;
+        }
+        .light-theme .mobile-meal-section .meal-name {
+            color: #2d3748;
+        }
+        .light-theme .mobile-meal-section .menu-item {
+            color: #4a5568;
+        }
+
+        @media print {
+            .editable-name,
+            .editable-menu {
+                cursor: default;
+            }
+            .editable-name:hover,
+            .editable-menu:hover,
+            .editable-name:focus,
+            .editable-menu:focus {
+                background-color: transparent;
+                outline: none;
+            }
+        }
+
+        /* 푸터 - 기본 숨김 */
+        .table-footer {
+            display: none;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .table-footer .company-info {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* 모바일 스타일 */
+        .mobile-header {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            padding: 30px 24px;
+            border-radius: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .mobile-header .site-name {
+            font-size: 24px;
+            font-weight: 900;
+            color: white;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+            margin-bottom: 5px;
+        }
+
+        .mobile-header .period {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .mobile-day-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 18px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .mobile-day-header {
+            padding: 14px 18px;
+            font-weight: 700;
+            font-size: 16px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .mobile-day-content {
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-meal-section {
+            margin-bottom: 14px;
+        }
+
+        .mobile-meal-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .mobile-meal-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mobile-meal-label::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+        }
+
+        .mobile-meal-menus {
+            color: white;
+            font-size: 14px;
+            line-height: 1.6;
+            padding-left: 14px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 인쇄 스타일 */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 5mm;
+            }
+
+            html, body {
+                width: 277mm; /* A4 가로 - 마진 */
+                height: 190mm; /* A4 세로 - 마진 */
+                margin: 0;
+                padding: 0;
+                overflow: hidden !important;
+            }
+
+            body * {
+                visibility: hidden;
+            }
+
+            .meal-table-wrapper, .meal-table-wrapper * {
+                visibility: visible;
+            }
+
+            .meal-table-wrapper {
+                position: fixed !important;
+                left: 50% !important;
+                top: 50% !important;
+                transform: translate(-50%, -50%) !important;
+                width: auto !important;
+                height: auto !important;
+                max-width: 95% !important;
+                max-height: 95% !important;
+                box-shadow: none !important;
+                overflow: hidden !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* 식단표 컨테이너 */
+            .meal-content {
+                max-height: 100% !important;
+                overflow: hidden !important;
+                transform-origin: top left;
+            }
+
+            /* 테이블 페이지 분리 방지 */
+            .weekly-grid {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            /* 원산지/알레르기 정보 영역 - 높이 제한 */
+            #originInfoDisplay, #extraInfoDisplay {
+                max-height: 30mm !important;
+                overflow: hidden !important;
+                font-size: 8px !important;
+            }
+
+            /* 숨길 요소들 */
+            .edit-btn,
+            .sidebar,
+            .header,
+            .format-tabs,
+            .bg-selector-panel,
+            .preview-container > .meal-bg-overlay,
+            #bgEditOptions {
+                display: none !important;
+            }
+
+            /* 배경 이미지 인쇄 허용 */
+            .meal-bg,
+            .meal-table-wrapper,
+            .meal-table-wrapper * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
+            /* 배경 이미지 강제 출력 */
+            .meal-bg {
+                background-size: cover !important;
+                background-position: center !important;
+                background-repeat: no-repeat !important;
+            }
+
+            /* 커스텀 템플릿 배경 출력 */
+            #mealBg {
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                z-index: 0 !important;
+            }
+        }
+
+        /* A4 세로 인쇄 */
+        @media print and (orientation: portrait) {
+            @page {
+                size: A4 portrait;
+                margin: 5mm;
+            }
+
+            html, body {
+                width: 200mm;
+                height: 287mm;
+            }
+
+            .meal-table-wrapper {
+                max-width: 95% !important;
+                max-height: 95% !important;
+            }
+        }
+
+        /* 로딩/토스트 */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .loading-overlay.active { display: flex; }
+        .loading-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 50px 70px;
+            border-radius: 24px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .loading-box i {
+            font-size: 50px;
+            color: #a5b4fc;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 16px 28px;
+            border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 9999;
+            font-weight: 600;
+        }
+        .toast.show { display: block; animation: slideIn 0.3s ease; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* 카테고리 탭 스타일 */
+        .category-tab {
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .category-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .category-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .category-tab .slot-count {
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
+
+        .category-tab.active .slot-count {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- 사이드바 -->
+        <nav class="sidebar">
+            <div class="logo">
+                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+            </div>
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+            <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+            <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+            <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+            <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+            <a href="meal_plan_print.html" class="nav-item active"><i class="fas fa-print"></i>식단표 출력</a>
+            <div class="nav-dropdown" id="event-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                    <a href="event_order_management.html" class="nav-item">행사 등록/손익</a>
+                    <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+                </div>
+            </div>
+            <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+            <div class="nav-dropdown" id="ingredients-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                    <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                    <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+                </div>
+            </div>
+            <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+            <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+            <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+            <div class="nav-dropdown" id="instruction-dropdown">
+                <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+                <div class="nav-submenu">
+                    <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                    <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                    <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                    <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+                </div>
+            </div>
+            <div class="nav-divider"></div>
+            <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+            <a href="hygiene_notice.html" class="nav-item"><i class="fas fa-shield-alt"></i>위생안전공지</a>
+            <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+            <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+            <div class="nav-divider"></div>
+            <a href="admin_dashboard.html" class="nav-item admin-item"><i class="fas fa-cog"></i>ADMIN</a>
+        </nav>
+
+        <!-- 메인 -->
+        <div class="workspace">
+            <!-- 헤더 -->
+            <div class="page-header">
+                <div>
+                    <h1><i class="fas fa-image"></i> 식단표 출력</h1>
+                    <p>배경 이미지와 함께 아름다운 식단표를 만들어보세요</p>
+                </div>
+                <!-- 사업장 선택기 -->
+                <div id="print-site-selector" class="site-selector-standard site-selector-right"></div>
+            </div>
+
+            <!-- 액션 버튼 바 -->
+            <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button class="btn btn-success" onclick="downloadSelectedSlots()">
+                    <i class="fas fa-download"></i> 선택 슬롯 개별 저장
+                </button>
+                <button class="btn btn-info" onclick="downloadMergedSlots()">
+                    <i class="fas fa-file-archive"></i> 선택 슬롯 통합 저장
+                </button>
+            </div>
+
+            <!-- 컨트롤 패널 -->
+            <div class="control-panel">
+                <!-- 기본 설정 + 출력 옵션 (한 줄 배치) -->
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 12px; margin-bottom: 12px;">
+                    <!-- 좌측: 기본 설정 -->
+                    <div class="control-section" style="margin-bottom: 0;">
+                        <div class="section-title"><i class="fas fa-cog"></i> 기본 설정</div>
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label>주차 선택</label>
+                                <input type="week" id="weekSelect" onchange="loadMealData()">
+                            </div>
+                            <button class="btn btn-primary" onclick="loadMealData()">
+                                <i class="fas fa-sync-alt"></i> 불러오기
+                            </button>
+                        </div>
+                    </div>
+                    <!-- 우측: 출력 옵션 (컴팩트) -->
+                    <div class="control-section" style="margin-bottom: 0;">
+                        <div class="section-title"><i class="fas fa-sliders-h"></i> 출력 옵션</div>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                            <!-- 표시 요일 -->
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 11px; color: #a5b4fc;">📅</span>
+                                <label style="display: flex; align-items: center; gap: 3px; font-size: 11px; color: #ccc; cursor: pointer;">
+                                    <input type="radio" name="dayOption" value="weekday" checked onchange="updateDayOption()" style="accent-color: #6366f1;"> 월~금
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 3px; font-size: 11px; color: #ccc; cursor: pointer;">
+                                    <input type="radio" name="dayOption" value="includeSat" onchange="updateDayOption()" style="accent-color: #6366f1;"> 월~토
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 3px; font-size: 11px; color: #ccc; cursor: pointer;">
+                                    <input type="radio" name="dayOption" value="fullWeek" onchange="updateDayOption()" style="accent-color: #6366f1;"> 월~일
+                                </label>
+                            </div>
+                            <!-- 원산지 -->
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <label style="display: flex; align-items: center; gap: 3px; font-size: 11px; color: #ccc; cursor: pointer;">
+                                    <input type="checkbox" id="showOrigin" onchange="toggleOriginOptions()" style="accent-color: #6366f1;"> 🌍 원산지
+                                </label>
+                                <div id="originOptions" style="display: none; align-items: center; gap: 8px;">
+                                    <select id="originSeafood" style="padding: 2px 4px; background: #2d3748; border: 1px solid #4a5568; border-radius: 3px; color: #e0e0e0; font-size: 10px;">
+                                        <option value="국내산">수산:국내산</option>
+                                        <option value="원양산">수산:원양산</option>
+                                        <option value="국내산/원양산">수산:국내/원양</option>
+                                    </select>
+                                    <select id="originKimchi" style="padding: 2px 4px; background: #2d3748; border: 1px solid #4a5568; border-radius: 3px; color: #e0e0e0; font-size: 10px;">
+                                        <option value="국내산">김치:국내산</option>
+                                        <option value="중국산">김치:중국산</option>
+                                    </select>
+                                    <div style="display: flex; gap: 4px; font-size: 10px; color: #aaa;">
+                                        <label><input type="checkbox" class="origin-meat" value="국내산" checked style="accent-color: #6366f1;">국내</label>
+                                        <label><input type="checkbox" class="origin-meat" value="러시아산" style="accent-color: #6366f1;">러시아</label>
+                                        <label><input type="checkbox" class="origin-meat" value="호주산" style="accent-color: #6366f1;">호주</label>
+                                        <label><input type="checkbox" class="origin-meat" value="브라질산" style="accent-color: #6366f1;">브라질</label>
+                                        <label><input type="checkbox" class="origin-meat" value="미국산" style="accent-color: #6366f1;">미국</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 추가 정보 -->
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <label style="display: flex; align-items: center; gap: 3px; font-size: 11px; color: #ccc; cursor: pointer;">
+                                    <input type="checkbox" id="showAllergy" onchange="reRenderMealData()" style="accent-color: #6366f1;"> ⚠️ 알러지
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 3px; font-size: 11px; color: #ccc; cursor: pointer;">
+                                    <input type="checkbox" id="showCalorie" onchange="reRenderMealData()" style="accent-color: #6366f1;"> 🔥 칼로리
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 사업장명 (숨김) -->
+                <input type="hidden" id="siteName" value="다함푸드 주간 식단표">
+                <input type="hidden" id="currentSiteId" value="">
+
+                <!-- 카테고리 선택 섹션 -->
+                <div class="control-section">
+                    <div class="section-title"><i class="fas fa-tags"></i> 카테고리 선택</div>
+                    <div id="categoryTabsContainer" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <div style="color: #888; text-align: center; width: 100%;">사업장을 선택하면 카테고리가 표시됩니다</div>
+                    </div>
+                </div>
+
+                <!-- 슬롯 선택 섹션 -->
+                <div class="control-section">
+                    <div class="section-title"><i class="fas fa-layer-group"></i> 출력할 슬롯 선택 <span id="slotCount" style="font-weight: normal; color: #888;">(0개 선택)</span></div>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <button class="btn" style="padding: 6px 10px; font-size: 11px; background: rgba(255,255,255,0.1);" onclick="selectAllSlots()">전체 선택</button>
+                        <button class="btn" style="padding: 6px 10px; font-size: 11px; background: rgba(255,255,255,0.1);" onclick="deselectAllSlots()">전체 해제</button>
+                    </div>
+                    <div id="slotListContainer" style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px;">
+                        <div style="color: #888; text-align: center;">카테고리를 선택하면 슬롯 목록이 표시됩니다</div>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <div class="section-title"><i class="fas fa-image"></i> 배경 이미지 선택</div>
+                    <!-- 🌟 다함 브랜드 배경 (밝은 톤) -->
+                    <div style="font-size: 11px; color: #a0aec0; margin-bottom: 8px; padding-left: 4px;">🏢 다함 브랜드</div>
+                    <div class="bg-selector" style="margin-bottom: 12px;">
+                        <div class="bg-option active" data-bg="daham_white" onclick="selectBackground('daham_white')">
+                            <img src="/static/images/backgrounds/bg_pure_white.jpg" alt="순백">
+                            <span class="bg-name">순백</span>
+                        </div>
+                        <div class="bg-option" data-bg="daham_corner" onclick="selectBackground('daham_corner')">
+                            <img src="/static/images/backgrounds/bg_white_corner_logo.jpg" alt="우하단 로고">
+                            <span class="bg-name">우하단 로고</span>
+                        </div>
+                        <div class="bg-option" data-bg="daham_top" onclick="selectBackground('daham_top')">
+                            <img src="/static/images/backgrounds/bg_white_top_logo.jpg" alt="상단 로고">
+                            <span class="bg-name">상단 로고</span>
+                        </div>
+                        <div class="bg-option" data-bg="daham_topleft" onclick="selectBackground('daham_topleft')">
+                            <img src="/static/images/backgrounds/bg_white_topleft_logo.jpg" alt="좌상단 로고">
+                            <span class="bg-name">좌상단 로고</span>
+                        </div>
+                        <div class="bg-option" data-bg="daham_ivory" onclick="selectBackground('daham_ivory')">
+                            <img src="/static/images/backgrounds/bg_ivory_bottom_logo.jpg" alt="아이보리">
+                            <span class="bg-name">아이보리</span>
+                        </div>
+                        <div class="bg-option" data-bg="daham_watermark" onclick="selectBackground('daham_watermark')">
+                            <img src="/static/images/backgrounds/bg_white_watermark.jpg" alt="워터마크">
+                            <span class="bg-name">워터마크</span>
+                        </div>
+                    </div>
+                    <!-- 📷 기타 배경 -->
+                    <div style="font-size: 11px; color: #a0aec0; margin-bottom: 8px; padding-left: 4px;">📷 이미지 배경</div>
+                    <div class="bg-selector">
+                        <div class="bg-option" data-bg="food" onclick="selectBackground('food')">
+                            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=300&q=80" alt="음식">
+                            <span class="bg-name">음식</span>
+                        </div>
+                        <div class="bg-option" data-bg="vegetables" onclick="selectBackground('vegetables')">
+                            <img src="https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300&q=80" alt="채소">
+                            <span class="bg-name">신선한 채소</span>
+                        </div>
+                        <div class="bg-option" data-bg="wood" onclick="selectBackground('wood')">
+                            <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80" alt="나무">
+                            <span class="bg-name">우드 테이블</span>
+                        </div>
+                        <div class="bg-option" data-bg="nature" onclick="selectBackground('nature')">
+                            <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&q=80" alt="자연">
+                            <span class="bg-name">자연</span>
+                        </div>
+                        <div class="bg-option" data-bg="sky" onclick="selectBackground('sky')">
+                            <img src="https://images.unsplash.com/photo-1517483000871-1dbf64a6e1c6?w=300&q=80" alt="하늘">
+                            <span class="bg-name">하늘</span>
+                        </div>
+                        <div class="bg-option" data-bg="gradient" onclick="selectBackground('gradient')">
+                            <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+                            <span class="bg-name">그라데이션</span>
+                        </div>
+                        <label class="bg-option" data-bg="custom" for="customBgInput" style="cursor: pointer;">
+                            <div style="width: 100%; height: 100%; background: #3a3a4a; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-plus" style="font-size: 24px; color: #888;"></i>
+                            </div>
+                            <span class="bg-name">이미지 추가</span>
+                        </label>
+                        <input type="file" id="customBgInput" accept="image/*" style="display: none;" onchange="handleCustomBgUpload(event)">
+                    </div>
+                    <div id="customBgList" class="custom-bg-list"></div>
+                    <div class="bg-size-info">
+                        <small>📐 권장 사이즈: A4가로 2480x1754px, A4세로 1754x2480px, 모바일 1080x1920px</small>
+                    </div>
+
+                    <!-- 이미지 편집 옵션 -->
+                    <div id="bgEditOptions" style="display: none; margin-top: 12px; padding: 12px; background: #2d3748; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #a0aec0; margin-bottom: 10px;">🎨 이미지 편집</div>
+
+                        <!-- 크기 조절 -->
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #e0e0e0; min-width: 50px;">크기</label>
+                            <input type="range" id="bgScale" min="50" max="400" value="100"
+                                style="flex: 1; accent-color: #6366f1;" onchange="applyBgEdit()">
+                            <span id="bgScaleValue" style="font-size: 10px; color: #a0aec0; min-width: 40px;">100%</span>
+                        </div>
+
+                        <!-- 위치 조정 -->
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #e0e0e0; min-width: 50px;">위치</label>
+                            <select id="bgPosition" style="flex: 1; padding: 4px 8px; background: #1a202c; border: 1px solid #4a5568; border-radius: 4px; color: #e0e0e0; font-size: 11px;" onchange="applyBgEdit()">
+                                <option value="center">중앙</option>
+                                <option value="top">상단</option>
+                                <option value="bottom">하단</option>
+                                <option value="left">좌측</option>
+                                <option value="right">우측</option>
+                                <option value="top left">좌상단</option>
+                                <option value="top right">우상단</option>
+                                <option value="bottom left">좌하단</option>
+                                <option value="bottom right">우하단</option>
+                            </select>
+                        </div>
+
+                        <!-- 투명도 -->
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #e0e0e0; min-width: 50px;">투명도</label>
+                            <input type="range" id="bgOpacity" min="0" max="100" value="100"
+                                style="flex: 1; accent-color: #6366f1;" onchange="applyBgEdit()">
+                            <span id="bgOpacityValue" style="font-size: 10px; color: #a0aec0; min-width: 35px;">100%</span>
+                        </div>
+
+                        <!-- 초기화 버튼 -->
+                        <button onclick="resetBgEdit()" style="width: 100%; padding: 6px; background: #4a5568; border: none; border-radius: 4px; color: #e0e0e0; font-size: 11px; cursor: pointer; margin-top: 4px;">
+                            ↺ 초기화
+                        </button>
+                    </div>
+
+                    <!-- ★ 글씨 색상 편집 -->
+                    <div id="textColorOptions" style="margin-top: 12px; padding: 12px; background: #2d3748; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #a0aec0; margin-bottom: 10px;">🎨 글씨 색상</div>
+
+                        <!-- 프리셋 색상 -->
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+                            <button onclick="setTextColor('#ffffff')" style="width: 28px; height: 28px; background: #ffffff; border: 2px solid #666; border-radius: 4px; cursor: pointer;" title="흰색"></button>
+                            <button onclick="setTextColor('#1a202c')" style="width: 28px; height: 28px; background: #1a202c; border: 2px solid #666; border-radius: 4px; cursor: pointer;" title="검정"></button>
+                            <button onclick="setTextColor('#1a365d')" style="width: 28px; height: 28px; background: #1a365d; border: 2px solid #666; border-radius: 4px; cursor: pointer;" title="진한 파랑"></button>
+                            <button onclick="setTextColor('#744210')" style="width: 28px; height: 28px; background: #744210; border: 2px solid #666; border-radius: 4px; cursor: pointer;" title="갈색"></button>
+                            <button onclick="setTextColor('#22543d')" style="width: 28px; height: 28px; background: #22543d; border: 2px solid #666; border-radius: 4px; cursor: pointer;" title="진한 녹색"></button>
+                            <button onclick="setTextColor('#742a2a')" style="width: 28px; height: 28px; background: #742a2a; border: 2px solid #666; border-radius: 4px; cursor: pointer;" title="진한 빨강"></button>
+                        </div>
+
+                        <!-- 커스텀 색상 -->
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="font-size: 11px; color: #e0e0e0; min-width: 60px;">직접 선택</label>
+                            <input type="color" id="customTextColor" value="#1a202c"
+                                style="width: 40px; height: 28px; border: none; border-radius: 4px; cursor: pointer;"
+                                onchange="setTextColor(this.value)">
+                            <span id="textColorValue" style="font-size: 10px; color: #a0aec0;">#1a202c</span>
+                        </div>
+                    </div>
+
+                    <!-- ★ 로고 표시 옵션 -->
+                    <div id="logoOptions" style="margin-top: 12px; padding: 12px; background: #2d3748; border-radius: 8px;">
+                        <div style="font-size: 11px; color: #a0aec0; margin-bottom: 10px;">🏷️ 로고 표시</div>
+
+                        <!-- 로고 ON/OFF -->
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <label style="font-size: 11px; color: #e0e0e0;">로고 표시</label>
+                            <input type="checkbox" id="logoEnabled" onchange="toggleLogo(this.checked)" style="accent-color: #6366f1;">
+                        </div>
+
+                        <!-- 로고 위치 -->
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #e0e0e0; min-width: 50px;">위치</label>
+                            <select id="logoPosition" onchange="setLogoPosition(this.value)" style="flex: 1; padding: 4px 8px; background: #1a202c; border: 1px solid #4a5568; border-radius: 4px; color: #e0e0e0; font-size: 11px;">
+                                <option value="top-left">좌상단</option>
+                                <option value="top-right">우상단</option>
+                                <option value="bottom-left">좌하단</option>
+                                <option value="bottom-right" selected>우하단</option>
+                                <option value="center">중앙</option>
+                            </select>
+                        </div>
+
+                        <!-- 로고 크기 -->
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <label style="font-size: 11px; color: #e0e0e0; min-width: 50px;">크기</label>
+                            <input type="range" id="logoSize" min="50" max="300" value="120"
+                                style="flex: 1; accent-color: #6366f1;" onchange="setLogoSize(this.value)">
+                            <span id="logoSizeValue" style="font-size: 10px; color: #a0aec0; min-width: 40px;">120px</span>
+                        </div>
+
+                        <!-- 로고 투명도 -->
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label style="font-size: 11px; color: #e0e0e0; min-width: 50px;">투명도</label>
+                            <input type="range" id="logoOpacity" min="10" max="100" value="40"
+                                style="flex: 1; accent-color: #6366f1;" onchange="setLogoOpacity(this.value)">
+                            <span id="logoOpacityValue" style="font-size: 10px; color: #a0aec0; min-width: 35px;">40%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 출력 형식 -->
+            <div class="format-tabs">
+                <div class="format-tab active" data-format="weekly" onclick="selectFormat('weekly')">
+                    <i class="fas fa-table"></i> 주간 (A4 가로)
+                </div>
+                <div class="format-tab" data-format="weekly-portrait" onclick="selectFormat('weekly-portrait')">
+                    <i class="fas fa-file-alt"></i> 주간 (A4 세로)
+                </div>
+                <div class="format-tab" data-format="mobile" onclick="selectFormat('mobile')">
+                    <i class="fas fa-mobile-alt"></i> 모바일
+                </div>
+                <button class="format-tab" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; margin-left: auto;" onclick="saveAsImage()">
+                    <i class="fas fa-image"></i> 이미지 저장
+                </button>
+                <button class="format-tab" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none;" onclick="saveToFile()">
+                    <i class="fas fa-download"></i> 파일 저장
+                </button>
+                <button class="format-tab" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none;" onclick="document.getElementById('mealPlanFileInput').click()">
+                    <i class="fas fa-upload"></i> 파일 불러오기
+                </button>
+                <input type="file" id="mealPlanFileInput" accept=".json" style="display: none;" onchange="loadFromFile(event)">
+                <button class="format-tab" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none;" onclick="printTable()">
+                    <i class="fas fa-print"></i> 인쇄
+                </button>
+            </div>
+
+            <!-- 미리보기 -->
+            <div class="preview-container">
+                <div id="mealTablePreview" class="meal-table-wrapper">
+                    <div class="meal-bg" id="mealBg"></div>
+                    <div class="meal-bg-overlay" id="mealBgOverlay"></div>
+                    <!-- ★ 로고 오버레이 (항상 맨 앞) -->
+                    <div class="logo-overlay" id="logoOverlay" style="display: none;">
+                        <img src="/static/images/backgrounds/daham_logo.png" alt="다함 로고" id="logoImage">
+                    </div>
+                    <div class="meal-content">
+                        <div class="table-header">
+                            <div class="site-name" id="displaySiteName" contenteditable="true" title="클릭하여 수정">다함푸드 주간 식단표</div>
+                            <div class="period" id="displayPeriod" contenteditable="true" title="클릭하여 수정">2025년 12월 4주차</div>
+                        </div>
+
+                        <table class="weekly-grid" id="weeklyTable">
+                            <thead>
+                                <tr>
+                                    <th>구분</th>
+                                    <th class="day-mon"><div class="day-name">월</div><div class="day-date" id="date-mon">23</div></th>
+                                    <th class="day-tue"><div class="day-name">화</div><div class="day-date" id="date-tue">24</div></th>
+                                    <th class="day-wed"><div class="day-name">수</div><div class="day-date" id="date-wed">25</div></th>
+                                    <th class="day-thu"><div class="day-name">목</div><div class="day-date" id="date-thu">26</div></th>
+                                    <th class="day-fri"><div class="day-name">금</div><div class="day-date" id="date-fri">27</div></th>
+                                    <th class="day-sat"><div class="day-name">토</div><div class="day-date" id="date-sat">28</div></th>
+                                    <th class="day-sun"><div class="day-name">일</div><div class="day-date" id="date-sun">29</div></th>
+                                </tr>
+                            </thead>
+                            <tbody id="weeklyTableBody">
+                            </tbody>
+                        </table>
+
+                        <!-- 원산지 및 알러지 정보 표시 영역 -->
+                        <div id="originInfoDisplay" style="display: none; margin-top: 12px; padding: 12px 16px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; font-size: 12px; color: #495057; border: 1px solid #dee2e6;">
+                        </div>
+
+                        <!-- 추가 정보 표시 영역 (알러지/칼로리) -->
+                        <div id="extraInfoDisplay" style="display: none; margin-top: 8px; padding: 12px 16px; background: linear-gradient(135deg, #fff5f5 0%, #ffe3e3 100%); border-radius: 8px; font-size: 11px; color: #c92a2a; border: 1px solid #ffc9c9;">
+                        </div>
+
+                        <div class="table-footer">
+                            <div class="company-info">
+                                <strong>다함푸드</strong> | 맛있고 건강한 급식
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 로딩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-box">
+            <i class="fas fa-spinner"></i>
+            <p style="margin-top: 20px; color: rgba(255,255,255,0.8);">이미지 생성 중...</p>
+        </div>
+    </div>
+
+    <!-- 토스트 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 사업장 선택기 스크립트 -->
+    <script src="/static/modules/core/site-selector.js"></script>
+
+    <script>
+        let currentFormat = 'weekly';
+        let currentBg = 'daham_white';
+        let currentSiteId = null;
+        let currentGroupId = null;  // 그룹 ID (카테고리 조회용)
+        let currentSiteName = '';
+        let allSlots = [];
+        let selectedSlots = new Set();
+        // ★ 데이터 캐시 (슬롯 선택 시 API 재호출 방지)
+        let cachedMealData = null;
+        let cachedStartDate = null;
+        let isLoadingMealData = false;  // 데이터 로딩 중 플래그
+
+        const backgrounds = {
+            // 🏢 다함 브랜드 배경 (밝은 톤)
+            daham_white: {
+                url: '/static/images/backgrounds/bg_pure_white.jpg',
+                overlay: 'transparent'
+            },
+            daham_corner: {
+                url: '/static/images/backgrounds/bg_pure_white.jpg',
+                overlay: 'transparent',
+                logo: { enabled: true, position: 'bottom-right' }
+            },
+            daham_top: {
+                url: '/static/images/backgrounds/bg_pure_white.jpg',
+                overlay: 'transparent',
+                logo: { enabled: true, position: 'top-right' }
+            },
+            daham_topleft: {
+                url: '/static/images/backgrounds/bg_pure_white.jpg',
+                overlay: 'transparent',
+                logo: { enabled: true, position: 'top-left' }
+            },
+            daham_ivory: {
+                url: '/static/images/backgrounds/bg_ivory_bottom_logo.jpg',
+                overlay: 'transparent'
+            },
+            daham_watermark: {
+                url: '/static/images/backgrounds/bg_white_watermark.jpg',
+                overlay: 'transparent'
+            },
+            // 📷 이미지 배경
+            food: {
+                url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=80',
+                overlay: 'linear-gradient(135deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 100%)'
+            },
+            vegetables: {
+                url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1200&q=80',
+                overlay: 'linear-gradient(135deg, rgba(0,50,0,0.5) 0%, rgba(0,80,0,0.3) 100%)'
+            },
+            wood: {
+                url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80',
+                overlay: 'linear-gradient(135deg, rgba(50,30,10,0.4) 0%, rgba(80,50,20,0.3) 100%)'
+            },
+            nature: {
+                url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&q=80',
+                overlay: 'linear-gradient(135deg, rgba(0,50,0,0.4) 0%, rgba(0,80,50,0.3) 100%)'
+            },
+            sky: {
+                url: 'https://images.unsplash.com/photo-1517483000871-1dbf64a6e1c6?w=1200&q=80',
+                overlay: 'linear-gradient(135deg, rgba(30,50,100,0.4) 0%, rgba(50,100,150,0.3) 100%)'
+            },
+            gradient: {
+                url: '',
+                gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                overlay: 'linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.1) 100%)'
+            }
+        };
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 즐겨찾기 로드
+            loadFavoriteSlots();
+
+            const now = new Date();
+            const weekInput = document.getElementById('weekSelect');
+            const year = now.getFullYear();
+            const week = getWeekNumber(now);
+            weekInput.value = `${year}-W${String(week).padStart(2, '0')}`;
+
+            // 사업장 선택기 초기화
+            if (typeof SiteSelector !== 'undefined') {
+                await SiteSelector.init('print-site-selector');
+                SiteSelector.on('siteChange', handleSiteChange);
+
+                // 초기 로드: 저장된 사업장이 있으면 슬롯 목록 로드
+                const savedContext = SiteSelector.getCurrentContext();
+                if (savedContext && savedContext.site_id) {
+                    currentSiteId = savedContext.site_id;
+                    currentGroupId = savedContext.group_id || currentSiteId;  // 그룹 ID
+                    currentSiteName = savedContext.site_name || '전체';
+                    document.getElementById('siteName').value = currentSiteName;
+                    document.getElementById('currentSiteId').value = currentSiteId || '';
+                    updateSiteName();
+                    await loadSlotList();
+                    loadMealData();
+                }
+            }
+
+            loadCustomBackgrounds();  // 서버에서 커스텀 배경 이미지 로드
+            selectBackground('daham_white');
+        });
+
+        // 사업장 변경 핸들러
+        async function handleSiteChange(context) {
+            console.log('🏢 사업장 변경:', context);
+            currentSiteId = context.site_id || context.siteId;
+            currentGroupId = context.group_id || currentSiteId;  // 그룹 ID 저장
+            currentSiteName = context.site_name || context.siteName || '전체';
+
+            document.getElementById('siteName').value = currentSiteName;
+            document.getElementById('currentSiteId').value = currentSiteId || '';
+            updateSiteName();
+
+            // 슬롯 목록 로드
+            await loadSlotList();
+
+            // 식단 데이터 로드
+            loadMealData();
+        }
+
+        // 슬롯 목록 로드 (카테고리별 - /api/v2/slots API 사용)
+        let allCategories = [];
+        let allSlotsData = [];  // /api/v2/slots에서 가져온 전체 슬롯 데이터
+        let selectedCategory = null;  // 현재 선택된 카테고리
+        let selectedCategoryId = null;  // 현재 선택된 카테고리 ID
+
+        // ★ 즐겨찾기 슬롯
+        let favoriteSlots = new Set();
+
+        // 즐겨찾기 로드
+        function loadFavoriteSlots() {
+            try {
+                const saved = localStorage.getItem('mealPlanFavoriteSlots');
+                if (saved) {
+                    favoriteSlots = new Set(JSON.parse(saved));
+                }
+            } catch (e) {
+                console.error('즐겨찾기 로드 실패:', e);
+            }
+        }
+
+        // 즐겨찾기 저장
+        function saveFavoriteSlots() {
+            try {
+                localStorage.setItem('mealPlanFavoriteSlots', JSON.stringify([...favoriteSlots]));
+            } catch (e) {
+                console.error('즐겨찾기 저장 실패:', e);
+            }
+        }
+
+        // 즐겨찾기 토글
+        function toggleFavorite(slotName, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (favoriteSlots.has(slotName)) {
+                favoriteSlots.delete(slotName);
+            } else {
+                favoriteSlots.add(slotName);
+            }
+            saveFavoriteSlots();
+            // 슬롯 목록 다시 렌더링
+            if (selectedCategory) {
+                renderSlotsForCategory(selectedCategory);
+            }
+        }
+
+        // 즐겨찾기 여부 확인
+        function isFavorite(slotName) {
+            return favoriteSlots.has(slotName);
+        }
+
+        async function loadSlotList() {
+            const container = document.getElementById('slotListContainer');
+            const categoryContainer = document.getElementById('categoryTabsContainer');
+
+            if (!currentSiteId) {
+                container.innerHTML = '<div style="color: #888; text-align: center;">카테고리를 선택하면 슬롯 목록이 표시됩니다</div>';
+                categoryContainer.innerHTML = '<div style="color: #888; text-align: center; width: 100%;">사업장을 선택하면 카테고리가 표시됩니다</div>';
+                allSlots = [];
+                allCategories = [];
+                allSlotsData = [];
+                selectedCategory = null;
+                updateSlotCount();
+                return;
+            }
+
+            categoryContainer.innerHTML = '<div style="color: #888;">로딩 중...</div>';
+            container.innerHTML = '<div style="color: #888; text-align: center;">카테고리를 선택해주세요</div>';
+
+            try {
+                // 1. /api/v2/slots에서 실제 슬롯 목록 가져오기
+                const slotsResponse = await fetch('/api/v2/slots');
+                const slotsResult = await slotsResponse.json();
+                console.log('📂 슬롯 목록:', slotsResult);
+
+                if (slotsResult.success && slotsResult.data) {
+                    allSlotsData = slotsResult.data;
+
+                    // 현재 그룹의 슬롯만 필터링
+                    const groupIdToFind = currentGroupId || 1;  // 기본값 1 (다함)
+                    const groupSlots = allSlotsData.filter(s => s.group_id === groupIdToFind);
+                    console.log('📂 현재 그룹 슬롯:', groupSlots.length, '개 (그룹 ID:', groupIdToFind, ')');
+
+                    // 카테고리 목록 추출 (중복 제거)
+                    const categoryMap = new Map();
+                    groupSlots.forEach(slot => {
+                        if (!categoryMap.has(slot.category_id)) {
+                            categoryMap.set(slot.category_id, {
+                                id: slot.category_id,
+                                name: slot.category_name,
+                                slots: []
+                            });
+                        }
+                        categoryMap.get(slot.category_id).slots.push(slot);
+                    });
+                    allCategories = Array.from(categoryMap.values());
+                    console.log('📂 카테고리 목록:', allCategories);
+
+                    if (allCategories.length > 0) {
+                        // 카테고리 탭 렌더링
+                        renderCategoryTabs(allCategories);
+
+                        // 첫 번째 카테고리 자동 선택
+                        selectCategory(allCategories[0].id, allCategories[0].name);
+                    } else {
+                        categoryContainer.innerHTML = '<div style="color: #888; text-align: center; width: 100%;">해당 그룹의 카테고리가 없습니다</div>';
+                        container.innerHTML = '<div style="color: #888; text-align: center;">슬롯이 없습니다</div>';
+                        allSlots = [];
+                        allCategories = [];
+                    }
+                } else {
+                    categoryContainer.innerHTML = '<div style="color: #888; text-align: center; width: 100%;">슬롯 정보를 가져올 수 없습니다</div>';
+                    container.innerHTML = '<div style="color: #888; text-align: center;">슬롯 정보를 가져올 수 없습니다</div>';
+                    allSlots = [];
+                }
+            } catch (e) {
+                console.error('슬롯 목록 로드 실패:', e);
+                categoryContainer.innerHTML = '<div style="color: #f87171;">로드 실패</div>';
+                container.innerHTML = '<div style="color: #f87171;">슬롯 목록 로드 실패</div>';
+            }
+
+            updateSlotCount();
+        }
+
+        // 카테고리 탭 렌더링
+        function renderCategoryTabs(categories) {
+            const container = document.getElementById('categoryTabsContainer');
+
+            const categoryIcons = {
+                '도시락': '🍱',
+                '운반': '🚚',
+                '학교': '🏫',
+                '요양원': '🏥',
+                '어린이집': '👶',
+                '산업체': '🏭'
+            };
+
+            let html = '';
+            categories.forEach(cat => {
+                const icon = categoryIcons[cat.name] || '📦';
+                const slotCount = cat.slots ? cat.slots.length : 0;
+                html += `
+                    <div class="category-tab ${selectedCategoryId === cat.id ? 'active' : ''}"
+                         onclick="selectCategory(${cat.id}, '${cat.name}')"
+                         data-category-id="${cat.id}">
+                        ${icon} ${cat.name}
+                        <span class="slot-count">${slotCount}</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 카테고리 선택
+        function selectCategory(categoryId, categoryName) {
+            selectedCategoryId = categoryId;
+            selectedCategory = categoryName;
+
+            // 탭 UI 업데이트
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.toggle('active', parseInt(tab.dataset.categoryId) === categoryId);
+            });
+
+            // 해당 카테고리의 슬롯만 렌더링
+            const category = allCategories.find(c => c.id === categoryId);
+            if (category && category.slots) {
+                // 슬롯 이름 추출
+                allSlots = category.slots.map(s => s.slot_name);
+                renderSlotsForCategory(category);
+            }
+
+            updateSlotCount();
+        }
+
+        // 선택된 카테고리의 슬롯 렌더링 (가로 배치)
+        function renderSlotsForCategory(category) {
+            const container = document.getElementById('slotListContainer');
+
+            if (!category.slots || category.slots.length === 0) {
+                container.innerHTML = '<div style="color: #888; text-align: center;">이 카테고리에 슬롯이 없습니다</div>';
+                return;
+            }
+
+            // ★ 슬롯 정렬 (조/중/석/야 순서)
+            const getMealTypeOrder = (slotName) => {
+                if (slotName.includes('조')) return 1;  // 조식
+                if (slotName.includes('중')) return 2;  // 중식
+                if (slotName.includes('석')) return 3;  // 석식
+                if (slotName.includes('야')) return 4;  // 야식
+                return 5;  // 기타
+            };
+
+            const sortedSlots = [...category.slots].sort((a, b) => {
+                return getMealTypeOrder(a.slot_name) - getMealTypeOrder(b.slot_name);
+            });
+
+            // ★ 즐겨찾기와 일반 슬롯 분리
+            const favoriteSlotsList = sortedSlots.filter(slot => isFavorite(slot.slot_name));
+            const normalSlotsList = sortedSlots.filter(slot => !isFavorite(slot.slot_name));
+
+            let html = '';
+
+            // 즐겨찾기 슬롯 섹션
+            if (favoriteSlotsList.length > 0) {
+                html += `
+                    <div style="margin-bottom: 16px; padding: 12px; background: rgba(255, 193, 7, 0.15); border-radius: 12px; border: 1px solid rgba(255, 193, 7, 0.3);">
+                        <div style="font-size: 12px; font-weight: 600; color: #ffc107; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-star"></i> 즐겨찾기
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                `;
+                favoriteSlotsList.forEach(slot => {
+                    const slotKey = slot.slot_name.replace(/[^a-zA-Z0-9가-힣]/g, '_');
+                    html += `
+                        <label for="slot_${slotKey}" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; background: rgba(255, 193, 7, 0.3); border-radius: 8px; cursor: pointer; border: 1px solid rgba(255, 193, 7, 0.4); white-space: nowrap;">
+                            <input type="checkbox" id="slot_${slotKey}"
+                                   data-slot-name="${slot.slot_name}"
+                                   onchange="updateSlotSelection()"
+                                   style="width: 16px; height: 16px; cursor: pointer; accent-color: #ffc107;">
+                            <span style="color: white; font-weight: 500; font-size: 13px;">${slot.slot_name}</span>
+                            <button onclick="toggleFavorite('${slot.slot_name}', event)" style="background: none; border: none; color: #ffc107; cursor: pointer; padding: 0; font-size: 14px;" title="즐겨찾기 해제">
+                                <i class="fas fa-star"></i>
+                            </button>
+                        </label>
+                    `;
+                });
+                html += '</div></div>';
+            }
+
+            // 일반 슬롯 섹션
+            if (normalSlotsList.length > 0) {
+                html += '<div style="display: flex; flex-wrap: wrap; gap: 10px;">';
+                normalSlotsList.forEach(slot => {
+                    const slotKey = slot.slot_name.replace(/[^a-zA-Z0-9가-힣]/g, '_');
+                    html += `
+                        <label for="slot_${slotKey}" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; background: rgba(99, 102, 241, 0.3); border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;">
+                            <input type="checkbox" id="slot_${slotKey}"
+                                   data-slot-name="${slot.slot_name}"
+                                   onchange="updateSlotSelection()"
+                                   style="width: 16px; height: 16px; cursor: pointer; accent-color: #6366f1;">
+                            <span style="color: white; font-weight: 500; font-size: 13px;">${slot.slot_name}</span>
+                            <button onclick="toggleFavorite('${slot.slot_name}', event)" style="background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 0; font-size: 14px;" title="즐겨찾기 추가">
+                                <i class="far fa-star"></i>
+                            </button>
+                        </label>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            container.innerHTML = html || '<div style="color: #888; text-align: center;">슬롯이 없습니다</div>';
+        }
+
+        // 슬롯 목록 렌더링 (트리 구조 기반 - 카테고리 > 끼니 > 사업장)
+        function renderSlotListFromTree(groupData) {
+            const container = document.getElementById('slotListContainer');
+
+            if (!groupData || !groupData.categories || groupData.categories.length === 0) {
+                container.innerHTML = '<div style="color: #888; text-align: center;">슬롯 배치 정보가 없습니다</div>';
+                return;
+            }
+
+            // 카테고리 색상
+            const categoryColors = [
+                'rgba(99, 102, 241, 0.3)',   // 인디고
+                'rgba(16, 185, 129, 0.3)',   // 에메랄드
+                'rgba(245, 158, 11, 0.3)',   // 앰버
+                'rgba(239, 68, 68, 0.3)',    // 레드
+                'rgba(139, 92, 246, 0.3)',   // 바이올렛
+                'rgba(20, 184, 166, 0.3)',   // 틸
+                'rgba(236, 72, 153, 0.3)',   // 핑크
+                'rgba(59, 130, 246, 0.3)'    // 블루
+            ];
+
+            let html = '';
+            let colorIdx = 0;
+
+            groupData.categories.forEach(cat => {
+                if (!cat.meal_slots || cat.meal_slots.length === 0) return;
+
+                const color = categoryColors[colorIdx % categoryColors.length];
+                colorIdx++;
+
+                // 카테고리 헤더
+                html += `
+                    <div style="margin-bottom: 16px; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px;">
+                        <div style="font-size: 14px; font-weight: 700; color: #a5b4fc; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            📁 ${currentSiteName} > ${cat.name}
+                            <span style="font-weight: normal; color: #888; font-size: 11px; margin-left: 8px;">(${cat.meal_slots.length}개 끼니)</span>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                `;
+
+                // 끼니별 슬롯 (가로 나열)
+                cat.meal_slots.forEach(ms => {
+                    const slotFullName = `${cat.name}-${ms.slot}`;
+                    const siteCount = ms.sites ? ms.sites.length : 0;
+                    const siteNames = ms.sites ? ms.sites.map(s => s.site_name).join(', ') : '';
+
+                    html += `
+                        <label style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; background: ${color}; border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); white-space: nowrap;" class="slot-item" data-slot="${slotFullName}" title="${siteNames || ms.slot}">
+                            <input type="checkbox" class="slot-checkbox" value="${slotFullName}" style="width: 16px; height: 16px; accent-color: #6366f1;" onchange="updateSlotSelection()">
+                            <span style="font-size: 13px; font-weight: 500; color: #e0e0e0;">${ms.slot}</span>
+                            <span style="font-size: 10px; color: #888;">(${siteCount})</span>
+                        </label>
+                    `;
+                });
+
+                html += `</div></div>`;
+            });
+
+            container.innerHTML = html || '<div style="color: #888; text-align: center;">슬롯이 없습니다</div>';
+            updateSlotSelection();
+        }
+
+        // 슬롯 목록 렌더링 (끼니별 - 기존 방식)
+        function renderSlotList() {
+            const container = document.getElementById('slotListContainer');
+            if (allSlots.length === 0) {
+                container.innerHTML = '<div style="color: #888; text-align: center;">슬롯이 없습니다</div>';
+                return;
+            }
+
+            // 끼니별로 그룹화
+            const groups = { '조식': [], '중식': [], '석식': [], '야식': [], '기타': [] };
+            allSlots.forEach(slot => {
+                if (slot.includes('조')) groups['조식'].push(slot);
+                else if (slot.includes('중')) groups['중식'].push(slot);
+                else if (slot.includes('석')) groups['석식'].push(slot);
+                else if (slot.includes('야')) groups['야식'].push(slot);
+                else groups['기타'].push(slot);
+            });
+
+            let html = '';
+            const groupColors = {
+                '조식': 'rgba(245, 158, 11, 0.3)',
+                '중식': 'rgba(99, 102, 241, 0.3)',
+                '석식': 'rgba(239, 68, 68, 0.3)',
+                '야식': 'rgba(139, 92, 246, 0.3)',
+                '기타': 'rgba(107, 114, 128, 0.3)'
+            };
+
+            Object.entries(groups).forEach(([groupName, slots]) => {
+                if (slots.length === 0) return;
+
+                html += `
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-size: 12px; font-weight: 600; color: #a5b4fc; margin-bottom: 8px;">${groupName}</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
+                            ${slots.map(slot => `
+                                <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: ${groupColors[groupName]}; border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s;" class="slot-item" data-slot="${slot}">
+                                    <input type="checkbox" class="slot-checkbox" value="${slot}" style="width: 16px; height: 16px; accent-color: #6366f1;" onchange="updateSlotSelection()">
+                                    <span style="font-size: 13px; color: #e0e0e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${slot}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            updateSlotSelection();
+        }
+
+        // 슬롯 목록 렌더링 (카테고리별)
+        function renderSlotListByCategory() {
+            const container = document.getElementById('slotListContainer');
+            if (allSlots.length === 0) {
+                container.innerHTML = '<div style="color: #888; text-align: center;">슬롯이 없습니다</div>';
+                return;
+            }
+
+            // 카테고리별로 슬롯 그룹화
+            // 슬롯 이름 형식: "도시락-중식", "운반-조식" 등 또는 카테고리명이 포함된 형태
+            const categorySlots = {};
+            const unmatched = [];
+
+            // 카테고리 색상
+            const categoryColors = [
+                'rgba(99, 102, 241, 0.3)',   // 인디고
+                'rgba(16, 185, 129, 0.3)',   // 에메랄드
+                'rgba(245, 158, 11, 0.3)',   // 앰버
+                'rgba(239, 68, 68, 0.3)',    // 레드
+                'rgba(139, 92, 246, 0.3)',   // 바이올렛
+                'rgba(20, 184, 166, 0.3)',   // 틸
+                'rgba(236, 72, 153, 0.3)',   // 핑크
+                'rgba(59, 130, 246, 0.3)'    // 블루
+            ];
+
+            // 카테고리 목록이 있으면 카테고리별로 그룹화
+            if (allCategories.length > 0) {
+                allCategories.forEach(cat => {
+                    categorySlots[cat.category_name] = [];
+                });
+
+                allSlots.forEach(slot => {
+                    let matched = false;
+                    for (const cat of allCategories) {
+                        // 슬롯 이름에 카테고리명이 포함되어 있는지 확인
+                        if (slot.includes(cat.category_name) || slot.startsWith(cat.category_code)) {
+                            categorySlots[cat.category_name].push(slot);
+                            matched = true;
+                            break;
+                        }
+                    }
+                    if (!matched) {
+                        unmatched.push(slot);
+                    }
+                });
+
+                // 매칭되지 않은 슬롯은 슬롯명의 앞부분(- 이전)으로 그룹화 시도
+                if (unmatched.length > 0) {
+                    unmatched.forEach(slot => {
+                        const parts = slot.split('-');
+                        if (parts.length > 1) {
+                            const catName = parts[0].trim();
+                            if (!categorySlots[catName]) {
+                                categorySlots[catName] = [];
+                            }
+                            categorySlots[catName].push(slot);
+                        } else {
+                            // 기타로 분류
+                            if (!categorySlots['기타']) {
+                                categorySlots['기타'] = [];
+                            }
+                            categorySlots['기타'].push(slot);
+                        }
+                    });
+                }
+            } else {
+                // 카테고리 정보가 없으면 슬롯명의 앞부분으로 그룹화
+                allSlots.forEach(slot => {
+                    const parts = slot.split('-');
+                    const catName = parts.length > 1 ? parts[0].trim() : '기타';
+                    if (!categorySlots[catName]) {
+                        categorySlots[catName] = [];
+                    }
+                    categorySlots[catName].push(slot);
+                });
+            }
+
+            // HTML 생성
+            let html = '';
+            let colorIdx = 0;
+
+            Object.entries(categorySlots).forEach(([catName, slots]) => {
+                if (slots.length === 0) return;
+
+                const color = categoryColors[colorIdx % categoryColors.length];
+                colorIdx++;
+
+                html += `
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-size: 13px; font-weight: 700; color: #a5b4fc; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            📁 ${currentSiteName} > ${catName}
+                            <span style="font-weight: normal; color: #888; font-size: 11px; margin-left: 8px;">(${slots.length}개)</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; padding-left: 12px;">
+                            ${slots.map(slot => {
+                                // 슬롯명에서 카테고리 부분 제거하여 표시
+                                let displayName = slot;
+                                if (slot.includes('-')) {
+                                    displayName = slot.split('-').slice(1).join('-').trim() || slot;
+                                }
+                                return `
+                                <label style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: ${color}; border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s;" class="slot-item" data-slot="${slot}">
+                                    <input type="checkbox" class="slot-checkbox" value="${slot}" style="width: 16px; height: 16px; accent-color: #6366f1;" onchange="updateSlotSelection()">
+                                    <span style="font-size: 13px; color: #e0e0e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${slot}">${displayName}</span>
+                                </label>
+                            `}).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html || '<div style="color: #888; text-align: center;">슬롯이 없습니다</div>';
+            updateSlotSelection();
+        }
+
+        // 슬롯 선택 업데이트
+        function updateSlotSelection() {
+            const checkboxes = document.querySelectorAll('#slotListContainer input[type="checkbox"]:checked');
+            selectedSlots = new Set();
+            checkboxes.forEach(cb => {
+                const slotName = cb.dataset.slotName;
+                if (slotName) {
+                    selectedSlots.add(slotName);
+                }
+            });
+            updateSlotCount();
+
+            // ★ 미리보기 업데이트 (캐시된 데이터로 빠르게 렌더링)
+            reRenderMealData();
+        }
+
+        function updateSlotCount() {
+            // 체크된 슬롯 개수 계산
+            const checkboxes = document.querySelectorAll('#slotListContainer input[type="checkbox"]:checked');
+            selectedSlots = new Set();
+            checkboxes.forEach(cb => {
+                const slotName = cb.dataset.slotName;
+                if (slotName) {
+                    selectedSlots.add(slotName);
+                }
+            });
+            document.getElementById('slotCount').textContent = `(${selectedSlots.size}개 선택)`;
+        }
+
+        // 전체 선택
+        function selectAllSlots() {
+            document.querySelectorAll('#slotListContainer input[type="checkbox"]').forEach(cb => cb.checked = true);
+            updateSlotSelection();
+        }
+
+        // 전체 해제
+        function deselectAllSlots() {
+            document.querySelectorAll('#slotListContainer input[type="checkbox"]').forEach(cb => cb.checked = false);
+            updateSlotSelection();
+        }
+
+        // 선택된 슬롯 가져오기
+        function getSelectedSlots() {
+            return Array.from(selectedSlots);
+        }
+
+        // ========== 출력 옵션 함수들 ==========
+
+        // 요일 옵션 변경
+        function updateDayOption() {
+            loadMealData();  // 데이터 다시 로드
+        }
+
+        // 현재 선택된 요일 옵션 가져오기
+        function getDayOption() {
+            const selected = document.querySelector('input[name="dayOption"]:checked');
+            return selected ? selected.value : 'weekday';
+        }
+
+        // 요일 옵션에 따른 표시 일수 반환
+        function getDaysToShow() {
+            const option = getDayOption();
+            if (option === 'weekday') return 5;      // 월~금
+            if (option === 'includeSat') return 6;   // 월~토
+            return 7;                                 // 월~일
+        }
+
+        // 원산지 옵션 토글
+        function toggleOriginOptions() {
+            const show = document.getElementById('showOrigin').checked;
+            document.getElementById('originOptions').style.display = show ? 'flex' : 'none';
+            reRenderMealData();  // ★ 캐시된 데이터로 빠르게 렌더링
+        }
+
+        // 원산지 정보 가져오기
+        function getOriginInfo() {
+            if (!document.getElementById('showOrigin').checked) return null;
+
+            const seafood = document.getElementById('originSeafood').value;
+            const kimchi = document.getElementById('originKimchi').value;
+            const meatCheckboxes = document.querySelectorAll('.origin-meat:checked');
+            const meats = Array.from(meatCheckboxes).map(cb => cb.value);
+
+            return {
+                seafood,
+                kimchi,
+                meat: meats.length > 0 ? meats.join('/') : '국내산'
+            };
+        }
+
+        // 추가 정보 옵션 가져오기
+        function getExtraOptions() {
+            return {
+                showAllergy: document.getElementById('showAllergy')?.checked || false,
+                showCalorie: document.getElementById('showCalorie')?.checked || false
+            };
+        }
+
+        // ========== 알러지 키워드 매핑 ==========
+        const ALLERGEN_KEYWORDS = {
+            1:  ['계란', '난류', '달걀', '메추리알', '오리알', '에그', '마요네즈', '커스터드'],  // ①난류
+            2:  ['우유', '밀크', '치즈', '버터', '크림', '요거트', '요구르트', '생크림', '연유', '분유', '유제품'],  // ②우유
+            3:  ['메밀', '모밀', '냉면', '막국수'],  // ③메밀
+            4:  ['땅콩', '피넛'],  // ④땅콩
+            5:  ['대두', '콩', '두부', '된장', '간장', '청국장', '콩나물', '유부', '미소', '두유', '콩기름'],  // ⑤대두
+            6:  ['밀', '밀가루', '빵', '면', '국수', '파스타', '스파게티', '라면', '우동', '만두', '튀김', '부침', '전분', '글루텐', '케이크', '과자', '쿠키', '크래커'],  // ⑥밀
+            7:  ['고등어'],  // ⑦고등어
+            8:  ['게', '꽃게', '대게', '킹크랩', '크랩'],  // ⑧게
+            9:  ['새우', '칵테일새우', '건새우', '젓갈새우'],  // ⑨새우
+            10: ['돼지', '돈육', '삼겹', '목살', '갈비', '베이컨', '햄', '소시지', '족발', '보쌈'],  // ⑩돼지고기
+            11: ['복숭아', '황도', '백도'],  // ⑪복숭아
+            12: ['토마토', '케첩', '토마토소스'],  // ⑫토마토
+            13: ['아황산', '와인', '건과일', '말린과일'],  // ⑬아황산염
+            14: ['호두'],  // ⑭호두
+            15: ['닭', '치킨', '닭고기', '닭가슴살', '닭날개', '닭다리'],  // ⑮닭고기
+            16: ['소고기', '쇠고기', '우육', '한우', '불고기', '스테이크', '갈비', '로스', '안심', '등심', '차돌'],  // ⑯소고기
+            17: ['오징어', '꼴뚜기', '한치'],  // ⑰오징어
+            18: ['조개', '굴', '전복', '홍합', '바지락', '모시조개', '가리비', '키조개', '꼬막', '피조개', '맛조개']  // ⑱조개류
+        };
+
+        const ALLERGEN_SYMBOLS = ['', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱'];
+
+        // 메뉴명에서 알러지 번호 추출
+        function getAllergenCodes(menuName) {
+            if (!menuName) return '';
+            const codes = [];
+
+            for (const [code, keywords] of Object.entries(ALLERGEN_KEYWORDS)) {
+                for (const keyword of keywords) {
+                    if (menuName.includes(keyword)) {
+                        codes.push(parseInt(code));
+                        break;  // 해당 알러지 코드는 한 번만 추가
+                    }
+                }
+            }
+
+            // 오름차순 정렬 후 심볼로 변환
+            codes.sort((a, b) => a - b);
+            return codes.map(c => ALLERGEN_SYMBOLS[c]).join('');
+        }
+
+        function getWeekNumber(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        }
+
+        async function loadTemplates() {
+            try {
+                const select = document.getElementById('templateSelect');
+                if (!select) return; // templateSelect 요소가 없으면 스킵
+
+                const response = await fetch('/api/meal-templates');
+                if (response.ok) {
+                    const data = await response.json();
+                    select.innerHTML = '<option value="">전체</option>';
+                    (data.templates || []).forEach(t => {
+                        select.innerHTML += `<option value="${t.id}">${t.template_name}</option>`;
+                    });
+                }
+            } catch (e) {
+                console.log('템플릿 로드:', e);
+            }
+        }
+
+        async function loadMealData() {
+            updatePeriodFromWeek();
+
+            const weekValue = document.getElementById('weekSelect').value;
+            if (!weekValue) {
+                renderSampleData();
+                return;
+            }
+
+            if (!currentSiteId) {
+                renderSampleData();
+                return;
+            }
+
+            // ★ 로딩 중 플래그 설정 및 로딩 표시
+            isLoadingMealData = true;
+            const tbody = document.getElementById('weeklyTableBody');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: #888;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 12px; display: block;"></i>
+                    식단 데이터 로딩 중...
+                </td></tr>`;
+            }
+
+            const [year, week] = weekValue.split('-W');
+            const startDate = getDateOfWeek(parseInt(year), parseInt(week));
+            const endDate = new Date(startDate);
+            endDate.setDate(endDate.getDate() + 6);
+
+            // ★ 로컬 날짜 형식으로 변환 (UTC 변환으로 인한 날짜 밀림 방지)
+            const formatDate = (d) => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            try {
+                let url = `/api/meal-plans?start_date=${formatDate(startDate)}&end_date=${formatDate(endDate)}&site_id=${currentSiteId}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    // ★ 데이터 캐시 저장
+                    cachedMealData = result.data;
+                    cachedStartDate = startDate;
+                    renderMealDataWithSlots(result.data, startDate, getSelectedSlots());
+                    showToast('식단 데이터를 불러왔습니다');
+                } else {
+                    cachedMealData = null;
+                    cachedStartDate = null;
+                    renderSampleData();
+                    showToast('데이터가 없어 샘플을 표시합니다', 'warning');
+                }
+            } catch (error) {
+                console.error('식단 로드 오류:', error);
+                cachedMealData = null;
+                cachedStartDate = null;
+                renderSampleData();
+                showToast('데이터 로드 실패', 'error');
+            } finally {
+                // ★ 로딩 완료 플래그 해제
+                isLoadingMealData = false;
+            }
+        }
+
+        // ★ 캐시된 데이터로 빠르게 다시 렌더링 (슬롯 선택 변경 시 사용)
+        function reRenderMealData() {
+            if (cachedMealData && cachedStartDate) {
+                // 캐시가 있으면 즉시 렌더링
+                renderMealDataWithSlots(cachedMealData, cachedStartDate, getSelectedSlots());
+            } else if (!isLoadingMealData) {
+                // 캐시가 없고 로딩 중이 아니면 데이터 로드
+                loadMealData();
+            }
+            // 로딩 중이면 아무것도 하지 않음 (로딩 완료 후 자동 렌더링됨)
+        }
+
+        // 선택된 슬롯만 렌더링
+        function renderMealDataWithSlots(data, startDate, selectedSlotNames) {
+            const tbody = document.getElementById('weeklyTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            // ★ 요일 옵션에 따른 표시 일수
+            const daysToShow = getDaysToShow();
+
+            // ★ 토/일 컬럼 표시/숨김 처리
+            updateDayColumns(daysToShow);
+
+            // ★ 선택된 슬롯이 없으면 안내 메시지 표시
+            if (selectedSlotNames.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${daysToShow + 1}" style="text-align: center; padding: 40px; color: #888;">
+                    <i class="fas fa-hand-pointer" style="font-size: 32px; margin-bottom: 12px; display: block;"></i>
+                    출력할 슬롯을 선택해주세요
+                </td></tr>`;
+                updateOriginDisplay();
+                return;
+            }
+
+            const slotMenus = {};
+
+            // 각 날짜별로 슬롯 데이터 수집 (선택한 요일만)
+            for (let i = 0; i < daysToShow; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                // ★ 로컬 날짜 형식 사용 (UTC 변환 방지)
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                const dayData = data[dateStr] || {};
+
+                Object.entries(dayData).forEach(([slotName, menus]) => {
+                    // 선택된 슬롯만 포함
+                    if (!selectedSlotNames.includes(slotName)) {
+                        return;
+                    }
+
+                    if (!slotMenus[slotName]) {
+                        slotMenus[slotName] = {};
+                    }
+                    slotMenus[slotName][i] = menus || [];
+                });
+            }
+
+            // ★ 슬롯 정렬 함수 (조/중/석/야 순서)
+            const getMealTypeOrder = (slotName) => {
+                if (slotName.includes('조')) return 1;  // 조식
+                if (slotName.includes('중')) return 2;  // 중식
+                if (slotName.includes('석')) return 3;  // 석식
+                if (slotName.includes('야')) return 4;  // 야식
+                return 5;  // 기타
+            };
+
+            // 슬롯 정렬 후 행 생성
+            const sortedSlotEntries = Object.entries(slotMenus).sort((a, b) => {
+                return getMealTypeOrder(a[0]) - getMealTypeOrder(b[0]);
+            });
+
+            sortedSlotEntries.forEach(([slotName, dayMenus]) => {
+                const tr = document.createElement('tr');
+                // ★ "-" 구분자 앞부분(카테고리) 제거하여 표시
+                const displayName = slotName.includes('-') ? slotName.split('-').slice(1).join('-') : slotName;
+                // ★ 구분명 수정 가능하도록 contenteditable 추가
+                tr.innerHTML = `<td class="meal-type-cell"><span class="editable-name" contenteditable="true" title="클릭하여 수정">${displayName}</span></td>`;
+
+                // ★ 알러지 표시 옵션 확인
+                const showAllergen = getExtraOptions().showAllergy;
+
+                for (let i = 0; i < daysToShow; i++) {
+                    const menus = dayMenus[i] || [];
+                    if (menus.length === 0) {
+                        tr.innerHTML += `<td><div class="menu-list"><div class="menu-item" style="color:#999;">-</div></div></td>`;
+                    } else {
+                        // ★ '양념', '양념류' 메뉴 필터링
+                        const filteredMenus = menus.filter(m => {
+                            const menuName = typeof m === 'string' ? m : (m.name || '');
+                            return !menuName.includes('양념');
+                        });
+                        const menuHtml = filteredMenus.map((m, idx) => {
+                            let name = typeof m === 'string' ? m : (m.name || '-');
+                            const originalName = name;  // 알러지 검출용 원본 보관
+                            // ★ 메뉴명 정규화: '본사-' 접두사 및 카테고리 접미사 제거
+                            if (name.startsWith('본사-')) {
+                                name = name.substring(3);  // '본사-' 제거
+                            }
+                            // 카테고리/끼니 접미사 제거 (-운, -요, -도, -학, -중, -석, -유 등 콤마 포함)
+                            name = name.replace(/-[운요도학조중석유,]+\s*$/, '').trim();
+                            // ★ 알러지 번호 추가
+                            const allergenCodes = showAllergen ? getAllergenCodes(originalName) : '';
+                            const allergenSup = allergenCodes ? `<sup style="color:#000;font-size:11px;font-weight:bold;margin-left:2px;text-shadow:-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;">${allergenCodes}</sup>` : '';
+                            // ★ 메뉴명 수정 가능하도록 contenteditable 추가
+                            return `<div class="menu-item ${idx === 0 ? 'main-dish' : ''}"><span class="editable-menu" contenteditable="true" title="클릭하여 수정">${name}</span>${allergenSup}</div>`;
+                        }).join('');
+                        tr.innerHTML += `<td><div class="menu-list">${menuHtml}</div></td>`;
+                    }
+                }
+
+                tbody.appendChild(tr);
+            });
+
+            // 선택한 슬롯에 데이터가 없으면 안내
+            if (Object.keys(slotMenus).length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${daysToShow + 1}" style="text-align: center; padding: 40px; color: #888;">
+                    선택한 슬롯에 식단 데이터가 없습니다
+                </td></tr>`;
+            }
+
+            // ★ 원산지 및 추가 정보 표시 업데이트
+            updateOriginDisplay();
+        }
+
+        // 요일 컬럼 표시/숨김
+        function updateDayColumns(daysToShow) {
+            const satTh = document.querySelector('th.day-sat');
+            const sunTh = document.querySelector('th.day-sun');
+
+            if (satTh) satTh.style.display = daysToShow >= 6 ? '' : 'none';
+            if (sunTh) sunTh.style.display = daysToShow >= 7 ? '' : 'none';
+        }
+
+        // 원산지 및 추가 정보 표시 업데이트
+        function updateOriginDisplay() {
+            const originDiv = document.getElementById('originInfoDisplay');
+            const extraDiv = document.getElementById('extraInfoDisplay');
+
+            // 요소가 없으면 종료
+            if (!originDiv || !extraDiv) return;
+
+            // 원산지 정보
+            const originInfo = getOriginInfo();
+            if (originInfo) {
+                originDiv.style.display = 'block';
+                originDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                        <span style="font-weight: 600; color: #212529;">🌍 원산지 표시</span>
+                        <span style="background: #e7f5ff; padding: 4px 10px; border-radius: 4px; color: #1971c2;">수산물: <strong>${originInfo.seafood}</strong></span>
+                        <span style="background: #fff3bf; padding: 4px 10px; border-radius: 4px; color: #e67700;">김치: <strong>${originInfo.kimchi}</strong></span>
+                        <span style="background: #ffe3e3; padding: 4px 10px; border-radius: 4px; color: #c92a2a;">육류: <strong>${originInfo.meat}</strong></span>
+                    </div>`;
+            } else {
+                originDiv.style.display = 'none';
+            }
+
+            // 추가 정보
+            const extraOpts = getExtraOptions();
+            const extraItems = [];
+            if (extraOpts.showAllergy) {
+                extraItems.push(`
+                    <div style="margin-bottom: 8px;">
+                        <div style="font-weight: 600; margin-bottom: 6px; font-size: 12px;">⚠️ 알레르기 유발식품 안내</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; font-size: 11px;">
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">①난류</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">②우유</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">③메밀</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">④땅콩</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑤대두</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑥밀</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑦고등어</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑧게</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑨새우</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑩돼지고기</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑪복숭아</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑫토마토</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑬아황산염</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑭호두</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑮닭고기</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑯소고기</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑰오징어</span>
+                            <span style="background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 3px;">⑱조개류</span>
+                        </div>
+                        <div style="font-size: 10px; color: #868e96; margin-top: 6px; text-align: center;">※ 기타 표기되지 않은 식품의 알레르기 증상을 보이는 경우 급식 시 각별한 주의를 부탁드립니다.</div>
+                    </div>`);
+            }
+            if (extraOpts.showCalorie) {
+                extraItems.push(`
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 15px; ${extraOpts.showAllergy ? 'padding-top: 8px; border-top: 1px dashed #ffc9c9;' : ''}">
+                        <span style="font-weight: 600;">🔥 1일 권장 칼로리</span>
+                        <span style="background: rgba(255,255,255,0.7); padding: 3px 8px; border-radius: 4px;">성인 남성: <strong>2,500kcal</strong></span>
+                        <span style="background: rgba(255,255,255,0.7); padding: 3px 8px; border-radius: 4px;">성인 여성: <strong>2,000kcal</strong></span>
+                    </div>`);
+            }
+
+            if (extraItems.length > 0) {
+                extraDiv.style.display = 'block';
+                extraDiv.innerHTML = extraItems.join('');
+            } else {
+                extraDiv.style.display = 'none';
+            }
+        }
+
+        function renderMealData(data, startDate) {
+            const tbody = document.getElementById('weeklyTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            // 슬롯별 메뉴 데이터 정리
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            const slotMenus = {};  // { slotName: { dayIndex: [menus] } }
+
+            // 각 날짜별로 슬롯 데이터 수집
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                // ★ 로컬 날짜 형식 사용 (UTC 변환 방지)
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                const dayData = data[dateStr] || {};
+
+                Object.entries(dayData).forEach(([slotName, menus]) => {
+                    if (!slotMenus[slotName]) {
+                        slotMenus[slotName] = {};
+                    }
+                    slotMenus[slotName][i] = menus || [];
+                });
+            }
+
+            // 슬롯별로 행 생성
+            Object.entries(slotMenus).forEach(([slotName, dayMenus]) => {
+                const tr = document.createElement('tr');
+
+                // 슬롯 이름에서 끼니 추출 (중, 석, 조 등)
+                let mealType = slotName;
+                if (slotName.includes('중')) mealType = '중식';
+                else if (slotName.includes('석')) mealType = '석식';
+                else if (slotName.includes('조')) mealType = '조식';
+
+                // ★ "-" 구분자 앞부분(카테고리) 제거하여 표시
+                const displayName = slotName.includes('-') ? slotName.split('-').slice(1).join('-') : slotName;
+                // ★ 구분명 수정 가능하도록 contenteditable 추가
+                tr.innerHTML = `<td class="meal-type-cell"><span class="editable-name" contenteditable="true" title="클릭하여 수정">${displayName}</span></td>`;
+
+                for (let i = 0; i < 7; i++) {
+                    const menus = dayMenus[i] || [];
+                    if (menus.length === 0) {
+                        tr.innerHTML += `<td><div class="menu-list"><div class="menu-item" style="color:#999;">-</div></div></td>`;
+                    } else {
+                        // ★ '양념', '양념류' 메뉴 필터링
+                        const filteredMenus = menus.filter(m => {
+                            const menuName = typeof m === 'string' ? m : (m.name || '');
+                            return !menuName.includes('양념');
+                        });
+                        const menuHtml = filteredMenus.map((m, idx) => {
+                            let name = typeof m === 'string' ? m : (m.name || '-');
+                            // ★ 메뉴명 정규화: '본사-' 접두사 및 카테고리 접미사 제거
+                            if (name.startsWith('본사-')) {
+                                name = name.substring(3);
+                            }
+                            name = name.replace(/-(운|요|도|학)\s*$/, '').trim();
+                            // ★ 메뉴명 수정 가능하도록 contenteditable 추가
+                            return `<div class="menu-item ${idx === 0 ? 'main-dish' : ''}"><span class="editable-menu" contenteditable="true" title="클릭하여 수정">${name}</span></div>`;
+                        }).join('');
+                        tr.innerHTML += `<td><div class="menu-list">${menuHtml}</div></td>`;
+                    }
+                }
+
+                tbody.appendChild(tr);
+            });
+
+            // 데이터가 없으면 샘플 표시
+            if (Object.keys(slotMenus).length === 0) {
+                renderSampleData();
+            }
+        }
+
+        function updatePeriodFromWeek() {
+            const weekValue = document.getElementById('weekSelect').value;
+            if (!weekValue) return;
+
+            const [year, week] = weekValue.split('-W');
+            const startDate = getDateOfWeek(parseInt(year), parseInt(week));
+
+            const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                const el = document.getElementById(`date-${days[i]}`);
+                if (el) el.textContent = date.getDate();
+            }
+
+            const month = startDate.getMonth() + 1;
+            const weekNum = getWeekNumber(startDate);
+            const periodEl = document.getElementById('displayPeriod');
+            if (periodEl) {
+                periodEl.textContent = `${year}년 ${month}월 ${weekNum}주차`;
+            }
+        }
+
+        function getDateOfWeek(year, week) {
+            // ISO 8601 주차 기준: 1월 4일이 포함된 주가 1주차
+            // 해당 주의 월요일 반환
+            const jan4 = new Date(year, 0, 4);
+            const jan4DayOfWeek = jan4.getDay() || 7; // 일요일=0 → 7로 변환
+            // 1주차 월요일 = 1월 4일 - (요일-1)
+            const week1Monday = new Date(jan4);
+            week1Monday.setDate(jan4.getDate() - (jan4DayOfWeek - 1));
+            // 해당 주의 월요일 = 1주차 월요일 + (week - 1) * 7
+            const targetMonday = new Date(week1Monday);
+            targetMonday.setDate(week1Monday.getDate() + (week - 1) * 7);
+            return targetMonday;
+        }
+
+        function renderSampleData() {
+            const sampleMeals = {
+                '조식': ['흰밥', '된장국', '계란말이', '김치', '깍두기'],
+                '중식': ['잡곡밥', '미역국', '제육볶음', '시금치나물', '배추김치'],
+                '석식': ['흰밥', '김치찌개', '불고기', '콩나물무침', '깍두기']
+            };
+
+            const tbody = document.getElementById('weeklyTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            Object.entries(sampleMeals).forEach(([mealType, menus]) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="meal-type-cell">${mealType}</td>`;
+
+                for (let i = 0; i < 7; i++) {
+                    const menuHtml = menus.map((m, idx) =>
+                        `<div class="menu-item ${idx === 0 ? 'main-dish' : ''}">${m}</div>`
+                    ).join('');
+                    tr.innerHTML += `<td><div class="menu-list">${menuHtml}</div></td>`;
+                }
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        let customBackgrounds = [];
+
+        // 서버에서 커스텀 배경 이미지 로드
+        async function loadCustomBackgrounds() {
+            try {
+                const response = await fetch('/api/meal-plan/backgrounds');
+                const result = await response.json();
+                if (result.success && result.backgrounds) {
+                    customBackgrounds = result.backgrounds.map(bg => ({
+                        id: 'custom_' + bg.id,
+                        serverId: bg.id,
+                        name: bg.name,
+                        data: bg.data
+                    }));
+                    renderCustomBackgrounds();
+                    console.log(`[배경] 서버에서 ${customBackgrounds.length}개 이미지 로드`);
+                }
+            } catch (e) {
+                console.error('배경 이미지 로드 오류:', e);
+                // 로컬 스토리지 폴백
+                customBackgrounds = JSON.parse(localStorage.getItem('mealPrintCustomBgs') || '[]');
+                renderCustomBackgrounds();
+            }
+        }
+
+        function selectBackground(bgKey) {
+            currentBg = bgKey;
+            document.querySelectorAll('.bg-option').forEach(el => {
+                el.classList.toggle('active', el.dataset.bg === bgKey);
+            });
+            document.querySelectorAll('.custom-bg-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.bg === bgKey);
+            });
+
+            const bgEl = document.getElementById('mealBg');
+            const overlayEl = document.getElementById('mealBgOverlay');
+            const contentEl = document.querySelector('.meal-content');
+
+            const bgEditOptions = document.getElementById('bgEditOptions');
+
+            if (bgKey.startsWith('custom_')) {
+                const customBg = customBackgrounds.find(b => b.id === bgKey);
+                if (customBg) {
+                    // 편집 설정 적용
+                    applyBgEdit(customBg.data);
+                    overlayEl.style.background = 'transparent';
+                    // 커스텀 템플릿: 기존 테이블 숨기기
+                    contentEl.style.display = 'none';
+                    // 편집 옵션 표시
+                    if (bgEditOptions) bgEditOptions.style.display = 'block';
+                }
+            } else {
+                const bg = backgrounds[bgKey];
+                if (bg.url) {
+                    bgEl.style.background = `url('${bg.url}') center/cover no-repeat`;
+                } else if (bg.gradient) {
+                    bgEl.style.background = bg.gradient;
+                }
+                overlayEl.style.background = bg.overlay;
+                // 기본 배경: 테이블 표시
+                contentEl.style.display = 'block';
+                // 편집 옵션 숨기기
+                if (bgEditOptions) bgEditOptions.style.display = 'none';
+                // 배경 투명도 초기화
+                bgEl.style.opacity = '1';
+            }
+
+            // ★ 밝은 배경(다함 브랜드)이면 라이트 테마 적용
+            const wrapper = document.querySelector('.meal-table-wrapper');
+            const logoCheckbox = document.getElementById('logoEnabled');
+            if (wrapper) {
+                if (bgKey.startsWith('daham_')) {
+                    wrapper.classList.add('light-theme');
+                    // 기본 어두운 글씨색 적용
+                    setTimeout(() => setTextColor('#1a365d'), 100);
+                    // 배경에 logo 설정이 있으면 오버레이 자동 적용
+                    const bgConfig = backgrounds[bgKey];
+                    if (bgConfig && bgConfig.logo && bgConfig.logo.enabled) {
+                        if (logoCheckbox) logoCheckbox.checked = true;
+                        toggleLogo(true);
+                        // 위치도 자동 설정
+                        const posSelect = document.getElementById('logoPosition');
+                        if (posSelect) posSelect.value = bgConfig.logo.position;
+                        setLogoPosition(bgConfig.logo.position);
+                    } else {
+                        if (logoCheckbox) logoCheckbox.checked = false;
+                        toggleLogo(false);
+                    }
+                } else {
+                    wrapper.classList.remove('light-theme');
+                    // 기본 흰색 글씨색 적용
+                    setTimeout(() => setTextColor('#ffffff'), 100);
+                    // 로고 숨김
+                    if (logoCheckbox) logoCheckbox.checked = false;
+                    toggleLogo(false);
+                }
+            }
+        }
+
+        // 이미지 편집 적용
+        function applyBgEdit(imageData) {
+            const bgEl = document.getElementById('mealBg');
+            const scaleInput = document.getElementById('bgScale');
+            const positionSelect = document.getElementById('bgPosition');
+            const opacityInput = document.getElementById('bgOpacity');
+
+            if (!bgEl) return;
+
+            const scale = scaleInput ? scaleInput.value : 100;
+            const position = positionSelect ? positionSelect.value : 'center';
+            const opacity = opacityInput ? opacityInput.value : 100;
+
+            // 값 표시 업데이트
+            const scaleValue = document.getElementById('bgScaleValue');
+            const opacityValue = document.getElementById('bgOpacityValue');
+            if (scaleValue) scaleValue.textContent = scale + '%';
+            if (opacityValue) opacityValue.textContent = opacity + '%';
+
+            // 현재 선택된 커스텀 배경 이미지 가져오기
+            let imgUrl = imageData;
+            if (!imgUrl && currentBg && currentBg.startsWith('custom_')) {
+                const customBg = customBackgrounds.find(b => b.id === currentBg);
+                if (customBg) imgUrl = customBg.data;
+            }
+
+            if (imgUrl) {
+                bgEl.style.background = `url('${imgUrl}') ${position}/cover no-repeat`;
+                bgEl.style.backgroundSize = scale + '%';
+                bgEl.style.opacity = opacity / 100;
+            }
+        }
+
+        // 이미지 편집 초기화
+        function resetBgEdit() {
+            const scaleInput = document.getElementById('bgScale');
+            const positionSelect = document.getElementById('bgPosition');
+            const opacityInput = document.getElementById('bgOpacity');
+
+            if (scaleInput) scaleInput.value = 100;
+            if (positionSelect) positionSelect.value = 'center';
+            if (opacityInput) opacityInput.value = 100;
+
+            applyBgEdit();
+        }
+
+        // ★ 글씨 색상 변경
+        function setTextColor(color) {
+            const wrapper = document.querySelector('.meal-table-wrapper');
+            if (!wrapper) return;
+
+            // 색상 값 표시 업데이트
+            const colorValue = document.getElementById('textColorValue');
+            const colorInput = document.getElementById('customTextColor');
+            if (colorValue) colorValue.textContent = color;
+            if (colorInput) colorInput.value = color;
+
+            // 모든 텍스트 요소에 색상 적용
+            const textSelectors = [
+                '.table-header .site-name',
+                '.table-header .period',
+                '.weekly-grid thead th',
+                '.weekly-grid thead th .day-name',
+                '.weekly-grid thead th .day-date',
+                '.weekly-grid tbody .meal-type-cell',
+                '.menu-item',
+                '.editable-name',
+                '.editable-menu',
+                '.table-footer .company-info',
+                '.mobile-header .site-name',
+                '.mobile-header .period',
+                '.mobile-day-card .day-header',
+                '.mobile-meal-section .meal-name',
+                '.mobile-meal-section .menu-item'
+            ];
+
+            textSelectors.forEach(selector => {
+                wrapper.querySelectorAll(selector).forEach(el => {
+                    el.style.color = color;
+                    el.style.textShadow = 'none';
+                });
+            });
+
+            console.log(`[글씨색상] ${color} 적용됨`);
+        }
+
+        // ★ 로고 표시/숨김
+        function toggleLogo(enabled) {
+            const logoOverlay = document.getElementById('logoOverlay');
+            if (logoOverlay) {
+                logoOverlay.style.display = enabled ? 'block' : 'none';
+                if (enabled) {
+                    // 기본 위치 적용
+                    const position = document.getElementById('logoPosition')?.value || 'bottom-right';
+                    setLogoPosition(position);
+                }
+            }
+        }
+
+        // ★ 로고 위치 변경
+        function setLogoPosition(position) {
+            const logoOverlay = document.getElementById('logoOverlay');
+            if (!logoOverlay) return;
+
+            // 모든 위치 클래스 제거
+            logoOverlay.classList.remove('top-left', 'top-right', 'bottom-left', 'bottom-right', 'center');
+            // 새 위치 클래스 추가
+            logoOverlay.classList.add(position);
+            console.log(`[로고위치] ${position}`);
+        }
+
+        // ★ 로고 크기 변경
+        function setLogoSize(size) {
+            const logoImage = document.getElementById('logoImage');
+            const sizeValue = document.getElementById('logoSizeValue');
+            if (logoImage) {
+                logoImage.style.maxWidth = size + 'px';
+            }
+            if (sizeValue) {
+                sizeValue.textContent = size + 'px';
+            }
+        }
+
+        // ★ 로고 투명도 변경
+        function setLogoOpacity(opacity) {
+            const logoImage = document.getElementById('logoImage');
+            const opacityValue = document.getElementById('logoOpacityValue');
+            if (logoImage) {
+                logoImage.style.opacity = opacity / 100;
+            }
+            if (opacityValue) {
+                opacityValue.textContent = opacity + '%';
+            }
+        }
+
+        async function handleCustomBgUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('이미지 크기는 5MB 이하로 해주세요', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const imageData = e.target.result;
+                const fileName = file.name.replace(/\.[^/.]+$/, '');
+
+                try {
+                    // 서버에 저장
+                    const response = await fetch('/api/meal-plan/backgrounds', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: fileName,
+                            image_data: imageData,
+                            file_type: file.type
+                        })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const customBg = {
+                            id: 'custom_' + result.id,
+                            serverId: result.id,
+                            name: fileName,
+                            data: imageData
+                        };
+                        customBackgrounds.push(customBg);
+                        renderCustomBackgrounds();
+                        selectBackground(customBg.id);
+                        showToast('배경 이미지가 서버에 저장되었습니다');
+                    } else {
+                        showToast(result.error || '저장 실패', 'error');
+                    }
+                } catch (err) {
+                    console.error('이미지 업로드 오류:', err);
+                    // 로컬 스토리지 폴백
+                    const id = 'custom_' + Date.now();
+                    const customBg = { id, name: fileName, data: imageData };
+                    customBackgrounds.push(customBg);
+                    localStorage.setItem('mealPrintCustomBgs', JSON.stringify(customBackgrounds));
+                    renderCustomBackgrounds();
+                    selectBackground(id);
+                    showToast('이미지가 로컬에 저장되었습니다 (서버 연결 실패)');
+                }
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function renderCustomBackgrounds() {
+            const container = document.getElementById('customBgList');
+            container.innerHTML = '';
+            customBackgrounds.forEach(bg => {
+                const item = document.createElement('div');
+                item.className = 'custom-bg-item' + (currentBg === bg.id ? ' active' : '');
+                item.dataset.bg = bg.id;
+                item.onclick = () => selectBackground(bg.id);
+                item.innerHTML = `
+                    <img src="${bg.data}" alt="${bg.name}">
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteCustomBg('${bg.id}')">×</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        async function deleteCustomBg(id) {
+            if (!confirm('이 배경 이미지를 삭제하시겠습니까?')) return;
+
+            const bg = customBackgrounds.find(b => b.id === id);
+            if (bg && bg.serverId) {
+                try {
+                    // 서버에서 삭제
+                    const response = await fetch(`/api/meal-plan/backgrounds/${bg.serverId}`, {
+                        method: 'DELETE'
+                    });
+                    const result = await response.json();
+                    if (!result.success) {
+                        showToast(result.error || '삭제 실패', 'error');
+                        return;
+                    }
+                } catch (err) {
+                    console.error('이미지 삭제 오류:', err);
+                }
+            }
+
+            customBackgrounds = customBackgrounds.filter(b => b.id !== id);
+            localStorage.setItem('mealPrintCustomBgs', JSON.stringify(customBackgrounds));
+            renderCustomBackgrounds();
+            if (currentBg === id) {
+                selectBackground('daham_white');
+            }
+            showToast('배경 이미지가 삭제되었습니다');
+        }
+
+        function selectFormat(format) {
+            currentFormat = format;
+            document.querySelectorAll('.format-tab').forEach(el => {
+                el.classList.toggle('active', el.dataset.format === format);
+            });
+
+            const wrapper = document.getElementById('mealTablePreview');
+            wrapper.classList.remove('portrait', 'mobile');
+
+            if (format === 'weekly-portrait') {
+                wrapper.classList.add('portrait');
+                renderWeeklyView();
+            } else if (format === 'mobile') {
+                wrapper.classList.add('mobile');
+                renderMobileView();
+            } else {
+                renderWeeklyView();
+            }
+        }
+
+        function renderWeeklyView() {
+            const siteName = document.getElementById('siteName').value;
+            const content = document.querySelector('.meal-content');
+
+            content.innerHTML = `
+                <div class="table-header">
+                    <div class="site-name" id="displaySiteName" contenteditable="true" title="클릭하여 수정">${siteName}</div>
+                    <div class="period" id="displayPeriod" contenteditable="true" title="클릭하여 수정"></div>
+                </div>
+                <table class="weekly-grid" id="weeklyTable">
+                    <thead>
+                        <tr>
+                            <th>구분</th>
+                            <th class="day-mon"><div class="day-name">월</div><div class="day-date" id="date-mon">-</div></th>
+                            <th class="day-tue"><div class="day-name">화</div><div class="day-date" id="date-tue">-</div></th>
+                            <th class="day-wed"><div class="day-name">수</div><div class="day-date" id="date-wed">-</div></th>
+                            <th class="day-thu"><div class="day-name">목</div><div class="day-date" id="date-thu">-</div></th>
+                            <th class="day-fri"><div class="day-name">금</div><div class="day-date" id="date-fri">-</div></th>
+                            <th class="day-sat"><div class="day-name">토</div><div class="day-date" id="date-sat">-</div></th>
+                            <th class="day-sun"><div class="day-name">일</div><div class="day-date" id="date-sun">-</div></th>
+                        </tr>
+                    </thead>
+                    <tbody id="weeklyTableBody"></tbody>
+                </table>
+                <div class="table-footer">
+                    <div class="company-info"><strong>다함푸드</strong> | 맛있고 건강한 급식</div>
+                </div>
+            `;
+
+            updatePeriodFromWeek();
+            renderSampleData();
+        }
+
+        function renderMobileView() {
+            const siteName = document.getElementById('siteName').value;
+            const content = document.querySelector('.meal-content');
+            const weekValue = document.getElementById('weekSelect').value;
+            let startDate = new Date();
+
+            if (weekValue) {
+                const [year, week] = weekValue.split('-W');
+                startDate = getDateOfWeek(parseInt(year), parseInt(week));
+            }
+
+            const days = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'];
+            const dayColors = [
+                'rgba(99, 102, 241, 0.7)',
+                'rgba(16, 185, 129, 0.7)',
+                'rgba(244, 63, 94, 0.7)',
+                'rgba(245, 158, 11, 0.7)',
+                'rgba(59, 130, 246, 0.7)',
+                'rgba(20, 184, 166, 0.7)',
+                'rgba(239, 68, 68, 0.7)'
+            ];
+
+            let html = `
+                <div class="mobile-header">
+                    <div class="site-name" contenteditable="true" title="클릭하여 수정">${siteName}</div>
+                    <div class="period" contenteditable="true" title="클릭하여 수정"></div>
+                </div>
+            `;
+
+            days.forEach((day, idx) => {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + idx);
+
+                html += `
+                    <div class="mobile-day-card">
+                        <div class="mobile-day-header" style="background: ${dayColors[idx]}">
+                            <span>${day}</span>
+                            <span style="opacity: 0.9; font-size: 14px;">${date.getDate()}일</span>
+                        </div>
+                        <div class="mobile-day-content">
+                            <div class="mobile-meal-section">
+                                <div class="mobile-meal-label">조식</div>
+                                <div class="mobile-meal-menus">흰밥, 된장국, 계란말이, 김치</div>
+                            </div>
+                            <div class="mobile-meal-section">
+                                <div class="mobile-meal-label">중식</div>
+                                <div class="mobile-meal-menus">잡곡밥, 미역국, 제육볶음, 시금치나물</div>
+                            </div>
+                            <div class="mobile-meal-section">
+                                <div class="mobile-meal-label">석식</div>
+                                <div class="mobile-meal-menus">흰밥, 김치찌개, 불고기, 콩나물무침</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div style="text-align: center; padding-top: 15px;">
+                    <div class="company-info" style="font-size: 12px;"><strong>다함푸드</strong> 급식관리</div>
+                </div>
+            `;
+
+            content.innerHTML = html;
+        }
+
+        function updateSiteName() {
+            // ★ 항상 "다함푸드 주간 식단표"로 표시 (사업장 선택과 무관)
+            const el = document.getElementById('displaySiteName');
+            if (el) el.textContent = '다함푸드 주간 식단표';
+        }
+
+        function editSiteName() {
+            const name = prompt('사업장명을 입력하세요:', document.getElementById('siteName').value);
+            if (name) {
+                document.getElementById('siteName').value = name;
+                updateSiteName();
+            }
+        }
+
+        async function downloadImage() {
+            showLoading(true);
+            try {
+                const element = document.getElementById('mealTablePreview');
+                const editBtn = element.querySelector('.edit-btn');
+                if (editBtn) editBtn.style.display = 'none';
+
+                // 외부 이미지 로드 대기
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: null,
+                    logging: false
+                });
+
+                if (editBtn) editBtn.style.display = '';
+
+                const link = document.createElement('a');
+                const siteName = document.getElementById('siteName').value;
+                link.download = `식단표_${siteName}_${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                showToast('이미지가 저장되었습니다!');
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패 - CORS 문제일 수 있습니다', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 선택한 슬롯들 개별 저장
+        async function downloadSelectedSlots() {
+            const slots = getSelectedSlots();
+            if (slots.length === 0) {
+                showToast('슬롯을 선택해주세요', 'error');
+                return;
+            }
+
+            if (!currentSiteId) {
+                showToast('사업장을 먼저 선택해주세요', 'error');
+                return;
+            }
+
+            showLoading(true);
+            const element = document.getElementById('mealTablePreview');
+            const editBtn = element.querySelector('.edit-btn');
+
+            try {
+                for (const slot of slots) {
+                    // 현재 슬롯만 선택
+                    document.querySelectorAll('.slot-checkbox').forEach(cb => {
+                        cb.checked = (cb.value === slot);
+                    });
+
+                    // 렌더링
+                    await loadMealData();
+                    await new Promise(resolve => setTimeout(resolve, 300));
+
+                    if (editBtn) editBtn.style.display = 'none';
+
+                    const canvas = await html2canvas(element, {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: null,
+                        logging: false
+                    });
+
+                    if (editBtn) editBtn.style.display = '';
+
+                    const link = document.createElement('a');
+                    const dateStr = new Date().toISOString().split('T')[0];
+                    const safeSlotName = slot.replace(/[/\\?%*:|"<>]/g, '_');
+                    link.download = `식단표_${currentSiteName}_${safeSlotName}_${dateStr}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+
+                // 원래 선택 복원
+                document.querySelectorAll('.slot-checkbox').forEach(cb => {
+                    cb.checked = slots.includes(cb.value);
+                });
+                await loadMealData();
+
+                showToast(`${slots.length}개 슬롯 식단표가 저장되었습니다!`);
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 선택한 슬롯들 통합 저장
+        async function downloadMergedSlots() {
+            const slots = getSelectedSlots();
+            if (slots.length === 0) {
+                showToast('슬롯을 선택해주세요', 'error');
+                return;
+            }
+
+            if (!currentSiteId) {
+                showToast('사업장을 먼저 선택해주세요', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                // 선택된 슬롯들 모두 포함하여 렌더링
+                await loadMealData();
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                const element = document.getElementById('mealTablePreview');
+                const editBtn = element.querySelector('.edit-btn');
+
+                if (editBtn) editBtn.style.display = 'none';
+
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: null,
+                    logging: false
+                });
+
+                if (editBtn) editBtn.style.display = '';
+
+                const link = document.createElement('a');
+                const dateStr = new Date().toISOString().split('T')[0];
+                link.download = `식단표_${currentSiteName}_${slots.length}개슬롯_${dateStr}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                showToast(`${currentSiteName} 통합 식단표가 저장되었습니다!`);
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 이미지로 저장 (JPG)
+        async function saveAsImage() {
+            const wrapper = document.getElementById('mealTablePreview');
+            const editBtn = wrapper.querySelector('.edit-btn');
+            if (editBtn) editBtn.style.display = 'none';
+
+            showLoading(true);
+
+            try {
+                // 현재 포맷에 따른 캔버스 크기 결정
+                const isPortrait = currentFormat === 'mobile' || currentFormat === 'weekly-portrait';
+                const scale = 2; // 고해상도를 위한 스케일
+
+                const canvas = await html2canvas(wrapper, {
+                    scale: scale,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    windowWidth: wrapper.scrollWidth,
+                    windowHeight: wrapper.scrollHeight
+                });
+
+                // JPG로 변환 (품질 0.95)
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+                // 파일명 생성
+                const siteName = document.getElementById('displaySiteName')?.textContent || '식단표';
+                const period = document.getElementById('displayPeriod')?.textContent || '';
+                const filename = `${siteName}_${period}`.replace(/[^\w가-힣]/g, '_') + '.jpg';
+
+                // 다운로드 링크 생성
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = imgData;
+                link.click();
+
+                showToast('이미지가 저장되었습니다', 'success');
+            } catch (error) {
+                console.error('이미지 저장 실패:', error);
+                showToast('이미지 저장 실패', 'error');
+            } finally {
+                if (editBtn) editBtn.style.display = '';
+                showLoading(false);
+            }
+        }
+
+        async function printTable() {
+            const wrapper = document.getElementById('mealTablePreview');
+            const editBtn = wrapper.querySelector('.edit-btn');
+            if (editBtn) editBtn.style.display = 'none';
+
+            showLoading(true);
+
+            // 현재 포맷에 따른 용지 방향 결정
+            const isPortrait = currentFormat === 'mobile' || currentFormat === 'weekly-portrait';
+
+            console.log('현재 포맷:', currentFormat, '세로 모드:', isPortrait);
+
+            try {
+                // 커스텀 배경 이미지 확인
+                let bgImageData = null;
+                let isTemplateMode = false;
+                console.log('현재 배경:', currentBg);
+                console.log('customBackgrounds:', customBackgrounds.length + '개');
+
+                if (currentBg && currentBg.startsWith('custom_')) {
+                    const customBg = customBackgrounds.find(b => b.id === currentBg);
+                    console.log('선택된 커스텀 배경:', customBg ? '찾음' : '없음');
+                    if (customBg) {
+                        bgImageData = customBg.data;
+                        console.log('이미지 데이터 타입:', typeof bgImageData);
+                        console.log('이미지 데이터 시작:', bgImageData ? bgImageData.substring(0, 50) : 'null');
+                        // 템플릿 모드 확인 (meal-content가 숨겨져 있으면 템플릿 전체 교체 모드)
+                        const contentEl = document.querySelector('.meal-content');
+                        isTemplateMode = contentEl && contentEl.style.display === 'none';
+                        console.log('템플릿 모드:', isTemplateMode);
+                    }
+                }
+
+                let finalCanvas;
+
+                // A4 크기 (px, 150dpi 기준 - 인쇄 품질)
+                const a4Width = isPortrait ? 1240 : 1754;   // 210mm or 297mm at 150dpi
+                const a4Height = isPortrait ? 1754 : 1240;  // 297mm or 210mm at 150dpi
+
+                if (isTemplateMode && bgImageData) {
+                    // 템플릿 모드: 배경 이미지만 A4 크기로 출력
+                    console.log('템플릿 모드: 배경 이미지만 출력');
+                    finalCanvas = document.createElement('canvas');
+                    finalCanvas.width = a4Width;
+                    finalCanvas.height = a4Height;
+                    const ctx = finalCanvas.getContext('2d');
+
+                    // UI에서 편집 설정 가져오기
+                    const scaleInput = document.getElementById('bgScale');
+                    const positionSelect = document.getElementById('bgPosition');
+                    const opacityInput = document.getElementById('bgOpacity');
+                    const userScale = scaleInput ? parseInt(scaleInput.value) / 100 : 1;
+                    const position = positionSelect ? positionSelect.value : 'center';
+                    const opacity = opacityInput ? parseInt(opacityInput.value) / 100 : 1;
+
+                    // 배경 이미지 로드 및 그리기
+                    await new Promise((resolve) => {
+                        const bgImg = new Image();
+                        bgImg.onload = () => {
+                            ctx.globalAlpha = opacity;
+
+                            // 배경 이미지를 캔버스 크기에 맞게 그리기 (cover 방식 + 사용자 스케일)
+                            const baseScale = Math.max(a4Width / bgImg.width, a4Height / bgImg.height);
+                            const totalScale = baseScale * userScale;
+                            const imgW = bgImg.width * totalScale;
+                            const imgH = bgImg.height * totalScale;
+
+                            // 위치 계산
+                            let x = (a4Width - imgW) / 2;
+                            let y = (a4Height - imgH) / 2;
+
+                            switch (position) {
+                                case 'top': y = 0; break;
+                                case 'bottom': y = a4Height - imgH; break;
+                                case 'left': x = 0; break;
+                                case 'right': x = a4Width - imgW; break;
+                                case 'top left': x = 0; y = 0; break;
+                                case 'top right': x = a4Width - imgW; y = 0; break;
+                                case 'bottom left': x = 0; y = a4Height - imgH; break;
+                                case 'bottom right': x = a4Width - imgW; y = a4Height - imgH; break;
+                            }
+
+                            ctx.drawImage(bgImg, x, y, imgW, imgH);
+                            ctx.globalAlpha = 1;
+                            resolve();
+                        };
+                        bgImg.onerror = () => {
+                            console.error('배경 이미지 로드 실패');
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, 0, a4Width, a4Height);
+                            resolve();
+                        };
+                        bgImg.src = bgImageData;
+                    });
+                } else {
+                    // 일반 모드: html2canvas로 콘텐츠 캡처
+                    console.log('일반 모드: 콘텐츠 캡처');
+                    finalCanvas = await html2canvas(wrapper, {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        backgroundColor: '#ffffff',
+                        logging: false
+                    });
+                }
+
+                // 가로/세로에 따른 A4 크기 설정 (mm)
+                const pageW = isPortrait ? '210mm' : '297mm';
+                const pageH = isPortrait ? '297mm' : '210mm';
+
+                // 이미지 데이터 결정
+                let imgData;
+                if (isTemplateMode && bgImageData) {
+                    // 템플릿 모드: 원본 이미지 직접 사용
+                    imgData = bgImageData;
+                    console.log('템플릿 모드: 원본 이미지 사용, 데이터 길이:', bgImageData.length);
+                } else {
+                    // 일반 모드: 캔버스 이미지 사용
+                    imgData = finalCanvas.toDataURL('image/png');
+                    console.log('일반 모드: 캔버스 이미지 사용');
+                }
+
+                // 새 인쇄 창 생성 (가로 또는 세로에 맞게)
+                const winWidth = isPortrait ? 800 : 1200;
+                const winHeight = isPortrait ? 1100 : 800;
+                const printWindow = window.open('', 'printWindow', `width=${winWidth},height=${winHeight}`);
+
+                if (!printWindow) {
+                    showToast('팝업이 차단되었습니다. 팝업을 허용해주세요.', 'error');
+                    showLoading(false);
+                    return;
+                }
+
+                printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+    <title>식단표 인쇄</title>
+    <style>
+        @page {
+            size: ${pageW} ${pageH};
+            margin: 0;
+        }
+        @media print {
+            @page {
+                size: ${pageW} ${pageH};
+                margin: 0;
+            }
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+        }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <img id="printImg" style="max-width:100%; max-height:100%; object-fit:contain;" />
+</body>
+</html>`);
+
+                // 이미지 설정 (별도로 설정하여 특수문자 문제 방지)
+                const printImg = printWindow.document.getElementById('printImg');
+                printImg.onload = function() {
+                    console.log('인쇄 이미지 로드 성공');
+                    setTimeout(function(){ printWindow.print(); }, 300);
+                };
+                printImg.onerror = function(e) {
+                    console.error('인쇄 이미지 로드 실패:', e);
+                    printWindow.document.body.innerHTML = '<h1 style="color:red; padding:20px;">이미지 로드 실패</h1>';
+                };
+                printImg.src = imgData;
+
+                printWindow.document.close();
+
+                showToast('인쇄 창이 열렸습니다. 용지 방향을 "' + (isPortrait ? '세로' : '가로') + '"로 설정하세요.', 'info');
+
+            } catch (e) {
+                console.error('인쇄 오류:', e);
+                showToast('인쇄 준비 중 오류가 발생했습니다.', 'error');
+            } finally {
+                if (editBtn) editBtn.style.display = '';
+                showLoading(false);
+            }
+        }
+
+        async function copyToClipboard() {
+            showLoading(true);
+            try {
+                const element = document.getElementById('mealTablePreview');
+                const editBtn = element.querySelector('.edit-btn');
+                if (editBtn) editBtn.style.display = 'none';
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: null
+                });
+
+                if (editBtn) editBtn.style.display = '';
+
+                canvas.toBlob(async (blob) => {
+                    try {
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ 'image/png': blob })
+                        ]);
+                        showToast('클립보드에 복사되었습니다!');
+                    } catch (e) {
+                        showToast('복사 실패', 'error');
+                    }
+                });
+            } catch (e) {
+                showToast('복사 실패', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('active', show);
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = type === 'success'
+                ? 'linear-gradient(135deg, #10b981, #059669)'
+                : 'linear-gradient(135deg, #ef4444, #dc2626)';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>

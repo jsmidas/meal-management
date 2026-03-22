@@ -1,0 +1,330 @@
+<!-- 사용자 추가/수정 모달 -->
+<div id="userModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 900px; width: 90%;">
+        <div class="modal-header">
+            <h2 id="modalTitle">사용자 추가</h2>
+            <span class="close" onclick="window.userManagement?.closeModal()">&times;</span>
+        </div>
+        <form id="userForm">
+            <div style="display: flex; gap: 30px;">
+                <!-- 왼쪽: 기본 정보 -->
+                <div style="flex: 1;">
+                    <h3 style="font-size: 16px; margin-bottom: 15px; color: #333;">기본 정보</h3>
+
+                    <div class="form-group">
+                        <label for="username" class="required">아이디</label>
+                        <input type="text" id="username" name="username" required placeholder="로그인에 사용할 아이디">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="full_name" class="required">이름</label>
+                        <input type="text" id="full_name" name="full_name" required placeholder="사용자 실명">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contact_info">연락처</label>
+                        <input type="text" id="contact_info" name="contact_info" placeholder="전화번호 또는 이메일">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="department">부서</label>
+                        <input type="text" id="department" name="department">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role" class="required">권한</label>
+                        <select id="role" name="role" required>
+                            <option value="">권한 선택</option>
+                            <option value="admin">관리자</option>
+                            <option value="nutritionist">영양사</option>
+                            <option value="operator">운영자</option>
+                            <option value="viewer">조회자</option>
+                        </select>
+                    </div>
+
+                    <div id="passwordGroup" class="form-group">
+                        <label for="password" class="required">비밀번호</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">메모</label>
+                        <textarea id="notes" name="notes" rows="3" placeholder="사용자에 대한 추가 정보나 메모를 입력하세요"></textarea>
+                    </div>
+                </div>
+
+                <!-- 오른쪽: 사업장 권한 관리 -->
+                <div style="flex: 1;">
+                    <h3 style="font-size: 16px; margin-bottom: 15px; color: #333;">사업장 권한 관리</h3>
+
+                    <div class="dual-list-container">
+                        <!-- 선택 가능한 사업장 -->
+                        <div class="dual-list-box">
+                            <div class="dual-list-header">
+                                <label>선택 가능한 사업장</label>
+                                <input type="text" id="searchAvailableSites" placeholder="검색..." class="dual-list-search">
+                            </div>
+                            <select id="availableSites" multiple class="dual-list-select">
+                                <!-- 동적으로 로드됨 -->
+                            </select>
+                            <div class="dual-list-footer">
+                                <span id="availableCount">0</span>개 사업장
+                            </div>
+                        </div>
+
+                        <!-- 이동 버튼 -->
+                        <div class="dual-list-controls">
+                            <button type="button" class="btn-move" onclick="window.userManagement?.moveSelectedSites()" title="선택한 사업장 추가">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button type="button" class="btn-move" onclick="window.userManagement?.removeSelectedSites()" title="선택한 사업장 제거">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button type="button" class="btn-move-all" onclick="window.userManagement?.moveAllSites()" title="모든 사업장 추가">
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
+                            <button type="button" class="btn-move-all" onclick="window.userManagement?.removeAllSites()" title="모든 사업장 제거">
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                        </div>
+
+                        <!-- 선택된 사업장 -->
+                        <div class="dual-list-box">
+                            <div class="dual-list-header">
+                                <label>권한이 부여된 사업장</label>
+                                <input type="text" id="searchSelectedSites" placeholder="검색..." class="dual-list-search">
+                            </div>
+                            <select id="selectedSites" multiple class="dual-list-select selected">
+                                <!-- 동적으로 로드됨 -->
+                            </select>
+                            <div class="dual-list-footer">
+                                <span id="selectedCount">0</span>개 사업장 선택됨
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 빠른 선택 버튼들 -->
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <label style="font-size: 13px; color: #666; margin-bottom: 8px; display: block;">빠른 선택</label>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" class="quick-select-btn" onclick="window.userManagement?.selectByType('도시락배송')" style="padding: 6px 12px; font-size: 12px; background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9; border-radius: 4px; cursor: pointer;">
+                                도시락 전체
+                            </button>
+                            <button type="button" class="quick-select-btn" onclick="window.userManagement?.selectByType('운반급식')" style="padding: 6px 12px; font-size: 12px; background: #f3e5f5; color: #7b1fa2; border: 1px solid #ce93d8; border-radius: 4px; cursor: pointer;">
+                                운반 전체
+                            </button>
+                            <button type="button" class="quick-select-btn" onclick="window.userManagement?.selectByType('학교')" style="padding: 6px 12px; font-size: 12px; background: #e8f5e9; color: #388e3c; border: 1px solid #81c784; border-radius: 4px; cursor: pointer;">
+                                학교 전체
+                            </button>
+                            <button type="button" class="quick-select-btn" onclick="window.userManagement?.selectByRegion('서울')" style="padding: 6px 12px; font-size: 12px; background: #fff3e0; color: #e65100; border: 1px solid #ffb74d; border-radius: 4px; cursor: pointer;">
+                                서울지역
+                            </button>
+                            <button type="button" class="quick-select-btn" onclick="window.userManagement?.selectByRegion('경기')" style="padding: 6px 12px; font-size: 12px; background: #fce4ec; color: #c2185b; border: 1px solid #f48fb1; border-radius: 4px; cursor: pointer;">
+                                경기지역
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <button type="button" class="btn" onclick="window.userManagement?.closeModal()" style="padding: 10px 24px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    취소
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn" style="padding: 10px 24px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    추가
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.close {
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #555;
+    font-size: 14px;
+}
+
+.form-group label.required::after {
+    content: " *";
+    color: #dc3545;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+/* Dual List Styles */
+.dual-list-container {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.dual-list-box {
+    flex: 1;
+}
+
+.dual-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.dual-list-header label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+}
+
+.dual-list-search {
+    width: 120px;
+    padding: 4px 8px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.dual-list-select {
+    width: 100%;
+    height: 250px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 13px;
+}
+
+.dual-list-select.selected {
+    background: #f8f9fa;
+}
+
+.dual-list-select option {
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.dual-list-select option:hover {
+    background: #e9ecef;
+}
+
+.dual-list-footer {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #666;
+}
+
+.dual-list-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-move {
+    padding: 8px 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-move:hover {
+    background: #0056b3;
+}
+
+.btn-move-all {
+    padding: 6px 10px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
+}
+
+.btn-move-all:hover {
+    background: #5a6268;
+}
+
+.quick-select-btn:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
+}
+
+#userForm {
+    padding: 20px;
+}
+</style>

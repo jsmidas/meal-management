@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 인증 체크 (페이지 로드 시 즉시 실행) -->
+    <script src="/static/js/auth-check.js"></script>
+    <!-- 커스텀 알림창 -->
+    <link rel="stylesheet" href="/static/css/custom-alert.css">
+    <script src="/static/js/custom-alert.js"></script>
+    <title>식재료비 분석 - 급식관리 시스템</title>
+    <link rel="icon" type="image/x-icon" href="static/favicon.ico">
+
+    <!-- 외부 라이브러리 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- 공통 CSS -->
+    <link rel="stylesheet" href="static/css/common-sidebar.css">
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <link rel="stylesheet" href="static/css/site-selector.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, 'Segoe UI', sans-serif;
+            background: #f8f9fa;
+            overflow-x: hidden;
+        }
+
+        .main-content {
+            margin-left: 180px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* 사업장 선택 */
+        .site-select-bar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .site-select-bar label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .site-select-bar select {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        /* 탭 */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: white;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #7f8c8d;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: #f8f9fa;
+        }
+
+        .tab.active {
+            background: #27ae60;
+            color: white;
+        }
+
+        /* 탭 컨텐츠 */
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 0 8px 8px 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 통계 카드 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #27ae60;
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        .stat-card .sub {
+            font-size: 12px;
+            color: #95a5a6;
+        }
+
+        /* 테이블 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .data-table .amount {
+            text-align: right;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .data-table .actions {
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .data-table .actions button {
+            padding: 5px 10px;
+            margin: 0 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .data-table .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .data-table .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        /* 버튼 */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #219a52;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .toolbar .filters {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toolbar select,
+        .toolbar input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 폼 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .input-group input {
+            border-radius: 6px 0 0 6px;
+        }
+
+        .input-group .suffix {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-left: none;
+            border-radius: 0 6px 6px 0;
+            color: #7f8c8d;
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: #bdc3c7;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 사이드바 -->
+    <nav class="sidebar" id="sidebar">
+        <div class="logo">
+            <img src="static/images/logo.png" alt="다함푸드 로고">
+        </div>
+        <div class="nav-menu" id="nav-menu"></div>
+    </nav>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="main-content">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-chart-pie"></i> 식재료비 분석</h1>
+                <p style="margin-top: 5px; opacity: 0.9;">일매출, 식재료비, 식재료비율 분석</p>
+            </div>
+        </div>
+
+        <!-- 사업장 선택 -->
+        <div class="site-select-bar">
+            <label><i class="fas fa-building"></i> 사업장:</label>
+            <select id="siteSelect" onchange="onSiteChange()">
+                <option value="">사업장을 선택하세요</option>
+            </select>
+            <label style="margin-left: 20px;"><i class="fas fa-calendar"></i> 연도:</label>
+            <select id="yearSelect" onchange="loadData()">
+            </select>
+        </div>
+
+        <!-- 탭 -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('daily')">
+                <i class="fas fa-chart-bar"></i> 일매출
+            </button>
+            <button class="tab" onclick="switchTab('monthly')">
+                <i class="fas fa-calendar-alt"></i> 월매출
+            </button>
+            <button class="tab" onclick="switchTab('menu')">
+                <i class="fas fa-utensils"></i> 메뉴단가
+            </button>
+            <button class="tab" onclick="switchTab('event')">
+                <i class="fas fa-star"></i> 행사매출
+            </button>
+        </div>
+
+        <!-- 월매출 탭 -->
+        <div class="tab-content" id="tab-monthly">
+            <div class="stats-row" id="monthlySummary">
+                <div class="stat-card">
+                    <div class="value" id="monthlyTotal">0</div>
+                    <div class="label">연간 총매출</div>
+                    <div class="sub">(부가세 별도)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="monthlyVat">0</div>
+                    <div class="label">부가세 합계</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="monthlyGrand">0</div>
+                    <div class="label">총 합계</div>
+                    <div class="sub">(부가세 포함)</div>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <div class="filters"></div>
+                <button class="btn btn-primary" onclick="openMonthlyModal()">
+                    <i class="fas fa-plus"></i> 월매출 등록
+                </button>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>년월</th>
+                        <th class="amount">매출액</th>
+                        <th class="amount">부가세</th>
+                        <th class="amount">합계</th>
+                        <th>메모</th>
+                        <th class="actions">관리</th>
+                    </tr>
+                </thead>
+                <tbody id="monthlyTable">
+                    <tr><td colspan="6" class="empty-state"><i class="fas fa-inbox"></i><p>데이터가 없습니다</p></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 메뉴단가 탭 -->
+        <div class="tab-content" id="tab-menu">
+            <div class="toolbar">
+                <div class="filters">
+                    <input type="text" id="menuSearch" placeholder="메뉴명 검색" onkeyup="loadMenuPrices()">
+                </div>
+                <button class="btn btn-primary" onclick="openMenuModal()">
+                    <i class="fas fa-plus"></i> 메뉴단가 등록
+                </button>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>메뉴명</th>
+                        <th class="amount">단가</th>
+                        <th>부가세</th>
+                        <th>적용일</th>
+                        <th class="actions">관리</th>
+                    </tr>
+                </thead>
+                <tbody id="menuTable">
+                    <tr><td colspan="5" class="empty-state"><i class="fas fa-inbox"></i><p>데이터가 없습니다</p></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 행사매출 탭 -->
+        <div class="tab-content" id="tab-event">
+            <div class="stats-row" id="eventSummary">
+                <div class="stat-card">
+                    <div class="value" id="eventTotal">0</div>
+                    <div class="label">연간 행사매출</div>
+                    <div class="sub">(부가세 별도)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="eventCount">0</div>
+                    <div class="label">행사 건수</div>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <div class="filters">
+                    <select id="eventTypeFilter" onchange="loadEventSales()">
+                        <option value="">전체 유형</option>
+                        <option value="anniversary">개업기념일</option>
+                        <option value="buffet">뷔페행사</option>
+                        <option value="special">특별행사</option>
+                        <option value="other">기타</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="openEventModal()">
+                    <i class="fas fa-plus"></i> 행사매출 등록
+                </button>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>행사일</th>
+                        <th>행사명</th>
+                        <th>유형</th>
+                        <th class="amount">매출액</th>
+                        <th class="amount">부가세</th>
+                        <th>참석인원</th>
+                        <th class="actions">관리</th>
+                    </tr>
+                </thead>
+                <tbody id="eventTable">
+                    <tr><td colspan="7" class="empty-state"><i class="fas fa-inbox"></i><p>데이터가 없습니다</p></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 일매출 탭 -->
+        <div class="tab-content active" id="tab-daily">
+            <!-- 기간 선택 -->
+            <div class="toolbar" style="margin-bottom: 20px;">
+                <div class="filters">
+                    <input type="date" id="dailyStartDate" style="width: 140px;">
+                    <span style="margin: 0 5px;">~</span>
+                    <input type="date" id="dailyEndDate" style="width: 140px;">
+                    <button class="btn btn-secondary" onclick="setDailyDateRange('week')" style="padding: 8px 12px; margin-left: 10px;">1주</button>
+                    <button class="btn btn-secondary" onclick="setDailyDateRange('month')" style="padding: 8px 12px;">1개월</button>
+                    <button class="btn btn-primary" onclick="loadDailyRevenue()" style="padding: 8px 16px;">
+                        <i class="fas fa-search"></i> 조회
+                    </button>
+                </div>
+            </div>
+
+            <!-- 요약 카드 -->
+            <div class="stats-row" id="dailySummary">
+                <div class="stat-card">
+                    <div class="value" id="dailyTotalRevenue" style="color: #2ecc71;">0</div>
+                    <div class="label">총 매출</div>
+                    <div class="sub">(VAT 제외)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="dailyTotalIngredientCost" style="color: #e74c3c;">0</div>
+                    <div class="label">총 식재료비</div>
+                    <div class="sub">(발주금액 합계)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="dailyFoodCostRatio" style="color: #3498db;">0%</div>
+                    <div class="label">식재료비율</div>
+                    <div class="sub">(식재료비 ÷ 매출)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="dailyTotalMealCount">0</div>
+                    <div class="label">총 식수</div>
+                </div>
+            </div>
+
+            <!-- 차트 영역 -->
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px; color: #2c3e50;"><i class="fas fa-chart-bar"></i> 일별 매출 vs 식재료비</h3>
+                <div style="height: 350px;">
+                    <canvas id="dailyRevenueChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 일별 매출·식재료비 통합 테이블 (세로형) -->
+            <div style="overflow-x: auto;">
+                <h3 style="margin-bottom: 15px; color: #2c3e50;"><i class="fas fa-table"></i> 일별 매출·식재료비 상세</h3>
+                <table class="data-table" id="dailyRevenueTableWrap" style="border-collapse:collapse; border-spacing:0;">
+                    <thead id="dailyRevenueHead">
+                        <tr><th>구분</th></tr>
+                    </thead>
+                    <tbody id="dailyRevenueTable">
+                        <tr><td colspan="1"><div class="empty-state"><i class="fas fa-inbox"></i><p>기간을 선택하고 조회하세요</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- 식재료 상세 모달 -->
+    <div class="modal" id="ingredientDetailModal">
+        <div class="modal-content" style="max-width: 750px;">
+            <div class="modal-header">
+                <h2 id="ingredientDetailTitle">식재료 상세</h2>
+                <button class="modal-close" onclick="closeIngredientDetail()">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+                <div id="ingredientDetailContent">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>로딩 중...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 월매출 모달 -->
+    <div class="modal" id="monthlyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="monthlyModalTitle">월매출 등록</h2>
+                <button class="modal-close" onclick="closeMonthlyModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="monthlyId">
+                <div class="form-group">
+                    <label>년월 *</label>
+                    <input type="month" id="yearMonth" required>
+                </div>
+                <div class="form-group">
+                    <label>매출액 (부가세 별도) *</label>
+                    <div class="input-group">
+                        <input type="number" id="salesAmount" required placeholder="0">
+                        <span class="suffix">원</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>부가세 (자동계산: 10%)</label>
+                    <div class="input-group">
+                        <input type="number" id="vatAmount" placeholder="자동계산" readonly>
+                        <span class="suffix">원</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>메모</label>
+                    <textarea id="monthlyMemo" rows="2" placeholder="메모"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeMonthlyModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveMonthly()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메뉴단가 모달 -->
+    <div class="modal" id="menuModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="menuModalTitle">메뉴단가 등록</h2>
+                <button class="modal-close" onclick="closeMenuModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="menuPriceId">
+                <div class="form-group">
+                    <label>메뉴명 *</label>
+                    <input type="text" id="menuName" required placeholder="예: 조식, 중식, 석식">
+                </div>
+                <div class="form-group">
+                    <label>단가 *</label>
+                    <div class="input-group">
+                        <input type="number" id="menuPrice" required placeholder="0">
+                        <span class="suffix">원</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="vatIncluded"> 부가세 포함 가격
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>적용일</label>
+                    <input type="date" id="effectiveDate">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeMenuModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveMenuPrice()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 행사매출 모달 -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="eventModalTitle">행사매출 등록</h2>
+                <button class="modal-close" onclick="closeEventModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="eventId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>행사일 *</label>
+                        <input type="date" id="eventDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>행사유형</label>
+                        <select id="eventType">
+                            <option value="anniversary">개업기념일</option>
+                            <option value="buffet">뷔페행사</option>
+                            <option value="special">특별행사</option>
+                            <option value="other">기타</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>행사명 *</label>
+                    <input type="text" id="eventName" required placeholder="예: 창립 10주년 기념행사">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>매출액 (부가세 별도) *</label>
+                        <div class="input-group">
+                            <input type="number" id="eventSalesAmount" required placeholder="0">
+                            <span class="suffix">원</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>참석인원</label>
+                        <div class="input-group">
+                            <input type="number" id="eventAttendees" placeholder="0">
+                            <span class="suffix">명</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>메모</label>
+                    <textarea id="eventMemo" rows="2" placeholder="메모"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEventModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveEvent()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 공통 사이드바 -->
+    <script src="static/js/common-sidebar.js"></script>
+
+    <script>
+        // 상태
+        let currentSiteId = null;
+        let currentYear = new Date().getFullYear();
+        let monthlySales = [];
+        let menuPrices = [];
+        let eventSales = [];
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', async function() {
+            initYearSelect();
+            initDailyDateRange();  // 일매출 날짜 초기화
+            await loadSites();
+
+            // 매출액 입력 시 부가세 자동 계산
+            document.getElementById('salesAmount').addEventListener('input', function() {
+                const amount = parseFloat(this.value) || 0;
+                document.getElementById('vatAmount').value = Math.round(amount * 0.1);
+            });
+        });
+
+        // 연도 선택 초기화
+        function initYearSelect() {
+            const yearSelect = document.getElementById('yearSelect');
+            const currentYear = new Date().getFullYear();
+
+            for (let y = currentYear; y >= currentYear - 5; y--) {
+                const option = document.createElement('option');
+                option.value = y;
+                option.textContent = `${y}년`;
+                yearSelect.appendChild(option);
+            }
+        }
+
+        // 사업장 목록 로드
+        async function loadSites() {
+            try {
+                const response = await fetch('/api/admin/sites');
+                const result = await response.json();
+
+                if (result.success) {
+                    const select = document.getElementById('siteSelect');
+                    result.data.forEach(site => {
+                        const option = document.createElement('option');
+                        option.value = site.id;
+                        option.textContent = site.name;
+                        select.appendChild(option);
+                    });
+
+                    // 첫 번째 사업장 선택
+                    if (result.data.length > 0) {
+                        select.value = result.data[0].id;
+                        onSiteChange();
+                    }
+                }
+            } catch (error) {
+                console.error('사업장 로드 실패:', error);
+            }
+        }
+
+        function onSiteChange() {
+            currentSiteId = document.getElementById('siteSelect').value;
+            if (currentSiteId) {
+                loadData();
+            }
+        }
+
+        function loadData() {
+            currentYear = parseInt(document.getElementById('yearSelect').value);
+            loadMonthlySales();
+            loadMenuPrices();
+            loadEventSales();
+            loadDailyRevenue();  // 일매출도 로드
+        }
+
+        // 탭 전환
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // 월매출 로드
+        async function loadMonthlySales() {
+            if (!currentSiteId) return;
+
+            try {
+                const response = await fetch(`/api/sales/monthly?site_id=${currentSiteId}&year=${currentYear}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    monthlySales = result.data;
+                    renderMonthlySales();
+                }
+            } catch (error) {
+                console.error('월매출 로드 실패:', error);
+            }
+        }
+
+        function renderMonthlySales() {
+            const tbody = document.getElementById('monthlyTable');
+
+            if (monthlySales.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-inbox"></i><p>데이터가 없습니다</p></div></td></tr>';
+                document.getElementById('monthlyTotal').textContent = '0';
+                document.getElementById('monthlyVat').textContent = '0';
+                document.getElementById('monthlyGrand').textContent = '0';
+                return;
+            }
+
+            let totalSales = 0, totalVat = 0;
+
+            tbody.innerHTML = monthlySales.map(s => {
+                totalSales += parseFloat(s.sales_amount) || 0;
+                totalVat += parseFloat(s.vat_amount) || 0;
+                return `
+                    <tr>
+                        <td>${s.year_month}</td>
+                        <td class="amount">${formatNumber(s.sales_amount)}</td>
+                        <td class="amount">${formatNumber(s.vat_amount)}</td>
+                        <td class="amount">${formatNumber(s.total_amount)}</td>
+                        <td>${s.memo || ''}</td>
+                        <td class="actions">
+                            <button class="btn-edit" onclick="editMonthly(${s.id})"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete" onclick="deleteMonthly(${s.id})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('monthlyTotal').textContent = formatNumber(totalSales);
+            document.getElementById('monthlyVat').textContent = formatNumber(totalVat);
+            document.getElementById('monthlyGrand').textContent = formatNumber(totalSales + totalVat);
+        }
+
+        // 월매출 모달
+        function openMonthlyModal(data = null) {
+            document.getElementById('monthlyModalTitle').textContent = data ? '월매출 수정' : '월매출 등록';
+            document.getElementById('monthlyId').value = data?.id || '';
+            document.getElementById('yearMonth').value = data?.year_month || '';
+            document.getElementById('salesAmount').value = data?.sales_amount || '';
+            document.getElementById('vatAmount').value = data?.vat_amount || '';
+            document.getElementById('monthlyMemo').value = data?.memo || '';
+            document.getElementById('monthlyModal').classList.add('active');
+        }
+
+        function closeMonthlyModal() {
+            document.getElementById('monthlyModal').classList.remove('active');
+        }
+
+        async function editMonthly(id) {
+            const data = monthlySales.find(s => s.id === id);
+            if (data) openMonthlyModal(data);
+        }
+
+        async function saveMonthly() {
+            const yearMonth = document.getElementById('yearMonth').value;
+            const salesAmount = parseFloat(document.getElementById('salesAmount').value) || 0;
+            const vatAmount = parseFloat(document.getElementById('vatAmount').value) || salesAmount * 0.1;
+            const memo = document.getElementById('monthlyMemo').value;
+
+            if (!yearMonth || !salesAmount) {
+                alert('년월과 매출액을 입력하세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/sales/monthly', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        site_id: parseInt(currentSiteId),
+                        year_month: yearMonth,
+                        sales_amount: salesAmount,
+                        vat_amount: vatAmount,
+                        memo
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('저장되었습니다.');
+                    closeMonthlyModal();
+                    loadMonthlySales();
+                } else {
+                    alert('저장 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('저장 실패:', error);
+                alert('저장에 실패했습니다.');
+            }
+        }
+
+        async function deleteMonthly(id) {
+            if (!confirm('삭제하시겠습니까?')) return;
+
+            try {
+                const response = await fetch(`/api/sales/monthly/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+
+                if (result.success) {
+                    loadMonthlySales();
+                } else {
+                    alert('삭제 실패: ' + result.error);
+                }
+            } catch (error) {
+                alert('삭제 실패');
+            }
+        }
+
+        // 메뉴단가 로드
+        async function loadMenuPrices() {
+            if (!currentSiteId) return;
+
+            try {
+                const menuName = document.getElementById('menuSearch')?.value || '';
+                let url = `/api/sales/menu-prices?site_id=${currentSiteId}`;
+                if (menuName) url += `&menu_name=${encodeURIComponent(menuName)}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    menuPrices = result.data;
+                    renderMenuPrices();
+                }
+            } catch (error) {
+                console.error('메뉴단가 로드 실패:', error);
+            }
+        }
+
+        function renderMenuPrices() {
+            const tbody = document.getElementById('menuTable');
+
+            if (menuPrices.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fas fa-inbox"></i><p>데이터가 없습니다</p></div></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = menuPrices.map(p => `
+                <tr>
+                    <td>${p.menu_name}</td>
+                    <td class="amount">${formatNumber(p.price)}</td>
+                    <td>${p.vat_included ? '포함' : '별도'}</td>
+                    <td>${p.effective_date || '-'}</td>
+                    <td class="actions">
+                        <button class="btn-edit" onclick="editMenuPrice(${p.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn-delete" onclick="deleteMenuPrice(${p.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 메뉴단가 모달
+        function openMenuModal(data = null) {
+            document.getElementById('menuModalTitle').textContent = data ? '메뉴단가 수정' : '메뉴단가 등록';
+            document.getElementById('menuPriceId').value = data?.id || '';
+            document.getElementById('menuName').value = data?.menu_name || '';
+            document.getElementById('menuPrice').value = data?.price || '';
+            document.getElementById('vatIncluded').checked = data?.vat_included || false;
+            document.getElementById('effectiveDate').value = data?.effective_date || '';
+            document.getElementById('menuModal').classList.add('active');
+        }
+
+        function closeMenuModal() {
+            document.getElementById('menuModal').classList.remove('active');
+        }
+
+        function editMenuPrice(id) {
+            const data = menuPrices.find(p => p.id === id);
+            if (data) openMenuModal(data);
+        }
+
+        async function saveMenuPrice() {
+            const menuName = document.getElementById('menuName').value.trim();
+            const price = parseFloat(document.getElementById('menuPrice').value) || 0;
+            const vatIncluded = document.getElementById('vatIncluded').checked;
+            const effectiveDate = document.getElementById('effectiveDate').value || null;
+
+            if (!menuName || !price) {
+                alert('메뉴명과 단가를 입력하세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/sales/menu-prices', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        site_id: parseInt(currentSiteId),
+                        menu_name: menuName,
+                        price,
+                        vat_included: vatIncluded,
+                        effective_date: effectiveDate
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('저장되었습니다.');
+                    closeMenuModal();
+                    loadMenuPrices();
+                } else {
+                    alert('저장 실패: ' + result.error);
+                }
+            } catch (error) {
+                alert('저장에 실패했습니다.');
+            }
+        }
+
+        async function deleteMenuPrice(id) {
+            if (!confirm('삭제하시겠습니까?')) return;
+
+            try {
+                const response = await fetch(`/api/sales/menu-prices/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+
+                if (result.success) {
+                    loadMenuPrices();
+                } else {
+                    alert('삭제 실패: ' + result.error);
+                }
+            } catch (error) {
+                alert('삭제 실패');
+            }
+        }
+
+        // 행사매출 로드
+        async function loadEventSales() {
+            if (!currentSiteId) return;
+
+            try {
+                const eventType = document.getElementById('eventTypeFilter').value;
+                let url = `/api/sales/events?site_id=${currentSiteId}&year=${currentYear}`;
+                if (eventType) url += `&event_type=${eventType}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    eventSales = result.data;
+                    renderEventSales();
+                }
+            } catch (error) {
+                console.error('행사매출 로드 실패:', error);
+            }
+        }
+
+        function renderEventSales() {
+            const tbody = document.getElementById('eventTable');
+
+            if (eventSales.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-inbox"></i><p>데이터가 없습니다</p></div></td></tr>';
+                document.getElementById('eventTotal').textContent = '0';
+                document.getElementById('eventCount').textContent = '0';
+                return;
+            }
+
+            let totalSales = 0;
+
+            tbody.innerHTML = eventSales.map(e => {
+                totalSales += parseFloat(e.sales_amount) || 0;
+                return `
+                    <tr>
+                        <td>${e.event_date}</td>
+                        <td>${e.event_name}</td>
+                        <td>${getEventTypeText(e.event_type)}</td>
+                        <td class="amount">${formatNumber(e.sales_amount)}</td>
+                        <td class="amount">${formatNumber(e.vat_amount)}</td>
+                        <td>${e.attendees || '-'}</td>
+                        <td class="actions">
+                            <button class="btn-edit" onclick="editEvent(${e.id})"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete" onclick="deleteEvent(${e.id})"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('eventTotal').textContent = formatNumber(totalSales);
+            document.getElementById('eventCount').textContent = eventSales.length;
+        }
+
+        // 행사매출 모달
+        function openEventModal(data = null) {
+            document.getElementById('eventModalTitle').textContent = data ? '행사매출 수정' : '행사매출 등록';
+            document.getElementById('eventId').value = data?.id || '';
+            document.getElementById('eventDate').value = data?.event_date || '';
+            document.getElementById('eventType').value = data?.event_type || 'other';
+            document.getElementById('eventName').value = data?.event_name || '';
+            document.getElementById('eventSalesAmount').value = data?.sales_amount || '';
+            document.getElementById('eventAttendees').value = data?.attendees || '';
+            document.getElementById('eventMemo').value = data?.memo || '';
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        function closeEventModal() {
+            document.getElementById('eventModal').classList.remove('active');
+        }
+
+        function editEvent(id) {
+            const data = eventSales.find(e => e.id === id);
+            if (data) openEventModal(data);
+        }
+
+        async function saveEvent() {
+            const eventId = document.getElementById('eventId').value;
+            const eventDate = document.getElementById('eventDate').value;
+            const eventType = document.getElementById('eventType').value;
+            const eventName = document.getElementById('eventName').value.trim();
+            const salesAmount = parseFloat(document.getElementById('eventSalesAmount').value) || 0;
+            const attendees = parseInt(document.getElementById('eventAttendees').value) || null;
+            const memo = document.getElementById('eventMemo').value;
+
+            if (!eventDate || !eventName || !salesAmount) {
+                alert('행사일, 행사명, 매출액을 입력하세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/sales/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: eventId ? parseInt(eventId) : null,
+                        site_id: parseInt(currentSiteId),
+                        event_date: eventDate,
+                        event_type: eventType,
+                        event_name: eventName,
+                        sales_amount: salesAmount,
+                        attendees,
+                        memo
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('저장되었습니다.');
+                    closeEventModal();
+                    loadEventSales();
+                } else {
+                    alert('저장 실패: ' + result.error);
+                }
+            } catch (error) {
+                alert('저장에 실패했습니다.');
+            }
+        }
+
+        async function deleteEvent(id) {
+            if (!confirm('삭제하시겠습니까?')) return;
+
+            try {
+                const response = await fetch(`/api/sales/events/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+
+                if (result.success) {
+                    loadEventSales();
+                } else {
+                    alert('삭제 실패: ' + result.error);
+                }
+            } catch (error) {
+                alert('삭제 실패');
+            }
+        }
+
+        // 유틸리티
+        function formatNumber(value) {
+            const num = Math.round(parseFloat(value) || 0);
+            return num.toLocaleString('ko-KR');
+        }
+
+        function getEventTypeText(type) {
+            const types = {
+                'anniversary': '개업기념일',
+                'buffet': '뷔페행사',
+                'special': '특별행사',
+                'other': '기타'
+            };
+            return types[type] || type;
+        }
+
+        // ========== 일매출 관련 함수 ==========
+
+        let dailyRevenueData = [];
+        let dailyOrdersData = [];
+        let dailyRevenueChart = null;
+
+        // 로컬 날짜를 YYYY-MM-DD 형식으로 (UTC 변환 방지)
+        function toLocalDateStr(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        // 일매출 날짜 초기화 (기본 월간)
+        function initDailyDateRange() {
+            const today = new Date();
+            const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+            document.getElementById('dailyStartDate').value = toLocalDateStr(startDate);
+            document.getElementById('dailyEndDate').value = toLocalDateStr(endDate);
+        }
+
+        // 날짜 범위 퀵버튼
+        function setDailyDateRange(range) {
+            const today = new Date();
+            let startDate, endDate;
+
+            if (range === 'week') {
+                startDate = new Date(today);
+                startDate.setDate(startDate.getDate() - 6);
+                endDate = today;
+            } else if (range === 'month') {
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            }
+
+            document.getElementById('dailyStartDate').value = toLocalDateStr(startDate);
+            document.getElementById('dailyEndDate').value = toLocalDateStr(endDate);
+            loadDailyRevenue();
+        }
+
+        // 일매출 데이터 로드
+        async function loadDailyRevenue() {
+            if (!currentSiteId) {
+                alert('사업장을 선택하세요.');
+                return;
+            }
+
+            const startDate = document.getElementById('dailyStartDate').value;
+            const endDate = document.getElementById('dailyEndDate').value;
+
+            if (!startDate || !endDate) {
+                alert('기간을 선택하세요.');
+                return;
+            }
+
+            try {
+                // 식재료비는 endDate+3일까지 확장 조회 (선발주 반영)
+                const extEnd = new Date(endDate);
+                extEnd.setDate(extEnd.getDate() + 3);
+                const extEndStr = toLocalDateStr(extEnd);
+
+                // 매출과 발주 데이터 동시 로드
+                const [revenueRes, ordersRes] = await Promise.all([
+                    fetch(`/api/sales/daily-revenue?site_id=${currentSiteId}&start_date=${startDate}&end_date=${endDate}`),
+                    fetch(`/api/sales/daily-orders?site_id=${currentSiteId}&start_date=${startDate}&end_date=${extEndStr}`)
+                ]);
+
+                const revenueResult = await revenueRes.json();
+                const ordersResult = await ordersRes.json();
+
+                if (revenueResult.success) {
+                    dailyRevenueData = revenueResult.data.daily_revenue || [];
+                } else {
+                    dailyRevenueData = [];
+                    console.error('일매출 로드 실패:', revenueResult.error);
+                }
+
+                if (ordersResult.success) {
+                    dailyOrdersData = ordersResult.data.daily_orders || [];
+                } else {
+                    dailyOrdersData = [];
+                    console.error('발주 데이터 로드 실패:', ordersResult.error);
+                }
+
+                // 매출+발주 데이터 모두 받은 후 통합 렌더링
+                const revSummary = revenueResult.success ? revenueResult.data.summary : { total_revenue: 0, total_meal_count: 0 };
+                const ordSummary = ordersResult.success ? ordersResult.data.summary : { total_confirmed: 0, total_draft: 0 };
+                renderDailySummary(revSummary, ordSummary);
+                renderDailyRevenueChart();
+                renderDailyRevenueTable();
+
+            } catch (error) {
+                console.error('일매출 로드 실패:', error);
+                alert('일매출 데이터 로드에 실패했습니다.');
+            }
+        }
+
+        // 요약 카드 렌더링 — 식재료비율은 양쪽 데이터가 있는 날짜 기준
+        function renderDailySummary(revenueSummary, ordersSummary) {
+            const totalRevenue = revenueSummary.total_revenue || 0;
+            const totalIngredientCost = (ordersSummary.total_confirmed || 0) + (ordersSummary.total_draft || 0);
+
+            // 오늘까지의 매출/식재료비로 비율 계산 (미래 예정 매출 제외)
+            const ordersMap = buildOrdersMap();
+            const todayForRatio = toLocalDateStr(new Date());
+
+            let revForRatio = 0;
+            let costForRatio = 0;
+            dailyRevenueData.forEach(d => {
+                if (d.date <= todayForRatio) {
+                    revForRatio += d.total_revenue || 0;
+                    costForRatio += ordersMap[d.date]?.total || 0;
+                }
+            });
+
+            const ratio = revForRatio > 0 ? (costForRatio / revForRatio * 100) : 0;
+            console.log(`[식재료비율] ~${todayForRatio} 매출:${revForRatio.toLocaleString()} / 식재료비:${costForRatio.toLocaleString()} = ${ratio.toFixed(1)}%`);
+
+            document.getElementById('dailyTotalRevenue').textContent = formatNumber(totalRevenue);
+            document.getElementById('dailyTotalIngredientCost').textContent = formatNumber(totalIngredientCost);
+            document.getElementById('dailyFoodCostRatio').textContent = ratio.toFixed(1) + '%';
+            document.getElementById('dailyFoodCostRatio').style.color = ratio > 60 ? '#e74c3c' : ratio > 45 ? '#f39c12' : '#2ecc71';
+            document.getElementById('dailyTotalMealCount').textContent = (revenueSummary.total_meal_count || 0).toLocaleString('ko-KR') + '식';
+        }
+
+        // 일별 발주 데이터를 날짜 기준 맵으로 변환 (끼니별 세분화)
+        // 반환: { '2026-03-05': { total: 1234, '조식': 100, '중식': 500, '석식': 400, '공통': 234 }, ... }
+        function buildOrdersMap() {
+            const map = {};
+            dailyOrdersData.forEach(o => {
+                const entry = { total: o.total_cost || 0 };
+                if (o.cost_by_meal_type) {
+                    Object.entries(o.cost_by_meal_type).forEach(([mt, cost]) => {
+                        entry[mt] = Math.round(cost);
+                    });
+                }
+                map[o.date] = entry;
+            });
+            return map;
+        }
+
+        // Chart.js - 매출 스택바 + 식재료비 라인 (계획 3일 포함)
+        function renderDailyRevenueChart() {
+            const ctx = document.getElementById('dailyRevenueChart').getContext('2d');
+
+            if (dailyRevenueChart) {
+                dailyRevenueChart.destroy();
+            }
+
+            if (dailyRevenueData.length === 0 && dailyOrdersData.length === 0) {
+                return;
+            }
+
+            const ordersMap = buildOrdersMap();
+            const revenueMap = {};
+            dailyRevenueData.forEach(d => { revenueMap[d.date] = d; });
+
+            // 통합 날짜
+            const allDatesSet = new Set();
+            dailyRevenueData.forEach(d => allDatesSet.add(d.date));
+            dailyOrdersData.forEach(o => allDatesSet.add(o.date));
+            const allDates = [...allDatesSet].sort();
+
+            // 오늘 날짜 기준으로 실적/예정 구분
+            const todayStr = toLocalDateStr(new Date());
+
+            const labels = allDates.map(dateStr => {
+                const dt = new Date(dateStr);
+                return `${dt.getMonth() + 1}/${dt.getDate()}`;
+            });
+            const isFutureDate = allDates.map(dateStr => dateStr > todayStr);
+
+            // --- 빗금 패턴 생성 (예정일 매출 바용) ---
+            function createStripePattern(rgb, alpha) {
+                const cvs = document.createElement('canvas');
+                cvs.width = 10; cvs.height = 10;
+                const c = cvs.getContext('2d');
+                c.fillStyle = `rgba(${rgb.join(',')}, ${alpha * 0.3})`;
+                c.fillRect(0, 0, 10, 10);
+                c.strokeStyle = `rgba(${rgb.join(',')}, ${alpha})`;
+                c.lineWidth = 2;
+                c.beginPath();
+                c.moveTo(0, 10); c.lineTo(10, 0);
+                c.stroke();
+                return ctx.createPattern(cvs, 'repeat');
+            }
+
+            // 끼니별 매출 바 — 예정일은 빗금 패턴
+            const mealTypes = ['조식', '중식', '석식'];
+            const baseColors = {
+                '조식': [255, 206, 86],
+                '중식': [54, 162, 235],
+                '석식': [255, 99, 132]
+            };
+
+            const datasets = mealTypes.map(mealType => {
+                const rgb = baseColors[mealType];
+                const pattern = createStripePattern(rgb, 0.7);
+                return {
+                    label: mealType,
+                    data: allDates.map(dateStr => {
+                        const revData = revenueMap[dateStr];
+                        return revData?.revenue_by_meal_type?.[mealType]?.revenue || 0;
+                    }),
+                    backgroundColor: allDates.map(dateStr =>
+                        dateStr > todayStr ? pattern : `rgba(${rgb.join(',')}, 0.8)`
+                    ),
+                    borderColor: allDates.map(dateStr =>
+                        dateStr > todayStr ? `rgba(${rgb.join(',')}, 0.5)` : `rgba(${rgb.join(',')}, 1)`
+                    ),
+                    borderWidth: allDates.map(dateStr => dateStr > todayStr ? 1 : 0),
+                    stack: 'revenue',
+                    yAxisID: 'y',
+                    order: 2
+                };
+            });
+
+            // 식재료비 실선 + 계획 점선 (오늘 기준)
+            const costData = allDates.map(dateStr => ordersMap[dateStr]?.total || 0);
+            const costActual = allDates.map((dateStr, i) => dateStr <= todayStr ? costData[i] : null);
+            const costPlan = allDates.map((dateStr, i) => {
+                if (dateStr > todayStr) return costData[i];
+                if (i < allDates.length - 1 && allDates[i + 1] > todayStr) return costData[i]; // 연결점
+                return null;
+            });
+
+            datasets.push({
+                label: '식재료비(확정)',
+                data: costActual,
+                type: 'line',
+                borderColor: '#e74c3c',
+                borderWidth: 2.5,
+                pointRadius: 4,
+                pointBackgroundColor: '#e74c3c',
+                tension: 0.3,
+                fill: false,
+                yAxisID: 'y',
+                spanGaps: false,
+                order: 1
+            });
+
+            datasets.push({
+                label: '식재료비(계획)',
+                data: costPlan,
+                type: 'line',
+                borderColor: '#e74c3c',
+                borderWidth: 2,
+                borderDash: [6, 4],
+                pointRadius: 4,
+                pointBackgroundColor: 'rgba(231,76,60,0.4)',
+                pointBorderColor: '#e74c3c',
+                pointBorderWidth: 1,
+                tension: 0.3,
+                fill: false,
+                yAxisID: 'y',
+                spanGaps: true,
+                order: 1
+            });
+
+            // 식재료비율 (매출 있는 날만)
+            datasets.push({
+                label: '식재료비율(%)',
+                data: allDates.map(dateStr => {
+                    const rev = revenueMap[dateStr]?.total_revenue || 0;
+                    const cost = ordersMap[dateStr]?.total || 0;
+                    return rev > 0 ? Math.round(cost / rev * 1000) / 10 : null;
+                }),
+                type: 'line',
+                borderColor: '#3498db',
+                borderWidth: 2,
+                borderDash: [6, 3],
+                pointRadius: 3,
+                pointBackgroundColor: '#3498db',
+                tension: 0.3,
+                fill: false,
+                yAxisID: 'y1',
+                spanGaps: false,
+                order: 0
+            });
+
+            dailyRevenueChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: {
+                                color: (ctx) => isFutureDate[ctx.index] ? '#e74c3c' : '#666'
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            position: 'left',
+                            title: { display: true, text: '금액' },
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M';
+                                    if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
+                                    return value;
+                                }
+                            }
+                        },
+                        y1: {
+                            beginAtZero: true,
+                            max: 100,
+                            position: 'right',
+                            title: { display: true, text: '식재료비율 (%)' },
+                            grid: { drawOnChartArea: false },
+                            ticks: { callback: v => v + '%' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.parsed.y;
+                                    if (val === null) return null;
+                                    if (context.dataset.label === '식재료비율(%)') {
+                                        return '식재료비율: ' + val.toFixed(1) + '%';
+                                    }
+                                    return context.dataset.label + ': ' + val.toLocaleString('ko-KR');
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: { usePointStyle: true, padding: 12 }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 세로형 통합 테이블 렌더링
+        // 열 = 날짜 (매출 범위 + 식재료비 추가 3일), 행 = 끼니별 매출/식재료비/비율
+        function renderDailyRevenueTable() {
+            const thead = document.getElementById('dailyRevenueHead');
+            const tbody = document.getElementById('dailyRevenueTable');
+
+            if (dailyRevenueData.length === 0 && dailyOrdersData.length === 0) {
+                thead.innerHTML = '<tr><th>구분</th></tr>';
+                tbody.innerHTML = '<tr><td><div class="empty-state"><i class="fas fa-inbox"></i><p>데이터가 없습니다</p></div></td></tr>';
+                return;
+            }
+
+            const ordersMap = buildOrdersMap();
+            const revenueMap = {};
+            dailyRevenueData.forEach(d => { revenueMap[d.date] = d; });
+
+            // 모든 날짜 통합 (매출 + 식재료비)
+            const allDatesSet = new Set();
+            dailyRevenueData.forEach(d => allDatesSet.add(d.date));
+            dailyOrdersData.forEach(o => allDatesSet.add(o.date));
+            const allDates = [...allDatesSet].sort();
+
+            // 날짜별 데이터 준비
+            const dates = [];
+            const breakfasts = [], lunches = [], dinners = [], revenues = [];
+            const costBreakfasts = [], costLunches = [], costDinners = [], costCommons = [], costTotals = [];
+            const ratios = [];
+            const isExtraDays = []; // 매출 범위 밖의 추가일 표시
+            let totB = 0, totL = 0, totD = 0, totRev = 0;
+            let totCostB = 0, totCostL = 0, totCostD = 0, totCostNight = 0, totCostEtc = 0, totCostCommon = 0, totCost = 0;
+            const costNights = [], costEtcs = [];
+
+            // 매출 날짜 범위 파악
+            const revDates = dailyRevenueData.map(d => d.date);
+            const revStart = revDates[0] || '';
+            const revEnd = revDates[revDates.length - 1] || '';
+
+            allDates.forEach(dateStr => {
+                const dt = new Date(dateStr);
+                const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                const dayOfWeek = dayNames[dt.getDay()];
+                const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+                const isExtra = dateStr > revEnd; // 매출 범위 밖
+                dates.push({ label: `${dt.getMonth() + 1}/${dt.getDate()}`, day: dayOfWeek, isWeekend, dateStr });
+                isExtraDays.push(isExtra);
+
+                // 매출
+                const revData = revenueMap[dateStr];
+                const b = revData?.revenue_by_meal_type?.['조식']?.revenue || 0;
+                const l = revData?.revenue_by_meal_type?.['중식']?.revenue || 0;
+                const dn = revData?.revenue_by_meal_type?.['석식']?.revenue || 0;
+                const rev = revData?.total_revenue || 0;
+                breakfasts.push(b); lunches.push(l); dinners.push(dn); revenues.push(rev);
+                totB += b; totL += l; totD += dn; totRev += rev;
+
+                // 식재료비 (끼니별)
+                const orderEntry = ordersMap[dateStr] || {};
+                const cb = orderEntry['조식'] || 0;
+                const cl = orderEntry['중식'] || 0;
+                const cd = orderEntry['석식'] || 0;
+                const cn = orderEntry['야식'] || 0;
+                const ce = orderEntry['기타'] || 0;
+                const cc = orderEntry['공통'] || 0;
+                const ct = orderEntry.total || 0;
+                costBreakfasts.push(cb); costLunches.push(cl); costDinners.push(cd);
+                costNights.push(cn); costEtcs.push(ce);
+                costCommons.push(cc); costTotals.push(ct);
+                totCostB += cb; totCostL += cl; totCostD += cd; totCostNight += cn; totCostEtc += ce; totCostCommon += cc; totCost += ct;
+
+                const ratio = rev > 0 ? (ct / rev * 100) : 0;
+                ratios.push(ratio);
+            });
+
+            // 합계 식재료비율: 오늘까지의 매출 대비 식재료비
+            const todayForTable = toLocalDateStr(new Date());
+            let revForTableRatio = 0;
+            let costForTableRatio = 0;
+            dates.forEach((dt, i) => {
+                if (dt.dateStr <= todayForTable) {
+                    revForTableRatio += revenues[i];
+                    costForTableRatio += costTotals[i];
+                }
+            });
+            const grandRatio = revForTableRatio > 0 ? (costForTableRatio / revForTableRatio * 100) : 0;
+
+            // 오늘 기준 예정일 판별 (미래 날짜에 옅은 배경)
+            const todayForTable2 = toLocalDateStr(new Date());
+            const isFutureDates = dates.map(dt => dt.dateStr > todayForTable2);
+            const futureBg = 'background-color:rgba(255,235,150,0.25);';  // 옅은 노랑
+
+            // 10일 초과면 천원 단위로 표시
+            const useK = dates.length > 10;
+            const fmtCell = (v) => {
+                if (v === 0) return '-';
+                if (useK) return Math.round(v / 1000).toLocaleString('ko-KR');
+                return Math.round(v).toLocaleString('ko-KR');
+            };
+            const fmtTotal = (v) => Math.round(v).toLocaleString('ko-KR');
+            const unitLabel = useK ? '<br><small style="color:#666;">(천원)</small>' : '';
+
+            // 셀 스타일: 월간은 콤팩트, 주간은 넉넉하게
+            const cellPad = useK ? 'padding:2px 1px;' : 'padding:4px 3px;';
+            const cellMinW = useK ? 'min-width:38px;' : 'min-width:70px;';
+            const cellFs = useK ? 'font-size:0.9em; font-weight:700;' : 'font-size:1em; font-weight:600;';
+
+            // --- thead: 날짜 헤더 ---
+            let headHtml = `<tr><th style="min-width:100px; position:sticky; left:0; background:#f8f9fa; z-index:2; font-size:0.8em;">구분${unitLabel}</th>`;
+            dates.forEach((dt, i) => {
+                const weekend = dt.isWeekend ? 'color:#e74c3c;' : '';
+                const extra = isExtraDays[i] ? 'background:#fff8e1;' : (isFutureDates[i] ? futureBg : '');
+                headHtml += `<th class="amount" style="${cellMinW} ${cellPad} font-size:0.75em; ${weekend} ${extra}">${dt.label}<br><small>(${dt.day})</small>${isExtraDays[i] ? '<br><small style="color:#f39c12;">계획</small>' : ''}</th>`;
+            });
+            headHtml += `<th class="amount" style="min-width:70px; background:#f0f0f0; font-size:0.8em;">합계${useK ? '<br><small style="color:#666;">(원)</small>' : ''}</th></tr>`;
+            thead.innerHTML = headHtml;
+
+            // --- tbody: 행별 렌더링 ---
+            const stickyTd = (label, bg) => `<td style="font-weight:600; font-size:0.78em; white-space:nowrap; position:sticky; left:0; background:${bg || 'inherit'}; z-index:1; padding:3px 6px;">${label}</td>`;
+
+            function makeRow(label, values, total, trStyle = '', cellStyle = '', bg = '') {
+                let row = `<tr style="${trStyle}">${stickyTd(label, bg)}`;
+                values.forEach((v, i) => {
+                    const fb = isFutureDates[i] ? futureBg : '';
+                    row += `<td class="amount" style="${cellFs} ${cellPad} ${cellStyle} ${fb}">${fmtCell(v)}</td>`;
+                });
+                row += `<td class="amount" style="font-weight:700; font-size:0.85em; ${cellStyle}">${fmtTotal(total)}</td></tr>`;
+                return row;
+            }
+
+            function makeSeparator(label, colspan) {
+                return `<tr style="background:#e9ecef; height:6px;"><td colspan="${colspan}" style="padding:0; border:none;"></td></tr>`;
+            }
+
+            // 클릭 가능한 식재료비 행 (셀 클릭 → 상세 모달)
+            function makeCostRow(label, mealType, values, total, trStyle = '', cellStyle = '', bg = '') {
+                let row = `<tr style="${trStyle}">${stickyTd(label, bg)}`;
+                values.forEach((v, i) => {
+                    const dateStr = dates[i]?.dateStr || '';
+                    const fb = isFutureDates[i] ? futureBg : '';
+                    if (v > 0) {
+                        row += `<td class="amount" style="${cellFs} ${cellPad} ${cellStyle} ${fb} cursor:pointer; text-decoration:underline dotted;" onclick="showIngredientDetail('${dateStr}','${mealType}')" title="클릭하여 상세보기">${fmtCell(v)}</td>`;
+                    } else {
+                        row += `<td class="amount" style="${cellFs} ${cellPad} ${cellStyle} ${fb}">-</td>`;
+                    }
+                });
+                row += `<td class="amount" style="font-weight:700; font-size:0.85em; ${cellStyle}">${fmtTotal(total)}</td></tr>`;
+                return row;
+            }
+
+            function makeRatioRow(label, ratioValues, grandR) {
+                let row = `<tr style="background:#ebf5fb;">${stickyTd(label, '#ebf5fb')}`;
+                ratioValues.forEach((r, i) => {
+                    const color = r > 60 ? '#e74c3c' : r > 45 ? '#f39c12' : '#2ecc71';
+                    const fb = isFutureDates[i] ? futureBg : '';
+                    row += `<td class="amount" style="${cellFs} ${cellPad} color:${color}; ${fb}">${r > 0 ? r.toFixed(1) + '%' : '-'}</td>`;
+                });
+                const gColor = grandR > 60 ? '#e74c3c' : grandR > 45 ? '#f39c12' : '#2ecc71';
+                row += `<td class="amount" style="font-weight:700; font-size:0.85em; color:${gColor};">${grandR.toFixed(1)}%</td></tr>`;
+                return row;
+            }
+
+            const cols = dates.length + 2;
+            let html = '';
+
+            // ── 매출 섹션 ──
+            html += makeRow('매출-조식', breakfasts, totB, '', 'color:#555;');
+            html += makeRow('매출-중식', lunches, totL, '', 'color:#555;');
+            html += makeRow('매출-석식', dinners, totD, '', 'color:#555;');
+            html += makeRow('매출합계 (VAT제외)', revenues, totRev, 'background:#eafaf1;', 'color:#2ecc71; font-weight:600;', '#eafaf1');
+
+            // ── 구분선 ──
+            html += makeSeparator('', cols);
+
+            // ── 식재료비 섹션 (끼니별, 클릭 가능) ──
+            html += makeCostRow('식재료-조식', '조식', costBreakfasts, totCostB, '', 'color:#c0392b;');
+            html += makeCostRow('식재료-중식', '중식', costLunches, totCostL, '', 'color:#c0392b;');
+            html += makeCostRow('식재료-석식', '석식', costDinners, totCostD, '', 'color:#c0392b;');
+            if (totCostNight > 0) {
+                html += makeCostRow('식재료-야식', '야식', costNights, totCostNight, '', 'color:#c0392b;');
+            }
+            if (totCostCommon > 0) {
+                html += makeCostRow('식재료-공통', '공통', costCommons, totCostCommon, '', 'color:#c0392b;');
+            }
+            html += makeCostRow('식재료-기타', '기타', costEtcs, totCostEtc, '', 'color:#c0392b;');
+            html += makeRow('식재료비 합계', costTotals, totCost, 'background:#fdedec;', 'color:#e74c3c; font-weight:600;', '#fdedec');
+
+            // ── 구분선 ──
+            html += makeSeparator('', cols);
+
+            // ── 비율 ──
+            html += makeRatioRow('식재료비율', ratios, grandRatio);
+
+            tbody.innerHTML = html;
+        }
+
+        // 탭 전환 시 일매출 탭이면 날짜 초기화
+        const originalSwitchTab = switchTab;
+        switchTab = function(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // 일매출 탭 첫 진입 시 날짜 초기화 + 자동 조회
+            if (tabName === 'daily' && !document.getElementById('dailyStartDate').value) {
+                initDailyDateRange();
+                loadDailyRevenue();
+            }
+        };
+
+        // ========== 식재료 상세 모달 ==========
+
+        async function showIngredientDetail(date, mealType) {
+            if (!currentSiteId || !date) return;
+
+            const modal = document.getElementById('ingredientDetailModal');
+            const content = document.getElementById('ingredientDetailContent');
+            const title = document.getElementById('ingredientDetailTitle');
+
+            const dt = new Date(date);
+            const dateLabel = `${dt.getMonth() + 1}/${dt.getDate()}`;
+            title.textContent = `식재료 상세 — ${dateLabel} ${mealType}`;
+
+            content.innerHTML = '<div style="text-align:center; padding:30px;"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>';
+            modal.classList.add('active');
+
+            try {
+                const resp = await fetch(`/api/sales/daily-order-detail?site_id=${currentSiteId}&date=${date}&meal_type=${encodeURIComponent(mealType)}`);
+                const result = await resp.json();
+
+                if (result.success && result.data.items.length > 0) {
+                    const items = result.data.items;
+                    let html = `<table class="data-table" style="font-size:0.9em;">
+                        <thead><tr>
+                            <th style="width:30px;">No</th>
+                            <th>식재료명</th>
+                            <th>메뉴</th>
+                            <th class="amount">수량</th>
+                            <th class="amount">단가</th>
+                            <th class="amount">금액</th>
+                        </tr></thead><tbody>`;
+
+                    items.forEach((item, i) => {
+                        const qty = item.order_qty > 0 ? item.order_qty.toFixed(2) + (item.unit ? ' ' + item.unit : '') : '-';
+                        html += `<tr>
+                            <td style="color:#555;">${i + 1}</td>
+                            <td>${item.ingredient_name || '-'}</td>
+                            <td style="color:#555; font-size:0.85em;">${item.menu_name || item.slot_name || '-'}</td>
+                            <td class="amount">${qty}</td>
+                            <td class="amount">${item.unit_price > 0 ? formatNumber(item.unit_price) : '-'}</td>
+                            <td class="amount" style="font-weight:600;">${formatNumber(item.total_price)}</td>
+                        </tr>`;
+                    });
+
+                    html += `<tr style="background:#f0f0f0; font-weight:700;">
+                        <td colspan="5">합계 (${items.length}건)</td>
+                        <td class="amount" style="color:#e74c3c;">${formatNumber(result.data.total)}</td>
+                    </tr></tbody></table>`;
+
+                    content.innerHTML = html;
+                } else {
+                    content.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>데이터가 없습니다</p></div>';
+                }
+            } catch (err) {
+                content.innerHTML = `<p style="color:#e74c3c;">조회 실패: ${err.message}</p>`;
+            }
+        }
+
+        function closeIngredientDetail() {
+            document.getElementById('ingredientDetailModal').classList.remove('active');
+        }
+    </script>
+</body>
+
+</html>

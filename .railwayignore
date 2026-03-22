@@ -1,0 +1,76 @@
+# Railway 배포 시 제외할 파일들
+
+# 모든 백업 폴더 제외 (용량 문제)
+backups/
+backup_*/
+*backup*/
+
+# 큰 데이터베이스 파일만 제외 (샘플은 포함)
+daham_meal.db
+*.sqlite
+*.sqlite3
+
+# 샘플 DB는 포함 (railway_app.py가 필요)
+!sample_daham_meal.db
+
+# 캐시 폴더
+__pycache__/
+*.pyc
+
+# 개발 관련 파일
+.git/
+.gitignore
+*.log
+
+# 임시/업로드 폴더만 제외
+uploads/
+temp/
+
+# Windows 파일
+*.bat
+Thumbs.db
+desktop.ini
+
+# 문서 파일
+*.md
+README*
+CLAUDE.md
+
+# 테스트 파일
+test_*
+*_test.py
+check_*
+validate_*
+update_all_unit_prices.py
+
+# 바이너리 파일
+*.exe
+*.dll
+*.so
+
+# 임시 파일
+tmp/
+temp/
+*.tmp
+*.temp
+
+# IDE 파일
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 환경 파일
+.env
+.env.local
+.env.development
+.env.production
+
+# 백업 파일
+*.bak
+*.backup
+*.old
+
+# 큰 데이터 파일
+*.xlsx
+*.csv

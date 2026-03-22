@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>행사 등록/손익 관리</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/common-sidebar.css?v=20251027">
+    <script src="/config.js"></script>
+    <script src="/static/js/branding.js"></script>
+    <script src="/static/js/sidebar-dropdown.js"></script>
+    <script src="/static/js/auth-check.js"></script>
+    <script src="/static/js/custom-alert.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f7fa;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 180px;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .page-title i {
+            color: #6366f1;
+            margin-right: 10px;
+        }
+
+        /* 탭 네비게이션 */
+        .tab-nav {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 8px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .tab-btn.active {
+            background: #6366f1;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 필터 영역 */
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-size: 0.85rem;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        /* 버튼 */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        /* 행사 목록 테이블 */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .event-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .event-table th,
+        .event-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .event-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            font-size: 0.85rem;
+        }
+
+        .event-table tr:hover {
+            background: #fafbfc;
+        }
+
+        .event-table .text-right {
+            text-align: right;
+        }
+
+        /* 상태 뱃지 */
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-estimate { background: #fef3c7; color: #92400e; }
+        .status-confirmed { background: #dbeafe; color: #1e40af; }
+        .status-in_progress { background: #dcfce7; color: #166534; }
+        .status-completed { background: #e0e7ff; color: #3730a3; }
+        .status-cancelled { background: #fee2e2; color: #991b1b; }
+
+        /* 종류 뱃지 */
+        .type-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .type-buffet { background: #fef3c7; color: #92400e; }
+        .type-lunchbox { background: #dbeafe; color: #1e40af; }
+        .type-salad { background: #dcfce7; color: #166534; }
+        .type-event { background: #fce7f3; color: #9d174d; }
+
+        /* 폼 영역 */
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        .form-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-section-title i {
+            color: #6366f1;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .form-group label.required::after {
+            content: ' *';
+            color: #ef4444;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        .form-group input:disabled,
+        .form-group select:disabled {
+            background: #f8fafc;
+            color: #64748b;
+        }
+
+        .form-group.wide {
+            grid-column: span 2;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        /* 계산된 값 표시 */
+        .calculated-value {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #0369a1;
+        }
+
+        .profit-positive {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+
+        .profit-negative {
+            background: #fee2e2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+        /* 손익 카드 */
+        .profit-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        .profit-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .profit-card .label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 5px;
+        }
+
+        .profit-card .value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .profit-card.highlight {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+
+        .profit-card.highlight .label,
+        .profit-card.highlight .value {
+            color: white;
+        }
+
+        /* 액션 버튼 영역 */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            color: #cbd5e1;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.wide,
+            .form-group.full {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 사이드바 -->
+    <nav class="sidebar">
+        <div class="logo">
+            <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+        </div>
+        <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
+        <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
+        <a href="meal_count_inquiry.html" class="nav-item"><i class="fas fa-search"></i>식수 조회</a>
+        <a href="menu_recipe_management.html" class="nav-item"><i class="fas fa-utensils"></i>메뉴/레시피 관리</a>
+        <a href="meal_plan_advanced.html" class="nav-item"><i class="fas fa-calendar-alt"></i>식단 관리</a>
+        <a href="meal_plan_print.html" class="nav-item"><i class="fas fa-print"></i>식단표 출력</a>
+        <div class="nav-dropdown open" id="event-dropdown">
+            <div class="nav-dropdown-toggle" onclick="toggleDropdown('event-dropdown')"><i class="fas fa-star"></i><span>행사/특별식</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+            <div class="nav-submenu">
+                <a href="event_template_management.html" class="nav-item">템플릿 관리</a>
+                <a href="event_order_management.html" class="nav-item active">행사 등록/손익</a>
+                <a href="event_ordering_management.html" class="nav-item">행사 발주</a>
+            </div>
+        </div>
+        <a href="base_weight_correction.html" class="nav-item"><i class="fas fa-balance-scale"></i>기준용량 보정</a>
+        <div class="nav-dropdown" id="ingredients-dropdown">
+            <div class="nav-dropdown-toggle" onclick="toggleDropdown('ingredients-dropdown')"><i class="fas fa-carrot"></i><span>식자재 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+            <div class="nav-submenu">
+                <a href="ingredients_management.html" class="nav-item">식자재 목록</a>
+                <a href="ingredient_bulk_change.html" class="nav-item">식자재 일괄변경</a>
+                <a href="ingredient_usage_history.html" class="nav-item">식자재 사용내역</a>
+            </div>
+        </div>
+        <a href="ordering_management.html" class="nav-item"><i class="fas fa-shopping-cart"></i>발주 관리</a>
+        <a href="receiving_management.html" class="nav-item"><i class="fas fa-truck"></i>입고명세서 관리</a>
+        <a href="logs_management.html" class="nav-item"><i class="fas fa-book"></i>각종 일지</a>
+        <div class="nav-dropdown" id="instruction-dropdown">
+            <div class="nav-dropdown-toggle" onclick="toggleDropdown('instruction-dropdown')"><i class="fas fa-clipboard-list"></i><span>지시서 관리</span><i class="fas fa-chevron-down dropdown-arrow"></i></div>
+            <div class="nav-submenu">
+                <a href="preprocessing_management.html" class="nav-item">1. 전처리지시서</a>
+                <a href="cooking_instruction_management.html" class="nav-item">2. 조리지시서</a>
+                <a href="portion_instruction_management.html" class="nav-item">3. 소분지시서</a>
+                <a href="side_dish_position_guide.html" class="nav-item">반찬위치지정서</a>
+            </div>
+        </div>
+        <div class="nav-divider"></div>
+        <a href="notice_board.html" class="nav-item"><i class="fas fa-bullhorn"></i>공지사항</a>
+        <a href="system_request.html" class="nav-item"><i class="fas fa-tools"></i>시스템 요청</a>
+        <a href="sales_management.html" class="nav-item"><i class="fas fa-chart-pie"></i>식재료비 분석</a>
+        <div class="nav-divider"></div>
+        <a href="admin_dashboard.html" class="nav-item admin-item" id="admin-link" style="display:none;"><i class="fas fa-cog"></i>ADMIN</a>
+    </nav>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="main-content">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <h1 class="page-title"><i class="fas fa-calendar-plus"></i>행사 등록/손익 관리</h1>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-building" style="color:#6366f1;"></i>
+                <select id="event-order-site-select" style="padding:8px 14px;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;font-weight:500;min-width:160px;cursor:pointer;">
+                    <option value="">사업장 선택</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 탭 네비게이션 -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="list"><i class="fas fa-list"></i> 행사 목록</button>
+            <button class="tab-btn" data-tab="form"><i class="fas fa-plus"></i> 행사 등록</button>
+        </div>
+
+        <!-- 행사 목록 탭 -->
+        <div id="tab-list" class="tab-content active">
+            <!-- 필터 -->
+            <div class="filter-section">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>상태</label>
+                        <select id="filter-status">
+                            <option value="">전체</option>
+                            <option value="estimate">견적</option>
+                            <option value="confirmed">확정</option>
+                            <option value="in_progress">진행중</option>
+                            <option value="completed">완료</option>
+                            <option value="cancelled">취소</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>종류</label>
+                        <select id="filter-type">
+                            <option value="">전체</option>
+                            <option value="buffet">뷔페</option>
+                            <option value="lunchbox">도시락</option>
+                            <option value="salad">샐러드</option>
+                            <option value="event">행사</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>기간</label>
+                        <input type="date" id="filter-start">
+                        <span>~</span>
+                        <input type="date" id="filter-end">
+                    </div>
+                    <div class="filter-group">
+                        <label>사업장</label>
+                        <select id="filter-site">
+                            <option value="">전체</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <input type="text" id="filter-search" placeholder="검색어 (행사명, 주관사)">
+                    </div>
+                    <button class="btn btn-primary" onclick="loadEvents()">
+                        <i class="fas fa-search"></i> 조회
+                    </button>
+                    <button class="btn btn-success" onclick="showCreateForm()">
+                        <i class="fas fa-plus"></i> 새 행사
+                    </button>
+                </div>
+            </div>
+
+            <!-- 테이블 -->
+            <div class="table-container">
+                <table class="event-table">
+                    <thead>
+                        <tr>
+                            <th>행사일</th>
+                            <th>행사명</th>
+                            <th>사업장</th>
+                            <th>종류</th>
+                            <th>상태</th>
+                            <th>주관사</th>
+                            <th class="text-right">예상 식수</th>
+                            <th class="text-right">단가</th>
+                            <th class="text-right">예상 매출</th>
+                            <th class="text-right">실제 매출</th>
+                            <th class="text-right">손익</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="event-list">
+                        <!-- 동적 로드 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 행사 등록/수정 탭 -->
+        <div id="tab-form" class="tab-content">
+            <div class="form-container">
+                <form id="event-form">
+                    <input type="hidden" id="event-id">
+
+                    <!-- 기본 정보 -->
+                    <div class="form-section">
+                        <h3 class="form-section-title"><i class="fas fa-info-circle"></i> 기본 정보</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="required">행사명</label>
+                                <input type="text" id="event-name" required placeholder="예: 신년회 뷔페">
+                            </div>
+                            <div class="form-group">
+                                <label class="required">행사일</label>
+                                <input type="date" id="event-date" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="required">종류</label>
+                                <select id="event-type" required>
+                                    <option value="">선택</option>
+                                    <option value="buffet">뷔페</option>
+                                    <option value="lunchbox">도시락</option>
+                                    <option value="salad">샐러드</option>
+                                    <option value="event">행사</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>상태</label>
+                                <select id="event-status">
+                                    <option value="estimate">견적</option>
+                                    <option value="confirmed">확정</option>
+                                    <option value="in_progress">진행중</option>
+                                    <option value="completed">완료</option>
+                                    <option value="cancelled">취소</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>사업장</label>
+                                <div id="form-site-display" style="padding:8px 0;font-weight:500;color:#1f2937;">
+                                    (상단에서 사업장 선택)
+                                </div>
+                                <input type="hidden" id="event-site-id">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 고객 정보 -->
+                    <div class="form-section">
+                        <h3 class="form-section-title"><i class="fas fa-building"></i> 고객 정보</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>주관사명</label>
+                                <input type="text" id="client-name" placeholder="예: (주)ABC 기업">
+                            </div>
+                            <div class="form-group">
+                                <label>담당자</label>
+                                <input type="text" id="contact-person" placeholder="담당자명">
+                            </div>
+                            <div class="form-group">
+                                <label>연락처</label>
+                                <input type="tel" id="phone" placeholder="010-0000-0000">
+                            </div>
+                            <div class="form-group wide">
+                                <label>주소</label>
+                                <input type="text" id="address" placeholder="행사 장소 주소">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 메뉴/견적 정보 -->
+                    <div class="form-section">
+                        <h3 class="form-section-title"><i class="fas fa-utensils"></i> 메뉴/견적 정보</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>템플릿 선택</label>
+                                <select id="template-id" onchange="applyTemplate()">
+                                    <option value="">직접 입력</option>
+                                    <!-- 동적 로드 -->
+                                </select>
+                            </div>
+                            <div class="form-group wide">
+                                <label>메뉴명</label>
+                                <input type="text" id="menu-name" placeholder="예: 한식 뷔페 A코스">
+                            </div>
+                            <div class="form-group">
+                                <label>예상 식수</label>
+                                <input type="number" id="expected-attendees" value="0" min="0" onchange="calculateRevenue()">
+                            </div>
+                            <div class="form-group">
+                                <label>단가 (원)</label>
+                                <input type="number" id="unit-price" value="0" min="0" onchange="calculateRevenue()">
+                            </div>
+                            <div class="form-group">
+                                <label>예상 매출</label>
+                                <div class="calculated-value" id="expected-revenue">0원</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 실제 매출 (완료 후) -->
+                    <div class="form-section" id="actual-section">
+                        <h3 class="form-section-title"><i class="fas fa-check-circle"></i> 실제 매출 (행사 완료 후)</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>실제 식수</label>
+                                <input type="number" id="actual-attendees" min="0" onchange="calculateProfit()">
+                            </div>
+                            <div class="form-group">
+                                <label>실제 매출</label>
+                                <div class="calculated-value" id="actual-revenue">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 비용/손익 -->
+                    <div class="form-section" id="cost-section">
+                        <h3 class="form-section-title"><i class="fas fa-calculator"></i> 비용/손익</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>식재료비</label>
+                                <input type="number" id="ingredient-cost" value="0" min="0" onchange="calculateProfit()">
+                            </div>
+                            <div class="form-group">
+                                <label>인건비</label>
+                                <input type="number" id="labor-cost" value="0" min="0" onchange="calculateProfit()">
+                            </div>
+                            <div class="form-group">
+                                <label>기타비용</label>
+                                <input type="number" id="other-cost" value="0" min="0" onchange="calculateProfit()">
+                            </div>
+                            <div class="form-group">
+                                <label>총 비용</label>
+                                <div class="calculated-value" id="total-cost">0원</div>
+                            </div>
+                        </div>
+
+                        <!-- 손익 요약 카드 -->
+                        <div class="profit-summary">
+                            <div class="profit-card">
+                                <div class="label">실제 매출</div>
+                                <div class="value" id="profit-revenue">-</div>
+                            </div>
+                            <div class="profit-card">
+                                <div class="label">총 비용</div>
+                                <div class="value" id="profit-cost">0원</div>
+                            </div>
+                            <div class="profit-card highlight">
+                                <div class="label">순이익</div>
+                                <div class="value" id="profit-amount">-</div>
+                            </div>
+                            <div class="profit-card">
+                                <div class="label">마진율</div>
+                                <div class="value" id="profit-margin">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 발주 현황 -->
+                    <div class="form-section" id="order-status-section" style="display: none;">
+                        <h3 class="form-section-title"><i class="fas fa-shopping-cart"></i> 발주 현황</h3>
+                        <div id="event-order-status-container">
+                            <p style="color: #888; text-align: center; padding: 10px;">발주 내역이 없습니다.</p>
+                        </div>
+                        <div style="margin-top: 10px; text-align: right;">
+                            <a href="/event_ordering_management.html" class="btn btn-secondary" style="padding: 6px 14px; font-size: 12px; text-decoration: none; display: inline-block;">
+                                <i class="fas fa-plus"></i> 행사 발주 생성
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 메모 -->
+                    <div class="form-section">
+                        <h3 class="form-section-title"><i class="fas fa-sticky-note"></i> 메모</h3>
+                        <div class="form-group full">
+                            <textarea id="memo" rows="3" placeholder="추가 메모 사항"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 액션 버튼 -->
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="cancelForm()">
+                            <i class="fas fa-times"></i> 취소
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 저장
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 전역 변수
+        let templates = [];
+        const TYPE_LABELS = {
+            buffet: '뷔페',
+            lunchbox: '도시락',
+            salad: '샐러드',
+            event: '행사'
+        };
+        const STATUS_LABELS = {
+            estimate: '견적',
+            confirmed: '확정',
+            in_progress: '진행중',
+            completed: '완료',
+            cancelled: '취소'
+        };
+
+        // 탭 전환
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // 숫자 포맷팅
+        function formatNumber(num) {
+            if (num === null || num === undefined || num === '') return '-';
+            return Number(num).toLocaleString() + '원';
+        }
+
+        // 매출 계산
+        function calculateRevenue() {
+            const attendees = parseInt(document.getElementById('expected-attendees').value) || 0;
+            const price = parseFloat(document.getElementById('unit-price').value) || 0;
+            const revenue = attendees * price;
+            document.getElementById('expected-revenue').textContent = formatNumber(revenue);
+        }
+
+        // 손익 계산
+        function calculateProfit() {
+            const actualAttendees = document.getElementById('actual-attendees').value;
+            const unitPrice = parseFloat(document.getElementById('unit-price').value) || 0;
+            const ingredientCost = parseFloat(document.getElementById('ingredient-cost').value) || 0;
+            const laborCost = parseFloat(document.getElementById('labor-cost').value) || 0;
+            const otherCost = parseFloat(document.getElementById('other-cost').value) || 0;
+
+            const totalCost = ingredientCost + laborCost + otherCost;
+            document.getElementById('total-cost').textContent = formatNumber(totalCost);
+            document.getElementById('profit-cost').textContent = formatNumber(totalCost);
+
+            if (actualAttendees !== '' && actualAttendees !== null) {
+                const actual = parseInt(actualAttendees) * unitPrice;
+                document.getElementById('actual-revenue').textContent = formatNumber(actual);
+                document.getElementById('profit-revenue').textContent = formatNumber(actual);
+
+                const profit = actual - totalCost;
+                document.getElementById('profit-amount').textContent = formatNumber(profit);
+
+                const profitCard = document.querySelector('.profit-card.highlight');
+                if (profit >= 0) {
+                    profitCard.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                } else {
+                    profitCard.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                }
+
+                if (actual > 0) {
+                    const margin = (profit / actual) * 100;
+                    document.getElementById('profit-margin').textContent = margin.toFixed(1) + '%';
+                } else {
+                    document.getElementById('profit-margin').textContent = '-';
+                }
+            } else {
+                document.getElementById('actual-revenue').textContent = '-';
+                document.getElementById('profit-revenue').textContent = '-';
+                document.getElementById('profit-amount').textContent = '-';
+                document.getElementById('profit-margin').textContent = '-';
+            }
+        }
+
+        // 템플릿 로드
+        async function loadTemplates() {
+            try {
+                const res = await fetch('/api/event/templates?is_active=true');
+                const data = await res.json();
+                if (data.success) {
+                    templates = data.data || [];
+                    const select = document.getElementById('template-id');
+                    select.innerHTML = '<option value="">직접 입력</option>';
+                    templates.forEach(t => {
+                        select.innerHTML += `<option value="${t.id}">${t.name} (${formatNumber(t.selling_price)})</option>`;
+                    });
+                }
+            } catch (e) {
+                console.error('템플릿 로드 오류:', e);
+            }
+        }
+
+        // 템플릿 적용
+        function applyTemplate() {
+            const templateId = document.getElementById('template-id').value;
+            if (!templateId) return;
+
+            const template = templates.find(t => t.id == templateId);
+            if (template) {
+                document.getElementById('menu-name').value = template.name;
+                document.getElementById('unit-price').value = template.selling_price || 0;
+                document.getElementById('event-type').value = template.category || 'event';
+                calculateRevenue();
+            }
+        }
+
+        // 행사 목록 로드
+        async function loadEvents() {
+            try {
+                const params = new URLSearchParams();
+                const status = document.getElementById('filter-status').value;
+                const type = document.getElementById('filter-type').value;
+                const start = document.getElementById('filter-start').value;
+                const end = document.getElementById('filter-end').value;
+                const search = document.getElementById('filter-search').value;
+                const siteFilter = document.getElementById('filter-site').value;
+
+                if (status) params.append('status', status);
+                if (type) params.append('event_type', type);
+                if (start) params.append('start_date', start);
+                if (end) params.append('end_date', end);
+                if (search) params.append('search', search);
+                // 필터 드롭다운 우선, 없으면 헤더 사업장
+                const activeSiteId = siteFilter || document.getElementById('event-order-site-select').value;
+                if (activeSiteId) params.append('site_id', activeSiteId);
+
+                const res = await fetch(`/api/events?${params}`);
+                const data = await res.json();
+
+                const tbody = document.getElementById('event-list');
+                if (!data.success || !data.data || data.data.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="12" class="empty-state">
+                                <i class="fas fa-calendar-times"></i>
+                                <p>등록된 행사가 없습니다</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = data.data.map(e => `
+                    <tr>
+                        <td>${e.event_date ? e.event_date.split('T')[0] : '-'}</td>
+                        <td><strong>${e.event_name}</strong></td>
+                        <td>${e.site_name || '-'}</td>
+                        <td><span class="type-badge type-${e.event_type}">${TYPE_LABELS[e.event_type] || e.event_type}</span></td>
+                        <td><span class="status-badge status-${e.status}">${STATUS_LABELS[e.status] || e.status}</span></td>
+                        <td>${e.client_name || '-'}</td>
+                        <td class="text-right">${e.expected_attendees?.toLocaleString() || 0}</td>
+                        <td class="text-right">${formatNumber(e.unit_price)}</td>
+                        <td class="text-right">${formatNumber(e.expected_revenue)}</td>
+                        <td class="text-right">${e.actual_revenue ? formatNumber(e.actual_revenue) : '-'}</td>
+                        <td class="text-right" style="color: ${e.profit >= 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">
+                            ${e.profit !== null && e.profit !== undefined ? formatNumber(e.profit) : '-'}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="editEvent(${e.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteEvent(${e.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+            } catch (e) {
+                console.error('행사 로드 오류:', e);
+                showAlert('행사 목록을 불러오는데 실패했습니다', 'error');
+            }
+        }
+
+        // 새 행사 폼 표시
+        function showCreateForm() {
+            document.getElementById('event-id').value = '';
+            document.getElementById('event-form').reset();
+            document.getElementById('expected-revenue').textContent = '0원';
+            document.getElementById('actual-revenue').textContent = '-';
+            document.getElementById('total-cost').textContent = '0원';
+            document.getElementById('profit-revenue').textContent = '-';
+            document.getElementById('profit-cost').textContent = '0원';
+            document.getElementById('profit-amount').textContent = '-';
+            document.getElementById('profit-margin').textContent = '-';
+
+            // 탭 전환
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector('[data-tab="form"]').classList.add('active');
+            document.getElementById('tab-form').classList.add('active');
+        }
+
+        // 행사 수정
+        async function editEvent(id) {
+            try {
+                const res = await fetch(`/api/events/${id}`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    showAlert('행사 정보를 불러올 수 없습니다', 'error');
+                    return;
+                }
+
+                const e = data.data;
+                document.getElementById('event-id').value = e.id;
+                document.getElementById('event-name').value = e.event_name || '';
+                document.getElementById('event-date').value = e.event_date ? e.event_date.split('T')[0] : '';
+                document.getElementById('event-type').value = e.event_type || '';
+                document.getElementById('event-status').value = e.status || 'estimate';
+                document.getElementById('client-name').value = e.client_name || '';
+                document.getElementById('contact-person').value = e.contact_person || '';
+                document.getElementById('phone').value = e.phone || '';
+                document.getElementById('address').value = e.address || '';
+                document.getElementById('template-id').value = e.template_id || '';
+                document.getElementById('menu-name').value = e.menu_name || '';
+                document.getElementById('expected-attendees').value = e.expected_attendees || 0;
+                document.getElementById('unit-price').value = e.unit_price || 0;
+                document.getElementById('actual-attendees').value = e.actual_attendees || '';
+                document.getElementById('ingredient-cost').value = e.ingredient_cost || 0;
+                document.getElementById('labor-cost').value = e.labor_cost || 0;
+                document.getElementById('other-cost').value = e.other_cost || 0;
+                document.getElementById('memo').value = e.memo || '';
+                document.getElementById('event-site-id').value = e.site_id || '';
+                document.getElementById('form-site-display').textContent = e.site_name || '(상단에서 사업장 선택)';
+
+                calculateRevenue();
+                calculateProfit();
+
+                // 발주 현황 로드
+                loadEventOrderStatus(e.event_date ? e.event_date.split('T')[0] : null, e.template_id);
+
+                // 탭 전환
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.querySelector('[data-tab="form"]').classList.add('active');
+                document.getElementById('tab-form').classList.add('active');
+
+            } catch (e) {
+                console.error('행사 로드 오류:', e);
+                showAlert('행사 정보를 불러오는데 실패했습니다', 'error');
+            }
+        }
+
+        // 행사 삭제
+        async function deleteEvent(id) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+
+            try {
+                const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+
+                if (data.success) {
+                    showAlert('삭제되었습니다', 'success');
+                    loadEvents();
+                } else {
+                    showAlert('삭제 실패: ' + (data.detail || ''), 'error');
+                }
+            } catch (e) {
+                console.error('삭제 오류:', e);
+                showAlert('삭제에 실패했습니다', 'error');
+            }
+        }
+
+        // 폼 취소
+        function cancelForm() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector('[data-tab="list"]').classList.add('active');
+            document.getElementById('tab-list').classList.add('active');
+        }
+
+        // 폼 제출
+        document.getElementById('event-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = document.getElementById('event-id').value;
+            const payload = {
+                event_name: document.getElementById('event-name').value,
+                event_date: document.getElementById('event-date').value,
+                event_type: document.getElementById('event-type').value,
+                status: document.getElementById('event-status').value,
+                client_name: document.getElementById('client-name').value,
+                contact_person: document.getElementById('contact-person').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                template_id: document.getElementById('template-id').value || null,
+                menu_name: document.getElementById('menu-name').value,
+                expected_attendees: document.getElementById('expected-attendees').value || 0,
+                unit_price: document.getElementById('unit-price').value || 0,
+                actual_attendees: document.getElementById('actual-attendees').value || null,
+                ingredient_cost: document.getElementById('ingredient-cost').value || 0,
+                labor_cost: document.getElementById('labor-cost').value || 0,
+                other_cost: document.getElementById('other-cost').value || 0,
+                memo: document.getElementById('memo').value,
+                site_id: document.getElementById('event-site-id').value || document.getElementById('event-order-site-select').value || null
+            };
+
+            try {
+                const url = id ? `/api/events/${id}` : '/api/events';
+                const method = id ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    showAlert(id ? '수정되었습니다' : '등록되었습니다', 'success');
+                    cancelForm();
+                    loadEvents();
+                } else {
+                    showAlert('저장 실패: ' + (data.detail || ''), 'error');
+                }
+            } catch (err) {
+                console.error('저장 오류:', err);
+                showAlert('저장에 실패했습니다', 'error');
+            }
+        });
+
+        // 행사 발주 현황 로드
+        async function loadEventOrderStatus(eventDate, templateId) {
+            const section = document.getElementById('order-status-section');
+            const container = document.getElementById('event-order-status-container');
+
+            if (!eventDate) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            try {
+                // 행사일 기준으로 발주서 조회
+                const response = await fetch(`/api/event-orders?limit=20`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    container.innerHTML = '<p style="color: #888; text-align: center; padding: 10px;">발주 현황 조회 실패</p>';
+                    return;
+                }
+
+                // 해당 행사일의 발주서만 필터 (행사일 또는 템플릿 매칭)
+                const filtered = data.orders.filter(o =>
+                    o.usage_date === eventDate ||
+                    (templateId && o.template_id === parseInt(templateId))
+                );
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<p style="color: #888; text-align: center; padding: 10px;">이 행사와 연결된 발주서가 없습니다.</p>';
+                    return;
+                }
+
+                const statusBadge = (status) => {
+                    const styles = { pending: 'background:#fef3c7;color:#92400e', confirmed: 'background:#dcfce7;color:#166534', cancelled: 'background:#fee2e2;color:#991b1b' };
+                    const texts = { pending: '대기', confirmed: '확정', cancelled: '취소' };
+                    return `<span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:500;${styles[status] || ''}">${texts[status] || status}</span>`;
+                };
+
+                let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+                html += '<thead><tr style="background:#f8fafc;"><th style="padding:8px;text-align:left;">발주번호</th><th style="padding:8px;">템플릿</th><th style="padding:8px;text-align:center;">인원</th><th style="padding:8px;text-align:center;">입고일</th><th style="padding:8px;text-align:right;">총액</th><th style="padding:8px;text-align:center;">상태</th></tr></thead><tbody>';
+
+                filtered.forEach(order => {
+                    const total = Math.round(order.total_amount || 0).toLocaleString('ko-KR');
+                    html += `<tr style="border-bottom:1px solid #f1f5f9;">
+                        <td style="padding:6px 8px;">${order.order_number}</td>
+                        <td style="padding:6px 8px;">${order.template_name || '-'}</td>
+                        <td style="padding:6px 8px;text-align:center;">${order.attendees || '-'}명</td>
+                        <td style="padding:6px 8px;text-align:center;">${order.order_date || '-'}</td>
+                        <td style="padding:6px 8px;text-align:right;">${total}원</td>
+                        <td style="padding:6px 8px;text-align:center;">${statusBadge(order.status)}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+
+            } catch (error) {
+                console.error('발주 현황 로드 오류:', error);
+                container.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 10px;">발주 현황 로드 실패</p>';
+            }
+        }
+
+        // 사업장 목록 로드 (optgroup 계층 구조)
+        async function loadSiteSelector() {
+            try {
+                const res = await fetch('/api/admin/structure/tree');
+                const data = await res.json();
+                const headerSelect = document.getElementById('event-order-site-select');
+                const filterSelect = document.getElementById('filter-site');
+
+                let optgroupHtml = '';
+                let flatHtml = '<option value="">전체</option>';
+
+                if (data.success && data.data) {
+                    data.data.forEach(group => {
+                        if (group.code === 'Meal' || group.name === '위탁사업장') {
+                            // 위탁사업장: 개별 사이트만
+                            if (group.categories) {
+                                group.categories.forEach(cat => {
+                                    const siteId = cat.sites?.[0]?.id || group.id;
+                                    optgroupHtml += `<option value="${siteId}">${cat.name}</option>`;
+                                    flatHtml += `<option value="${siteId}">${cat.name}</option>`;
+                                });
+                            }
+                        } else {
+                            optgroupHtml += `<option value="${group.id}">${group.name}</option>`;
+                            flatHtml += `<option value="${group.id}">${group.name}</option>`;
+                        }
+                    });
+                    headerSelect.innerHTML = '<option value="">사업장 선택</option>' + optgroupHtml;
+                    filterSelect.innerHTML = flatHtml;
+                } else {
+                    const res2 = await fetch('/api/site-groups');
+                    const data2 = await res2.json();
+                    if (data2.success) {
+                        const opts = data2.groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+                        headerSelect.innerHTML = '<option value="">사업장 선택</option>' + opts;
+                        filterSelect.innerHTML = '<option value="">전체</option>' + opts;
+                    }
+                }
+
+                // localStorage 복원
+                const saved = localStorage.getItem('event_order_site_id');
+                if (saved) headerSelect.value = saved;
+                syncSiteToForm();
+
+                // 변경 시 저장 + 목록 새로고침
+                headerSelect.addEventListener('change', function() {
+                    localStorage.setItem('event_order_site_id', this.value);
+                    syncSiteToForm();
+                    loadEvents();
+                });
+            } catch (e) {
+                console.error('사업장 로드 오류:', e);
+            }
+        }
+
+        // 헤더 사업장 → 폼 동기화
+        function syncSiteToForm() {
+            const select = document.getElementById('event-order-site-select');
+            const siteId = select.value;
+            const siteName = select.options[select.selectedIndex]?.text || '';
+            document.getElementById('event-site-id').value = siteId;
+            document.getElementById('form-site-display').textContent = siteName && siteId ? siteName.replace(/[⊙　]/g, '').trim() : '(상단에서 사업장 선택)';
+        }
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSiteSelector();
+            loadTemplates();
+            loadEvents();
+        });
+    </script>
+</body>
+</html>

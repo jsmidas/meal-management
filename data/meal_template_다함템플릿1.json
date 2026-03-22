@@ -1,0 +1,103 @@
+{
+  "id": 1,
+  "template_name": "다함템플릿1",
+  "description": "",
+  "template_data": {
+    "mealData": {
+      "운반": [
+        {"order": 0, "mealType": "조식", "menuName": "조4찬 1,900", "siteName": "원앤원", "mealCount": 0, "matchingName": ""},
+        {"order": 1, "mealType": "중식", "menuName": "중 5찬저 1,980", "siteName": "화성", "mealCount": 0, "matchingName": ""},
+        {"order": 1, "mealType": "중식", "menuName": "중 5찬저 1,980", "siteName": "리치", "mealCount": 0, "matchingName": ""},
+        {"order": 1, "mealType": "중식", "menuName": "중 5찬저 1,980", "siteName": "상인주간", "mealCount": 0, "matchingName": ""},
+        {"order": 1, "mealType": "중식", "menuName": "중 5찬저 1,980", "siteName": "보금푸드", "mealCount": 0, "matchingName": ""},
+        {"order": 2, "mealType": "중식", "menuName": "중 5찬중 2,200", "siteName": "아스트라", "mealCount": 0, "matchingName": ""},
+        {"order": 2, "mealType": "중식", "menuName": "중 5찬중 2,200", "siteName": "알텍", "mealCount": 0, "matchingName": ""},
+        {"order": 4, "mealType": "중식", "menuName": "중 7찬 2,930", "siteName": "에임트", "mealCount": 0, "matchingName": ""},
+        {"order": 6, "mealType": "석식", "menuName": "석 5찬저 1,980", "siteName": "화성", "mealCount": 0, "matchingName": ""},
+        {"order": 6, "mealType": "석식", "menuName": "석 5찬저 1,980", "siteName": "리치", "mealCount": 0, "matchingName": ""},
+        {"order": 7, "mealType": "석식", "menuName": "석 5찬중", "siteName": "원앤원", "mealCount": 0, "matchingName": ""},
+        {"order": 8, "mealType": "중식", "menuName": "야 4찬 1,710", "siteName": "SAL", "mealCount": 0, "matchingName": ""},
+        {"order": 9, "mealType": "중식", "menuName": "야 5찬 1,900", "siteName": "화성", "mealCount": 0, "matchingName": ""},
+        {"order": 9, "mealType": "중식", "menuName": "야 5찬 1,900", "siteName": "리치", "mealCount": 0, "matchingName": ""}
+      ],
+      "도시락": [
+        {"order": 0, "mealType": "중식", "menuName": "중 BASIC 2,350", "siteName": "중식 BASIC", "mealCount": 150, "matchingName": ""},
+        {"order": 1, "mealType": "중식", "menuName": "중 PLUS 2,650", "siteName": "중식 PLUS", "mealCount": 50, "matchingName": ""},
+        {"order": 2, "mealType": "중식", "menuName": "중 샐러드 2,200", "siteName": "중 샐러드", "mealCount": 0, "matchingName": ""},
+        {"order": 3, "mealType": "중식", "menuName": "중 실속 2,060", "siteName": "중 실속", "mealCount": 0, "matchingName": ""},
+        {"order": 4, "mealType": "석식", "menuName": "석 BASIC 2,350", "siteName": "석식 BASIC", "mealCount": 20, "matchingName": ""},
+        {"order": 5, "mealType": "석식", "menuName": "석 PLUS 2,650", "siteName": "석식 PLUS", "mealCount": 5, "matchingName": ""},
+        {"order": 6, "mealType": "중식", "menuName": "석 샐러드 2,200", "siteName": "석 샐러드", "mealCount": 0, "matchingName": ""}
+      ],
+      "요양원": [
+        {"order": 0, "mealType": "조식", "menuName": "조식 갈찬", "siteName": "아람", "mealCount": 12, "matchingName": ""},
+        {"order": 0, "mealType": "조식", "menuName": "조식 갈찬", "siteName": "해오름", "mealCount": 5, "matchingName": ""},
+        {"order": 1, "mealType": "조식", "menuName": "조식 다짐식", "siteName": "아람", "mealCount": 15, "matchingName": ""},
+        {"order": 1, "mealType": "조식", "menuName": "조식 다짐식", "siteName": "해오름1", "mealCount": 13, "matchingName": ""},
+        {"order": 1, "mealType": "조식", "menuName": "조식 다짐식", "siteName": "해오름2", "mealCount": 20, "matchingName": ""},
+        {"order": 2, "mealType": "조식", "menuName": "조식 도평", "siteName": "도평성지", "mealCount": 25, "matchingName": ""},
+        {"order": 3, "mealType": "중식", "menuName": "중식 갈찬", "siteName": "해오름", "mealCount": 5, "matchingName": ""},
+        {"order": 4, "mealType": "중식", "menuName": "중식 다짐", "siteName": "해오름1", "mealCount": 13, "matchingName": ""},
+        {"order": 4, "mealType": "중식", "menuName": "중식 다짐", "siteName": "해오름2", "mealCount": 20, "matchingName": ""},
+        {"order": 5, "mealType": "중식", "menuName": "중식 가톨릭", "siteName": "가톨릭", "mealCount": 17, "matchingName": ""},
+        {"order": 5, "mealType": "중식", "menuName": "중식 가톨릭", "siteName": "효심청", "mealCount": 8, "matchingName": ""},
+        {"order": 6, "mealType": "중식", "menuName": "중식 도평", "siteName": "도평", "mealCount": 24, "matchingName": ""},
+        {"order": 7, "mealType": "석식", "menuName": "석식 갈찬", "siteName": "해오름", "mealCount": 5, "matchingName": ""},
+        {"order": 7, "mealType": "석식", "menuName": "석식 갈찬", "siteName": "아람", "mealCount": 12, "matchingName": ""},
+        {"order": 8, "mealType": "석식", "menuName": "석식 다짐", "siteName": "해오름1", "mealCount": 13, "matchingName": ""},
+        {"order": 8, "mealType": "석식", "menuName": "석식 다짐", "siteName": "해오름2", "mealCount": 20, "matchingName": ""},
+        {"order": 8, "mealType": "석식", "menuName": "석식 다짐", "siteName": "아람", "mealCount": 15, "matchingName": ""},
+        {"order": 9, "mealType": "석식", "menuName": "석식 도평", "siteName": "도평", "mealCount": 24, "matchingName": ""}
+      ]
+    },
+    "menuStructure": {
+      "운반": [
+        {"order": 0, "mealType": "조식", "menuName": "조4찬 1,900", "matchingName": ""},
+        {"order": 1, "mealType": "중식", "menuName": "중 5찬저 1,980", "matchingName": ""},
+        {"order": 2, "mealType": "중식", "menuName": "중 5찬중 2,200", "matchingName": ""},
+        {"order": 3, "mealType": "중식", "menuName": "중 5찬고 2,390", "matchingName": ""},
+        {"order": 4, "mealType": "중식", "menuName": "중 7찬 2,930", "matchingName": ""},
+        {"order": 5, "mealType": "석식", "menuName": "석 주간 1,650", "matchingName": ""},
+        {"order": 6, "mealType": "석식", "menuName": "석 5찬저 1,980", "matchingName": ""},
+        {"order": 7, "mealType": "석식", "menuName": "석 5찬중", "matchingName": ""},
+        {"order": 8, "mealType": "중식", "menuName": "야 4찬 1,710", "matchingName": ""},
+        {"order": 9, "mealType": "중식", "menuName": "야 5찬 1,900", "matchingName": ""}
+      ],
+      "학교": [
+        {"order": 0, "mealType": "중식", "menuName": "급식", "matchingName": ""}
+      ],
+      "기타1": [
+        {"order": 0, "mealType": "중식", "menuName": "메뉴1", "matchingName": ""}
+      ],
+      "기타2": [
+        {"order": 0, "mealType": "중식", "menuName": "메뉴1", "matchingName": ""}
+      ],
+      "도시락": [
+        {"order": 0, "mealType": "중식", "menuName": "중 BASIC 2,350", "matchingName": ""},
+        {"order": 1, "mealType": "중식", "menuName": "중 PLUS 2,650", "matchingName": ""},
+        {"order": 2, "mealType": "중식", "menuName": "중 샐러드 2,200", "matchingName": ""},
+        {"order": 3, "mealType": "중식", "menuName": "중 실속 2,060", "matchingName": ""},
+        {"order": 4, "mealType": "석식", "menuName": "석 BASIC 2,350", "matchingName": ""},
+        {"order": 5, "mealType": "석식", "menuName": "석 PLUS 2,650", "matchingName": ""},
+        {"order": 6, "mealType": "중식", "menuName": "석 샐러드 2,200", "matchingName": ""}
+      ],
+      "요양원": [
+        {"order": 0, "mealType": "조식", "menuName": "조식 갈찬", "matchingName": ""},
+        {"order": 1, "mealType": "조식", "menuName": "조식 다짐식", "matchingName": ""},
+        {"order": 2, "mealType": "조식", "menuName": "조식 도평", "matchingName": ""},
+        {"order": 3, "mealType": "중식", "menuName": "중식 갈찬", "matchingName": ""},
+        {"order": 4, "mealType": "중식", "menuName": "중식 다짐", "matchingName": ""},
+        {"order": 5, "mealType": "중식", "menuName": "중식 가톨릭", "matchingName": ""},
+        {"order": 6, "mealType": "중식", "menuName": "중식 도평", "matchingName": ""},
+        {"order": 7, "mealType": "석식", "menuName": "석식 갈찬", "matchingName": ""},
+        {"order": 8, "mealType": "석식", "menuName": "석식 다짐", "matchingName": ""},
+        {"order": 9, "mealType": "석식", "menuName": "석식 도평", "matchingName": ""}
+      ]
+    }
+  },
+  "created_at": "2025-12-15 11:43:58.271232",
+  "updated_at": "2025-12-17 04:48:21.029188",
+  "valid_from": "2025-12-16",
+  "valid_to": "2026-12-31",
+  "apply_days": "1,2,3,4,5"
+}

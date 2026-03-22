@@ -1,0 +1,91 @@
+/* 페이지 타입 구분 스타일 */
+
+/* 관리자 페이지 표시 */
+.admin-page .sidebar {
+    border-top: 4px solid #e74c3c !important;
+    position: relative;
+}
+
+.admin-page .sidebar::before {
+    content: "ADMIN";
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background: #e74c3c;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+/* 사용자 페이지 표시 */
+.user-page .sidebar {
+    border-top: 4px solid #3498db !important;
+    position: relative;
+}
+
+.user-page .sidebar::before {
+    content: "USER";
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background: #3498db;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+/* 페이지 상단 배지 공통 스타일 */
+.page-type-badge {
+    padding: 8px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.page-type-badge.admin {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.page-type-badge.user {
+    background: linear-gradient(90deg, #3498db, #2980b9);
+    color: white;
+}
+
+/* 사이드바 ADMIN 버튼 강조 */
+.nav-item.admin-item {
+    margin-top: 20px;
+    background-color: rgba(231, 76, 60, 0.1);
+    border-left: 3px solid #e74c3c;
+}
+
+.nav-item.admin-item:hover {
+    background-color: rgba(231, 76, 60, 0.2);
+    border-right: 3px solid #e74c3c;
+}
+
+/* 사이드바 USER 섹션 구분 */
+.nav-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.2);
+    margin: 15px 15px;
+}
+
+/* 네비게이션 아이템 활성화 상태 */
+.admin-page .nav-item.active {
+    background-color: rgba(231, 76, 60, 0.15);
+    border-right: 3px solid #e74c3c;
+}
+
+.user-page .nav-item.active {
+    background-color: rgba(52, 152, 219, 0.15);
+    border-right: 3px solid #3498db;
+}

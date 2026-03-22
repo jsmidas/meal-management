@@ -1,0 +1,247 @@
+/* 관리자 대시보드 인라인 스타일 - admin_dashboard.html에서 분리 */
+
+/* 활동 로그 스타일 - 실버 테마 */
+.activity-log {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 3px 15px rgba(142, 154, 175, 0.1);
+    border: 1px solid var(--border-light, #e5e7eb);
+}
+
+.log-item {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+    transition: background 0.2s ease;
+}
+
+.log-item:hover {
+    background: rgba(142, 154, 175, 0.05);
+}
+
+.log-time {
+    font-size: 11px;
+    color: #95a5a6;
+    font-weight: 500;
+}
+
+.log-message {
+    font-size: 13px;
+    color: #2d3436;
+    margin-top: 5px;
+    line-height: 1.5;
+}
+
+/* 사이드바 푸터 - 실버 테마 */
+.sidebar-footer {
+    margin-top: auto;
+    padding: 20px;
+    background: linear-gradient(180deg, transparent 0%, #f8f9fa 100%);
+}
+
+.sidebar-footer > div {
+    border-top: 2px solid #dee2e6;
+    padding-top: 20px;
+}
+
+/* 헤더 정보 */
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-info {
+    font-size: 13px;
+    color: #636e72;
+    font-weight: 500;
+}
+
+.logout-btn {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #8e9aaf 0%, #5c677d 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(142, 154, 175, 0.2);
+}
+
+.logout-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(142, 154, 175, 0.3);
+}
+
+/* 추가 유틸리티 클래스 */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #95a5a6;
+    font-weight: 500;
+}
+
+.search-container input {
+    padding: 10px 14px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    width: 300px;
+    background: #ffffff;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.search-container input:focus {
+    border-color: #8e9aaf;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(142, 154, 175, 0.1);
+}
+
+.filter-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-container select {
+    padding: 10px 14px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    background: #ffffff;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.filter-container select:focus {
+    border-color: #8e9aaf;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(142, 154, 175, 0.1);
+}
+
+/* 사용자 관리 테이블 스타일 */
+.user-info {
+    line-height: 1.4;
+}
+
+.role-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    color: #495057;
+    border: 1px solid #ced4da;
+}
+
+.role-badge.admin {
+    background: #ff4444;
+    color: white;
+}
+
+.role-badge.nutritionist {
+    background: #44b8ff;
+    color: white;
+}
+
+.role-badge.operator {
+    background: #ffaa44;
+    color: white;
+}
+
+.role-badge.viewer {
+    background: #aaaaaa;
+    color: white;
+}
+
+.status-badge {
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.status-badge.active {
+    background: #44ff44;
+    color: #006600;
+}
+
+.status-badge.inactive {
+    background: #ffcccc;
+    color: #cc0000;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px;
+}
+
+.btn-icon:hover {
+    transform: scale(1.2);
+}
+
+.btn-danger {
+    color: #ff0000;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.pagination button {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+}
+
+.pagination button.active {
+    background: #667eea;
+    color: white;
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.alert {
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}

@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>협력업체 포털 - 발주 현황</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        /* 헤더 */
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-left .logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .header-left .divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .header-left .supplier-name {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: background 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* 메인 컨텐츠 */
+        .main-content {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 대시보드 카드 */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            color: white;
+        }
+
+        .stat-icon.blue { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .stat-icon.green { background: linear-gradient(135deg, #28a745, #20c997); }
+        .stat-icon.orange { background: linear-gradient(135deg, #fd7e14, #ffc107); }
+        .stat-icon.red { background: linear-gradient(135deg, #dc3545, #e74c3c); }
+
+        .stat-info h3 {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-info .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* 탭 네비게이션 */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            background: white;
+            border-radius: 12px 12px 0 0;
+            margin-bottom: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: none;
+            background: #f8f9fa;
+            color: #666;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            background: #eef;
+            color: #667eea;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 발주불가일 스타일 */
+        .blackout-notice {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #e74c3c);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+        }
+
+        /* 캘린더 셀 */
+        .cal-header {
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 0.5rem 0;
+            color: #555;
+        }
+        .cal-header.sun { color: #ef4444; }
+        .cal-header.sat { color: #3b82f6; }
+
+        .cal-cell {
+            text-align: center;
+            padding: 0.6rem 0.3rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cal-cell:hover:not(.cal-past):not(.cal-empty) {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .cal-cell.cal-empty {
+            cursor: default;
+        }
+        .cal-cell.cal-blackout {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #ef4444;
+        }
+        .cal-cell.cal-available {
+            background: #f0fdf4;
+            color: #16a34a;
+            border-color: #22c55e;
+        }
+        .cal-cell.cal-past {
+            background: #f3f4f6;
+            color: #9ca3af;
+            cursor: not-allowed;
+            border-color: #d1d5db;
+        }
+        .cal-cell.cal-today {
+            box-shadow: 0 0 0 2px #667eea;
+        }
+
+        /* 입고일 그룹 헤더 */
+        .date-group-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.7rem 1.2rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-group-count {
+            background: rgba(255,255,255,0.25);
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        /* 필터 섹션 */
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .filter-group label {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .filter-input {
+            padding: 0.6rem 0.8rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            min-width: 140px;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 발주 테이블 */
+        .orders-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .orders-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.8rem;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .orders-table td {
+            padding: 0.8rem;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.9rem;
+        }
+
+        .orders-table tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .orders-table tr.clickable {
+            cursor: pointer;
+        }
+
+        /* 상태 뱃지 */
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-draft { background: #fff3cd; color: #856404; }
+        .badge-confirmed { background: #d4edda; color: #155724; }
+        .badge-locked { background: #e9ecef; color: #495057; }
+
+        /* 액션 버튼 */
+        .action-btn {
+            padding: 0.3rem 0.6rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn.view {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .action-btn.excel {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* 모달 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 1.2rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: calc(85vh - 140px);
+            overflow-y: auto;
+        }
+
+        .order-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .order-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .order-info-item label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .order-info-item span {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .items-table th {
+            background: #f8f9fa;
+            padding: 0.6rem;
+            text-align: center;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .items-table td {
+            padding: 0.5rem;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.8rem;
+        }
+
+        .total-row {
+            background: #f8f9fa;
+            font-weight: 700;
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+
+        /* 로딩 */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 프로필 탭 */
+        .profile-container {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .profile-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .profile-section-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .profile-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .profile-field.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .profile-field label {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .profile-input {
+            padding: 0.6rem 0.8rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            color: #999;
+        }
+
+        .profile-input.editable {
+            background: white;
+            color: #333;
+        }
+
+        .profile-input.editable:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .password-form {
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .profile-actions {
+            margin-top: 1.2rem;
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .filter-row {
+                flex-direction: column;
+            }
+
+            .filter-input {
+                width: 100%;
+            }
+
+            .orders-table {
+                font-size: 0.8rem;
+            }
+
+            .orders-table th, .orders-table td {
+                padding: 0.5rem;
+            }
+
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 헤더 -->
+    <header class="header">
+        <div class="header-left">
+            <span class="logo"><i class="fas fa-building"></i> 협력업체 포털</span>
+            <span class="divider"></span>
+            <span class="supplier-name" id="supplierName">로딩 중...</span>
+        </div>
+        <div class="header-right">
+            <button class="btn-logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                로그아웃
+            </button>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="main-content">
+        <!-- 대시보드 카드 -->
+        <div class="dashboard-cards">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>신규 발주</h3>
+                    <div class="value" id="draftCount">-</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>확정 발주</h3>
+                    <div class="value" id="confirmedCount">-</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>오늘 배송</h3>
+                    <div class="value" id="todayDeliveries">-</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red">
+                    <i class="fas fa-won-sign"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>이번 달 금액</h3>
+                    <div class="value" id="monthlyTotal">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 탭 네비게이션 -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('orders')">
+                <i class="fas fa-list"></i> 발주목록
+            </button>
+            <button class="tab-btn" onclick="switchTab('receiving')">
+                <i class="fas fa-clipboard-check"></i> 입고명세서
+            </button>
+            <button class="tab-btn" onclick="switchTab('blackout')">
+                <i class="fas fa-calendar-times"></i> 발주불가일
+            </button>
+            <button class="tab-btn" onclick="switchTab('profile')">
+                <i class="fas fa-user-cog"></i> 내 정보
+            </button>
+        </div>
+
+        <!-- ========== 탭1: 발주목록 ========== -->
+        <div class="tab-content active" id="tab-orders">
+            <div class="filter-section" style="border-radius: 0 0 12px 12px; margin-top: 0;">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>입고일</label>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <button type="button" class="btn btn-sm" onclick="changeDateInput('orderDate', -1)" style="padding: 0.3rem 0.5rem; min-width: auto;">◀</button>
+                            <input type="date" class="filter-input" id="orderDate">
+                            <button type="button" class="btn btn-sm" onclick="changeDateInput('orderDate', 1)" style="padding: 0.3rem 0.5rem; min-width: auto;">▶</button>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label>상태</label>
+                        <select class="filter-input" id="statusFilter">
+                            <option value="">전체</option>
+                            <option value="confirmed">확정</option>
+                            <option value="locked">완료</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" id="siteFilterGroup" style="display: none;">
+                        <label>사업장</label>
+                        <select class="filter-input" id="siteFilter" onchange="onSiteChange()">
+                            <option value="">전체 (종합)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadOrders()">
+                        <i class="fas fa-search"></i> 조회
+                    </button>
+                    <button class="btn btn-success" onclick="downloadAllExcel()">
+                        <i class="fas fa-file-excel"></i> 엑셀 다운로드
+                    </button>
+                </div>
+            </div>
+
+            <div class="orders-section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <i class="fas fa-list"></i>
+                        발주 목록
+                    </h3>
+                </div>
+                <div id="ordersContent">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>발주 목록을 불러오는 중...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 탭2: 입고명세서 ========== -->
+        <div class="tab-content" id="tab-receiving">
+            <div class="filter-section" style="border-radius: 0 0 12px 12px; margin-top: 0;">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>입고일</label>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <button type="button" class="btn btn-sm" onclick="changeDateInput('rcvDate', -1)" style="padding: 0.3rem 0.5rem; min-width: auto;">◀</button>
+                            <input type="date" class="filter-input" id="rcvDate">
+                            <button type="button" class="btn btn-sm" onclick="changeDateInput('rcvDate', 1)" style="padding: 0.3rem 0.5rem; min-width: auto;">▶</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadReceivingStatement()">
+                        <i class="fas fa-search"></i> 조회
+                    </button>
+                </div>
+            </div>
+
+            <div class="orders-section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <i class="fas fa-clipboard-check"></i>
+                        입고 명세서
+                    </h3>
+                </div>
+                <div id="receivingContent">
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-check"></i>
+                        <h3>날짜를 선택하고 조회해주세요</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 탭3: 발주불가일 ========== -->
+        <div class="tab-content" id="tab-blackout">
+            <div class="blackout-notice" style="margin-top: 1rem;">
+                <i class="fas fa-info-circle"></i>
+                날짜를 클릭하여 발주 불가/가능을 전환하세요. 일요일은 기본 불가일로 설정됩니다.
+            </div>
+
+            <div class="orders-section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <i class="fas fa-calendar-times"></i>
+                        발주 불가일 캘린더
+                    </h3>
+                </div>
+                <div style="padding: 1rem;">
+                    <!-- 월 네비게이션 -->
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-bottom: 1rem;">
+                        <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(-1)" style="padding: 0.4rem 0.8rem;">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="calendarTitle" style="font-size: 1.2rem; font-weight: 700; color: #333; min-width: 140px; text-align: center;"></span>
+                        <button class="btn btn-secondary btn-sm" onclick="changeCalendarMonth(1)" style="padding: 0.4rem 0.8rem;">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <!-- 캘린더 그리드 -->
+                    <div id="blackoutCalendar" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"></div>
+                    <!-- 범례 -->
+                    <div style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; font-size: 0.85rem; color: #666;">
+                        <span><span style="display: inline-block; width: 14px; height: 14px; background: #fee2e2; border: 2px solid #ef4444; border-radius: 3px; vertical-align: middle; margin-right: 4px;"></span> 발주불가</span>
+                        <span><span style="display: inline-block; width: 14px; height: 14px; background: #f0fdf4; border: 2px solid #22c55e; border-radius: 3px; vertical-align: middle; margin-right: 4px;"></span> 발주가능</span>
+                        <span><span style="display: inline-block; width: 14px; height: 14px; background: #f3f4f6; border: 2px solid #d1d5db; border-radius: 3px; vertical-align: middle; margin-right: 4px;"></span> 지난 날짜</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ========== 탭4: 내 정보 ========== -->
+        <div class="tab-content" id="tab-profile">
+            <div class="profile-container">
+                <!-- 업체 정보 섹션 -->
+                <div class="profile-section">
+                    <h3 class="profile-section-title">
+                        <i class="fas fa-building"></i> 업체 정보
+                    </h3>
+                    <div class="profile-grid">
+                        <div class="profile-field">
+                            <label>업체명</label>
+                            <input type="text" class="profile-input" id="profileName" readonly>
+                        </div>
+                        <div class="profile-field">
+                            <label>로그인 ID</label>
+                            <input type="text" class="profile-input" id="profileLoginId" readonly>
+                        </div>
+                        <div class="profile-field">
+                            <label>사업자번호</label>
+                            <input type="text" class="profile-input" id="profileBizNumber" readonly>
+                        </div>
+                        <div class="profile-field">
+                            <label>대표자</label>
+                            <input type="text" class="profile-input" id="profileRepresentative" readonly>
+                        </div>
+                        <div class="profile-field full-width">
+                            <label>주소</label>
+                            <input type="text" class="profile-input" id="profileAddress" readonly>
+                        </div>
+                        <div class="profile-field">
+                            <label>연락처 이메일</label>
+                            <input type="email" class="profile-input editable" id="profileEmail" placeholder="이메일 주소 입력">
+                        </div>
+                        <div class="profile-field">
+                            <label>연락처 전화번호</label>
+                            <input type="tel" class="profile-input editable" id="profilePhone" placeholder="전화번호 입력">
+                        </div>
+                    </div>
+                    <div class="profile-field" style="margin-top: 0.5rem; font-size: 0.8rem; color: #999;">
+                        <i class="fas fa-clock"></i> 마지막 로그인: <span id="profileLastLogin">-</span>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="btn btn-primary" onclick="saveProfile()">
+                            <i class="fas fa-save"></i> 연락처 저장
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 비밀번호 변경 섹션 -->
+                <div class="profile-section">
+                    <h3 class="profile-section-title">
+                        <i class="fas fa-lock"></i> 비밀번호 변경
+                    </h3>
+                    <div class="password-form">
+                        <div class="profile-field">
+                            <label>현재 비밀번호</label>
+                            <input type="password" class="profile-input editable" id="currentPassword" placeholder="현재 비밀번호 입력">
+                        </div>
+                        <div class="profile-field">
+                            <label>새 비밀번호</label>
+                            <input type="password" class="profile-input editable" id="newPassword" placeholder="새 비밀번호 입력 (4자 이상)">
+                        </div>
+                        <div class="profile-field">
+                            <label>새 비밀번호 확인</label>
+                            <input type="password" class="profile-input editable" id="confirmPassword" placeholder="새 비밀번호 다시 입력">
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="btn btn-primary" onclick="changePassword()">
+                            <i class="fas fa-key"></i> 비밀번호 변경
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 발주 상세 모달 -->
+    <div class="modal-overlay" id="orderModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">발주 상세</h2>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 동적 내용 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="downloadOrderExcel()">
+                    <i class="fas fa-file-excel"></i> 엑셀 다운로드
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal()">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // 전역 변수
+        // ============================================
+        let supplierSession = null;
+        let currentOrderId = null;
+        let activeTab = 'orders';
+        let calendarYear = null;
+        let calendarMonth = null;
+        let calendarBlackoutDates = {};
+        let selectedSiteId = '';
+
+        // 사업장 필터 파라미터 헬퍼
+        function getSiteParam() {
+            return selectedSiteId ? `&site_id=${selectedSiteId}` : '';
+        }
+
+        // 사업장 목록 로드
+        async function loadSites() {
+            try {
+                const response = await fetch(`/api/supplier/sites?supplier_id=${supplierSession.supplier_id}`);
+                const result = await response.json();
+
+                if (result.success && result.data.length >= 2) {
+                    const select = document.getElementById('siteFilter');
+                    result.data.forEach(site => {
+                        const option = document.createElement('option');
+                        option.value = site.id;
+                        option.textContent = site.site_name;
+                        select.appendChild(option);
+                    });
+                    document.getElementById('siteFilterGroup').style.display = '';
+                }
+            } catch (error) {
+                console.error('사업장 목록 로드 오류:', error);
+            }
+        }
+
+        // 사업장 변경 시
+        function onSiteChange() {
+            selectedSiteId = document.getElementById('siteFilter').value;
+            loadDashboard();
+            if (activeTab === 'orders') loadOrders();
+            else if (activeTab === 'receiving') loadReceivingStatement();
+        }
+
+        // ============================================
+        // 탭 전환
+        // ============================================
+        function switchTab(tabName) {
+            activeTab = tabName;
+            // 탭 버튼 활성화
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+
+            // 탭별 초기 로드
+            if (tabName === 'receiving' && !document.getElementById('rcvDate').value) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                document.getElementById('rcvDate').value = tomorrow.toISOString().split('T')[0];
+            }
+            if (tabName === 'blackout') {
+                if (!calendarYear) {
+                    const now = new Date();
+                    calendarYear = now.getFullYear();
+                    calendarMonth = now.getMonth() + 1;
+                }
+                loadBlackoutCalendar();
+            }
+            if (tabName === 'profile') {
+                loadProfile();
+            }
+        }
+
+        // ============================================
+        // 날짜 변경 함수 (화살표 버튼용)
+        // ============================================
+        function changeDateInput(inputId, days) {
+            const dateInput = document.getElementById(inputId);
+            if (!dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+            const currentDate = new Date(dateInput.value);
+            currentDate.setDate(currentDate.getDate() + days);
+            dateInput.value = currentDate.toISOString().split('T')[0];
+        }
+
+        // ============================================
+        // 초기화
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // 세션 확인
+            const savedSession = localStorage.getItem('supplier_session');
+            if (!savedSession) {
+                window.location.href = '/supplier_login.html';
+                return;
+            }
+
+            supplierSession = JSON.parse(savedSession);
+            document.getElementById('supplierName').textContent = supplierSession.supplier_name;
+
+            // 기본 날짜 설정 (내일)
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+            document.getElementById('orderDate').value = tomorrowStr;
+
+            // 데이터 로드
+            loadSites();
+            loadDashboard();
+            loadOrders();
+        });
+
+        // ============================================
+        // 발주목록 API
+        // ============================================
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`/api/supplier/dashboard?supplier_id=${supplierSession.supplier_id}${getSiteParam()}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const data = result.data;
+                    document.getElementById('draftCount').textContent = data.status_counts.draft || 0;
+                    document.getElementById('confirmedCount').textContent = data.status_counts.confirmed || 0;
+                    document.getElementById('todayDeliveries').textContent = data.today_deliveries || 0;
+                    document.getElementById('monthlyTotal').textContent = formatCurrency(data.monthly_total || 0);
+                }
+            } catch (error) {
+                console.error('대시보드 로드 오류:', error);
+            }
+        }
+
+        async function loadOrders() {
+            const container = document.getElementById('ordersContent');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>발주 목록을 불러오는 중...</p>
+                </div>
+            `;
+
+            try {
+                const orderDate = document.getElementById('orderDate').value;
+                const status = document.getElementById('statusFilter').value;
+
+                let url = `/api/supplier/order-items?supplier_id=${supplierSession.supplier_id}${getSiteParam()}`;
+                if (orderDate) {
+                    url += `&from_date=${orderDate}&to_date=${orderDate}`;
+                }
+                if (status) url += `&status=${status}`;
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayOrders(result.data);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <h3>오류가 발생했습니다</h3>
+                            <p>${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('발주 목록 로드 오류:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>서버 연결 오류</h3>
+                        <p>잠시 후 다시 시도해주세요.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayOrders(items) {
+            const container = document.getElementById('ordersContent');
+
+            if (!items || items.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>발주 내역이 없습니다</h3>
+                        <p>선택한 기간에 해당하는 발주가 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const showSiteCol = !selectedSiteId;
+            let html = `
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            ${showSiteCol ? '<th>사업장</th>' : ''}
+                            <th>품목코드</th>
+                            <th>품목명</th>
+                            <th>규격</th>
+                            <th>선발주일</th>
+                            <th>수량</th>
+                            <th>단위</th>
+                            <th>수량(kg)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            items.forEach(item => {
+                html += `
+                    <tr>
+                        ${showSiteCol ? `<td>${item.site_name || '-'}</td>` : ''}
+                        <td>${item.ingredient_code || '-'}</td>
+                        <td style="text-align: left;">${item.ingredient_name || '-'}</td>
+                        <td>${item.specification || '-'}</td>
+                        <td>${item.lead_time != null ? 'D-' + item.lead_time : '-'}</td>
+                        <td><strong>${item.order_qty || 0}</strong></td>
+                        <td>${item.unit || '-'}</td>
+                        <td><strong>${item.order_qty_kg || 0}</strong> kg</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        async function viewOrder(orderId) {
+            currentOrderId = orderId;
+            const modal = document.getElementById('orderModal');
+            const modalBody = document.getElementById('modalBody');
+
+            modal.classList.add('show');
+            modalBody.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>발주 상세 정보를 불러오는 중...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`/api/supplier/orders/${orderId}?supplier_id=${supplierSession.supplier_id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayOrderDetail(result.data);
+                } else {
+                    modalBody.innerHTML = `<p style="color: red;">오류: ${result.error}</p>`;
+                }
+            } catch (error) {
+                console.error('발주 상세 로드 오류:', error);
+                modalBody.innerHTML = `<p style="color: red;">서버 연결 오류</p>`;
+            }
+        }
+
+        function displayOrderDetail(order) {
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.textContent = `발주 상세 - ${order.order_number}`;
+
+            let itemsHtml = '';
+            let totalAmount = 0;
+
+            if (order.items && order.items.length > 0) {
+                order.items.forEach((item, index) => {
+                    totalAmount += item.total_price || 0;
+                    itemsHtml += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${item.ingredient_code || '-'}</td>
+                            <td style="text-align: left;">${item.ingredient_name || '-'}</td>
+                            <td>${item.specification || '-'}</td>
+                            <td>${item.unit || '-'}</td>
+                            <td>${item.order_qty || 0}</td>
+                            <td><strong>${item.order_qty_kg || 0}</strong> kg</td>
+                            <td style="text-align: right;">${formatCurrency(item.unit_price || 0)}</td>
+                            <td style="text-align: right; font-weight: 600;">${formatCurrency(item.total_price || 0)}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            modalBody.innerHTML = `
+                <div class="order-info">
+                    <div class="order-info-item">
+                        <label>발주번호</label>
+                        <span>${order.order_number}</span>
+                    </div>
+                    <div class="order-info-item">
+                        <label>입고일</label>
+                        <span>${order.order_date}</span>
+                    </div>
+                    <div class="order-info-item">
+                        <label>식단표 날짜</label>
+                        <span>${order.usage_date}</span>
+                    </div>
+                    <div class="order-info-item">
+                        <label>발주처</label>
+                        <span>${order.site_name || '-'}</span>
+                    </div>
+                    <div class="order-info-item">
+                        <label>납품장소</label>
+                        <span>${order.warehouse_name || '-'}</span>
+                    </div>
+                    <div class="order-info-item">
+                        <label>상태</label>
+                        <span>${getStatusBadge(order.status)}</span>
+                    </div>
+                </div>
+
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>NO</th>
+                            <th>품목코드</th>
+                            <th>품목명</th>
+                            <th>규격</th>
+                            <th>단위</th>
+                            <th>수량</th>
+                            <th>수량(kg)</th>
+                            <th>단가</th>
+                            <th>금액</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                        <tr class="total-row">
+                            <td colspan="8" style="text-align: right;">합계</td>
+                            <td style="text-align: right; font-size: 1.1rem;">${formatCurrency(totalAmount)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // ============================================
+        // 엑셀 다운로드
+        // ============================================
+        function downloadSingleExcel(orderId) {
+            const url = `/api/supplier/orders/${orderId}/excel?supplier_id=${supplierSession.supplier_id}`;
+            window.location.href = url;
+        }
+
+        function downloadOrderExcel() {
+            if (currentOrderId) {
+                downloadSingleExcel(currentOrderId);
+            }
+        }
+
+        function downloadAllExcel() {
+            const orderDate = document.getElementById('orderDate').value;
+
+            let url = `/api/supplier/orders/excel?supplier_id=${supplierSession.supplier_id}${getSiteParam()}`;
+            if (orderDate) {
+                url += `&from_date=${orderDate}&to_date=${orderDate}`;
+            }
+
+            window.location.href = url;
+        }
+
+        // ============================================
+        // 입고 명세서
+        // ============================================
+        async function loadReceivingStatement() {
+            const container = document.getElementById('receivingContent');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>입고 명세서를 불러오는 중...</p>
+                </div>
+            `;
+
+            try {
+                const rcvDate = document.getElementById('rcvDate').value;
+
+                let url = `/api/supplier/receiving-statement?supplier_id=${supplierSession.supplier_id}${getSiteParam()}`;
+                if (rcvDate) {
+                    url += `&from_date=${rcvDate}&to_date=${rcvDate}`;
+                }
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayReceivingStatement(result.data);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <h3>오류가 발생했습니다</h3>
+                            <p>${result.error}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('입고 명세서 로드 오류:', error);
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>서버 연결 오류</h3>
+                        <p>잠시 후 다시 시도해주세요.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayReceivingStatement(grouped) {
+            const container = document.getElementById('receivingContent');
+            const dates = Object.keys(grouped).sort();
+
+            if (dates.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h3>입고 내역이 없습니다</h3>
+                        <p>선택한 기간에 해당하는 입고 내역이 없습니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const showSiteCol = !selectedSiteId;
+            let html = '';
+            dates.forEach(dateStr => {
+                const items = grouped[dateStr];
+                const dayOfWeek = ['일','월','화','수','목','금','토'][new Date(dateStr).getDay()];
+
+                html += `
+                    <div class="date-group-header">
+                        <i class="fas fa-calendar-day"></i>
+                        ${dateStr} (${dayOfWeek})
+                        <span class="date-group-count">${items.length}건</span>
+                    </div>
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                ${showSiteCol ? '<th>사업장</th>' : ''}
+                                <th>발주번호</th>
+                                <th>품목코드</th>
+                                <th>품목명</th>
+                                <th>규격</th>
+                                <th>입고일</th>
+                                <th>선발주일</th>
+                                <th>수량</th>
+                                <th>단위</th>
+                                <th>수량(kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                items.forEach(item => {
+                    html += `
+                        <tr>
+                            ${showSiteCol ? `<td>${item.site_name || '-'}</td>` : ''}
+                            <td><strong>${item.order_number || '-'}</strong></td>
+                            <td>${item.ingredient_code || '-'}</td>
+                            <td style="text-align: left;">${item.ingredient_name || '-'}</td>
+                            <td>${item.specification || '-'}</td>
+                            <td>${item.order_date || '-'}</td>
+                            <td>${item.lead_time != null ? 'D-' + item.lead_time : '-'}</td>
+                            <td>${item.order_qty || 0}</td>
+                            <td>${item.unit || '-'}</td>
+                            <td><strong>${item.order_qty_kg || 0}</strong> kg</td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ============================================
+        // 발주불가일 캘린더
+        // ============================================
+        function changeCalendarMonth(delta) {
+            calendarMonth += delta;
+            if (calendarMonth > 12) { calendarMonth = 1; calendarYear++; }
+            if (calendarMonth < 1) { calendarMonth = 12; calendarYear--; }
+            loadBlackoutCalendar();
+        }
+
+        async function loadBlackoutCalendar() {
+            const titleEl = document.getElementById('calendarTitle');
+            titleEl.textContent = `${calendarYear}년 ${calendarMonth}월`;
+
+            const grid = document.getElementById('blackoutCalendar');
+            grid.innerHTML = '<div style="text-align:center; padding:1rem; grid-column: 1/-1; color:#999;">불러오는 중...</div>';
+
+            try {
+                const url = `/api/supplier/blackout-calendar?supplier_id=${supplierSession.supplier_id}&year=${calendarYear}&month=${calendarMonth}`;
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    calendarBlackoutDates = result.data.blackout_dates;
+                    renderCalendar();
+                } else {
+                    grid.innerHTML = `<div style="text-align:center; padding:1rem; grid-column: 1/-1; color:red;">오류: ${result.error}</div>`;
+                }
+            } catch (error) {
+                console.error('캘린더 로드 오류:', error);
+                grid.innerHTML = '<div style="text-align:center; padding:1rem; grid-column: 1/-1; color:red;">서버 연결 오류</div>';
+            }
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('blackoutCalendar');
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            let html = '';
+            // 요일 헤더
+            dayNames.forEach((name, i) => {
+                const cls = i === 0 ? 'sun' : (i === 6 ? 'sat' : '');
+                html += `<div class="cal-header ${cls}">${name}</div>`;
+            });
+
+            // 첫째날 요일 (0=일요일)
+            const firstDate = new Date(calendarYear, calendarMonth - 1, 1);
+            const firstDow = firstDate.getDay();
+            const daysInMonth = new Date(calendarYear, calendarMonth, 0).getDate();
+
+            // 빈 셀 (1일 이전)
+            for (let i = 0; i < firstDow; i++) {
+                html += '<div class="cal-cell cal-empty"></div>';
+            }
+
+            // 날짜 셀
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${calendarYear}-${String(calendarMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const isPast = dateStr < todayStr;
+                const isToday = dateStr === todayStr;
+                const isBlackout = calendarBlackoutDates.hasOwnProperty(dateStr);
+
+                let cls = 'cal-cell';
+                if (isPast) {
+                    cls += ' cal-past';
+                    if (isBlackout) cls += ' cal-blackout';
+                } else if (isBlackout) {
+                    cls += ' cal-blackout';
+                } else {
+                    cls += ' cal-available';
+                }
+                if (isToday) cls += ' cal-today';
+
+                const clickHandler = isPast ? '' : `onclick="toggleBlackoutDate('${dateStr}')"`;
+                html += `<div class="${cls}" ${clickHandler}>${day}</div>`;
+            }
+
+            grid.innerHTML = html;
+        }
+
+        async function toggleBlackoutDate(dateStr) {
+            try {
+                const response = await fetch('/api/supplier/blackout-date/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        supplier_id: supplierSession.supplier_id,
+                        date: dateStr
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    if (result.blackout) {
+                        calendarBlackoutDates[dateStr] = "발주불가";
+                    } else {
+                        delete calendarBlackoutDates[dateStr];
+                    }
+                    renderCalendar();
+                } else {
+                    alert('변경 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('토글 오류:', error);
+                alert('서버 연결 오류');
+            }
+        }
+
+        // ============================================
+        // 내 정보 (프로필/비밀번호)
+        // ============================================
+        async function loadProfile() {
+            try {
+                const response = await fetch(`/api/supplier/profile?supplier_id=${supplierSession.supplier_id}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const d = result.data;
+                    document.getElementById('profileName').value = d.name || '';
+                    document.getElementById('profileLoginId').value = d.login_id || '';
+                    document.getElementById('profileBizNumber').value = d.business_number || '';
+                    document.getElementById('profileRepresentative').value = d.representative || '';
+                    document.getElementById('profileAddress').value = d.headquarters_address || '';
+                    document.getElementById('profileEmail').value = d.contact_email || '';
+                    document.getElementById('profilePhone').value = d.contact_phone || '';
+                    document.getElementById('profileLastLogin').textContent = d.last_login || '-';
+                }
+            } catch (error) {
+                console.error('프로필 로드 오류:', error);
+            }
+        }
+
+        async function saveProfile() {
+            const email = document.getElementById('profileEmail').value.trim();
+            const phone = document.getElementById('profilePhone').value.trim();
+
+            try {
+                const response = await fetch('/api/supplier/profile', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        supplier_id: supplierSession.supplier_id,
+                        contact_email: email,
+                        contact_phone: phone
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('연락처 정보가 저장되었습니다.');
+                } else {
+                    alert('저장 실패: ' + result.error);
+                }
+            } catch (error) {
+                console.error('프로필 저장 오류:', error);
+                alert('서버 연결 오류');
+            }
+        }
+
+        async function changePassword() {
+            const currentPw = document.getElementById('currentPassword').value;
+            const newPw = document.getElementById('newPassword').value;
+            const confirmPw = document.getElementById('confirmPassword').value;
+
+            if (!currentPw || !newPw || !confirmPw) {
+                alert('모든 항목을 입력해주세요.');
+                return;
+            }
+
+            if (newPw.length < 4) {
+                alert('새 비밀번호는 4자 이상이어야 합니다.');
+                return;
+            }
+
+            if (newPw !== confirmPw) {
+                alert('새 비밀번호가 일치하지 않습니다.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/supplier/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        supplier_id: supplierSession.supplier_id,
+                        current_password: currentPw,
+                        new_password: newPw
+                    })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('비밀번호가 변경되었습니다.');
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                } else {
+                    alert(result.error);
+                }
+            } catch (error) {
+                console.error('비밀번호 변경 오류:', error);
+                alert('서버 연결 오류');
+            }
+        }
+
+        // ============================================
+        // 유틸리티
+        // ============================================
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('ko-KR', {
+                style: 'currency',
+                currency: 'KRW'
+            }).format(amount);
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'draft': '<span class="badge badge-draft">신규</span>',
+                'confirmed': '<span class="badge badge-confirmed">확정</span>',
+                'locked': '<span class="badge badge-locked">완료</span>'
+            };
+            return badges[status] || status;
+        }
+
+        function closeModal() {
+            document.getElementById('orderModal').classList.remove('show');
+            currentOrderId = null;
+        }
+
+        function logout() {
+            // 모든 인증 관련 데이터 삭제
+            localStorage.removeItem('supplier_session');
+            localStorage.removeItem('supplier_token');
+            localStorage.removeItem('supplier_info');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_info');
+            window.location.href = '/login.html?logout=true';
+        }
+
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

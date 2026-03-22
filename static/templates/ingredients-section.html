@@ -1,0 +1,1603 @@
+<!-- 식자재 관리 섹션 템플릿 -->
+
+<!-- SheetJS 라이브러리 (엑셀 파싱용) - 반드시 스크립트보다 먼저 로드 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<div class="page-header">
+    <h2>📦 식자재 관리</h2>
+    <p class="page-description">식자재 데이터를 Excel 파일로 업로드하고 관리합니다.</p>
+</div>
+
+<!-- 통계 요약 -->
+<div class="stats-container">
+    <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-content">
+            <div class="stat-value" id="total-ingredients">84,215</div>
+            <div class="stat-label">전체 식자재</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🏢</div>
+        <div class="stat-content">
+            <div class="stat-value" id="total-suppliers-count">5</div>
+            <div class="stat-label">협력업체</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📁</div>
+        <div class="stat-content">
+            <div class="stat-value" id="total-categories">12</div>
+            <div class="stat-label">카테고리</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-content">
+            <div class="stat-value" id="last-update">2025-09-15</div>
+            <div class="stat-label">최근 업데이트</div>
+        </div>
+    </div>
+</div>
+
+<!-- Excel 업로드 섹션 -->
+<!-- 엑셀 업로드 및 샘플 이미지 나란히 배치 -->
+<div style="display: flex; gap: 20px; margin-bottom: 30px;">
+    <!-- 엑셀 파일 업로드 섹션 -->
+    <div class="upload-section-container"
+        style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+        <div class="section-header" style="margin-bottom: 10px;">
+            <h3 style="font-size: 14px; margin: 0;">📤 Excel 파일 업로드</h3>
+            <div class="header-actions" style="display: flex; gap: 5px;">
+                <button class="btn btn-secondary" style="padding: 3px 6px; font-size: 10px;"
+                    onclick="window.IngredientsModule.downloadTemplate()">
+                    <i class="fas fa-download"></i> 템플릿
+                </button>
+                <button class="btn btn-info" style="padding: 3px 6px; font-size: 10px;"
+                    onclick="window.IngredientsModule.recalculateUnitPrices()" title="모든 식자재의 단위당 단가를 재계산합니다">
+                    <i class="fas fa-calculator"></i> 단위당 단가 재계산
+                </button>
+                <button class="btn btn-success" style="padding: 3px 6px; font-size: 10px; background-color: #27ae60;"
+                    onclick="document.getElementById('priceHistoryAdminModal').style.display='block'"
+                    title="기간별 단가 이력을 업로드합니다">
+                    <i class="fas fa-history"></i> 단가 이력 업로드
+                </button>
+                <button class="btn btn-warning" style="padding: 3px 6px; font-size: 10px;"
+                    onclick="window.IngredientsModule.downloadErrors()">
+                    <i class="fas fa-exclamation-triangle"></i> 오류
+                </button>
+            </div>
+        </div>
+
+        <!-- 업로드 주의사항 -->
+        <div class="upload-notice" style="background: #f7fafc; padding: 8px; border-radius: 4px; margin-bottom: 10px;">
+            <h4 style="font-size: 11px; margin: 0 0 5px 0;">⚠️ 업로드 주의사항</h4>
+            <ul style="font-size: 9px; margin: 0; padding-left: 15px; line-height: 1.4;">
+                <li>필드명(헤더) 정확히 일치</li>
+                <li>필수: 분류, 고유코드, 식자재명, 단위, 입고가</li>
+                <li>최대 <strong>20,000건</strong> 업로드</li>
+            </ul>
+        </div>
+
+        <!-- 날짜 선택 (단가 이력 동시 저장용) -->
+        <div
+            style="margin-bottom: 10px; padding: 8px; background: #e3f2fd; border-radius: 4px; border: 1px solid #90caf9;">
+            <label style="display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #1565c0;">
+                📅 단가 적용 기간 <span style="color: #dc2626;">*필수</span>
+            </label>
+            <div style="display: flex; gap: 5px;">
+                <input type="date" id="upload-start-date" required
+                    style="flex:1; padding: 4px; border: 2px solid #dc2626; border-radius: 3px; font-size: 11px; color: #333; background: #fff5f5;"
+                    title="단가 시작일 (필수)">
+                <input type="date" id="upload-end-date" required
+                    style="flex:1; padding: 4px; border: 2px solid #dc2626; border-radius: 3px; font-size: 11px; color: #333; background: #fff5f5;"
+                    title="단가 종료일 (필수)">
+            </div>
+            <p style="font-size: 9px; color: #1e88e5; margin: 3px 0 0 0; line-height: 1.2;">
+                * 날짜를 지정하면 <strong>단가 이력</strong>에도 자동 저장됩니다.
+            </p>
+        </div>
+
+        <!-- 협력업체 선택 -->
+        <div
+            style="margin-bottom: 10px; padding: 8px; background: #fff3e0; border-radius: 4px; border: 1px solid #ffb74d;">
+            <label style="display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #e65100;">
+                🏢 협력업체 선택 <span style="color: #999; font-weight: normal;">(선택사항)</span>
+            </label>
+            <select id="upload-supplier-select"
+                style="width: 100%; padding: 6px; border: 1px solid #ffb74d; border-radius: 3px; font-size: 11px; color: #333; background: #fff;">
+                <option value="">-- 파일의 거래처명 사용 (기본) --</option>
+            </select>
+            <p style="font-size: 9px; color: #f57c00; margin: 3px 0 0 0; line-height: 1.2;">
+                * 선택 시 파일의 모든 식자재가 해당 협력업체로 등록됩니다.
+            </p>
+        </div>
+
+        <div class="upload-area" id="excel-upload-area">
+            <i class="fas fa-cloud-upload-alt" style="font-size: 32px; color: #a0aec0; margin-bottom: 8px;"></i>
+            <h4 style="font-size: 12px; margin: 0 0 5px 0;">Excel 파일 업로드 (클릭 또는 드래그)</h4>
+            <p style="font-size: 10px; color: #718096; margin: 0;">.xlsx, .xls</p>
+            <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display: none;">
+        </div>
+
+        <!-- 파일 정보 표시 (선택시에만 나타남) -->
+        <div id="file-info" class="file-info"
+            style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 8px; border: 2px solid #4caf50; display: none;">
+            <div class="file-details" style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-file-excel" style="font-size: 32px; color: #2e7d32;"></i>
+                <div style="flex: 1;">
+                    <div id="file-name"
+                        style="font-size: 15px; font-weight: 700; color: #1b5e20; margin-bottom: 4px; word-break: break-all;">
+                    </div>
+                    <div id="file-size" style="font-size: 12px; color: #558b2f; font-weight: 500;"></div>
+                </div>
+                <button onclick="clearFileSelection()"
+                    style="background: #f44336; color: white; border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 11px; font-weight: 600; transition: background 0.3s;">
+                    <i class="fas fa-times"></i> 취소
+                </button>
+            </div>
+        </div>
+
+        <!-- 업로드 버튼 (항상 표시) -->
+        <div style="margin-top: 15px; text-align: center;">
+            <button class="btn btn-primary" style="padding: 8px 16px; font-size: 12px;" onclick="uploadExcelFile()">
+                <i class="fas fa-upload"></i> Excel 파일 업로드
+            </button>
+        </div>
+    </div>
+
+    <!-- 샘플 이미지 섹션 -->
+    <div class="sample-image-section" style="flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px;">
+        <div class="section-header" style="margin-bottom: 10px;">
+            <h3 style="font-size: 14px; margin: 0;">🖼️ 샘플 데이터 예시</h3>
+        </div>
+
+        <div style="background: #f7fafc; border-radius: 6px; padding: 20px; min-height: 186px; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+            onclick="showImageModal()">
+            <div style="text-align: center;">
+                <img id="sample-thumbnail" src="/static/images/system32.jpg" alt="Excel 샘플"
+                    style="max-width: 100%; max-height: 120px; border: 1px solid #e2e8f0; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <p style="font-size: 10px; color: #718096; margin-top: 10px;">클릭하여 확대</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 공급 불가 품목 관리 섹션 -->
+<div style="margin-bottom: 30px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; background: #fffaf0;">
+    <div class="section-header" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 14px; margin: 0;">🚫 공급 불가 품목 관리</h3>
+        <button class="btn btn-info" style="padding: 4px 10px; font-size: 11px;"
+            onclick="showSupplyUnavailableList()">
+            <i class="fas fa-list"></i> 등록된 목록 보기
+        </button>
+    </div>
+
+    <p style="font-size: 11px; color: #718096; margin-bottom: 10px;">
+        협력업체에서 특정 기간 공급 불가한 품목을 등록하면, 해당 기간 발주 시 <span style="color: #dc2626; font-weight: bold;">발주 불가</span>로 표시됩니다.
+    </p>
+
+    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <!-- 협력업체 선택 -->
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px;">
+                🏢 협력업체 <span style="color: #dc2626;">*</span>
+            </label>
+            <select id="supply-unavailable-supplier"
+                   style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; background: white;">
+                <option value="">-- 협력업체 선택 --</option>
+            </select>
+        </div>
+        <!-- 직접 입력 (드롭다운에 없는 경우) -->
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px;">
+                ✏️ 직접 입력 <span style="color: #999; font-weight: normal;">(목록에 없는 경우)</span>
+            </label>
+            <input type="text" id="supply-unavailable-supplier-custom"
+                   placeholder="새 협력업체명 입력"
+                   style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display: block; font-size: 11px; font-weight: bold; margin-bottom: 4px;">
+                📝 사유
+            </label>
+            <input type="text" id="supply-unavailable-reason"
+                   placeholder="예: 2025년 신정 연휴"
+                   style="width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+        </div>
+    </div>
+
+    <!-- 업로드 영역 -->
+    <div id="supply-unavailable-upload-area"
+         style="margin-top: 10px; padding: 15px; border: 2px dashed #ddd; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.3s;"
+         onclick="document.getElementById('supply-unavailable-file-input').click()">
+        <i class="fas fa-file-excel" style="font-size: 24px; color: #27ae60; margin-bottom: 5px;"></i>
+        <p style="font-size: 11px; margin: 0; color: #666;">공급불가 품목 Excel 파일 드래그 또는 클릭</p>
+        <p style="font-size: 9px; margin: 3px 0 0 0; color: #999;">필수 컬럼: 단품코드, 시작일, 종료일</p>
+        <input type="file" id="supply-unavailable-file-input" accept=".xlsx,.xls" style="display: none;"
+               onchange="handleSupplyUnavailableFile(this)">
+    </div>
+
+    <!-- 선택된 파일 정보 -->
+    <div id="supply-unavailable-file-info" style="display: none; margin-top: 10px; padding: 10px; background: #e8f5e9; border-radius: 4px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-file-excel" style="font-size: 20px; color: #27ae60;"></i>
+            <span id="supply-unavailable-file-name" style="flex: 1; font-size: 12px; font-weight: bold;"></span>
+            <button onclick="clearSupplyUnavailableFile()" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">
+                <i class="fas fa-times"></i> 취소
+            </button>
+        </div>
+    </div>
+
+    <!-- 업로드 버튼 -->
+    <div style="margin-top: 10px; text-align: center;">
+        <button class="btn btn-warning" style="padding: 6px 15px; font-size: 12px; background: #ff9800; border: none;"
+                onclick="uploadSupplyUnavailable()">
+            <i class="fas fa-upload"></i> 공급불가 품목 업로드
+        </button>
+    </div>
+</div>
+
+<!-- 공급불가 품목 목록 모달 -->
+<div id="supply-unavailable-modal"
+     style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 20px; width: 90%; max-width: 800px; max-height: 80vh; overflow: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; font-size: 16px;">🚫 등록된 공급불가 품목</h3>
+            <button onclick="hideSupplyUnavailableModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+        </div>
+
+        <!-- 요약 정보 -->
+        <div id="supply-unavailable-summary" style="margin-bottom: 15px;"></div>
+
+        <!-- 목록 테이블 -->
+        <div id="supply-unavailable-list" style="max-height: 400px; overflow-y: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead style="position: sticky; top: 0; background: #f5f5f5;">
+                    <tr>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">협력업체</th>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">단품코드</th>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">단품명</th>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">시작일</th>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">종료일</th>
+                        <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">사유</th>
+                    </tr>
+                </thead>
+                <tbody id="supply-unavailable-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 이미지 모달 -->
+<div id="imageModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; cursor: pointer;"
+    onclick="hideImageModal()">
+    <div
+        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 95%; height: 95%; display: flex; align-items: center; justify-content: center;">
+        <img src="/static/images/system32.jpg" alt="Excel 샘플 확대"
+            style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border: 2px solid white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+        <button onclick="hideImageModal()"
+            style="position: absolute; top: 20px; right: 20px; background: white; border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 30px; cursor: pointer; color: #2c3e50; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">&times;</button>
+    </div>
+</div>
+
+<!-- 진행율 표시 모달 (전체 화면 중앙) -->
+<div id="upload-progress"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 10000; backdrop-filter: blur(5px);">
+    <div
+        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; padding: 40px; min-width: 500px; max-width: 600px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <!-- 헤더 -->
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div
+                style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                <i class="fas fa-upload" style="font-size: 36px; color: white;"></i>
+            </div>
+            <h3 style="font-size: 24px; font-weight: 700; color: #2d3748; margin: 0 0 10px 0;">Excel 파일 업로드 중</h3>
+            <p style="font-size: 14px; color: #718096; margin: 0;">잠시만 기다려주세요...</p>
+        </div>
+
+        <!-- 진행율 바 -->
+        <div style="margin-bottom: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span id="progress-text" style="font-size: 15px; font-weight: 600; color: #2d3748;">업로드 준비 중...</span>
+                <span id="progress-percentage" style="font-size: 18px; font-weight: 700; color: #667eea;">0%</span>
+            </div>
+            <div
+                style="background: #e2e8f0; border-radius: 12px; height: 32px; overflow: hidden; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+                <div id="progress-fill"
+                    style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: 0%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; position: relative;">
+                    <!-- 애니메이션 효과 -->
+                    <div
+                        style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); animation: shimmer 2s infinite;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 상세 정보 -->
+        <div id="progress-details" style="background: #f7fafc; border-radius: 8px; padding: 15px; text-align: center;">
+            <div id="progress-phase" style="font-size: 13px; color: #4a5568; font-weight: 500;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes shimmer {
+        0% {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(100%);
+        }
+    }
+</style>
+
+<!-- 협력업체 매핑 경고 모달 -->
+<div id="supplier-mapping-modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 10001; backdrop-filter: blur(5px);">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; padding: 30px; min-width: 600px; max-width: 800px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <!-- 헤더 -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="background: #fef3c7; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; color: #d97706;"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 18px; color: #1e293b;">협력업체명 확인 필요</h3>
+                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #64748b;">등록되지 않은 협력업체명이 발견되었습니다</p>
+                </div>
+            </div>
+            <button onclick="closeSupplierMappingModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #94a3b8;">&times;</button>
+        </div>
+
+        <!-- 안내 문구 -->
+        <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px 15px; margin-bottom: 20px;">
+            <p style="margin: 0; font-size: 13px; color: #92400e;">
+                <i class="fas fa-info-circle"></i> 아래 업체명이 기존 협력업체 목록에 없습니다.
+                오타일 경우 기존 업체를 선택하거나, 새 업체로 등록할 수 있습니다.
+            </p>
+        </div>
+
+        <!-- 매칭되지 않은 업체 목록 -->
+        <div id="unmatched-suppliers-list" style="margin-bottom: 20px;">
+            <!-- 동적으로 채워짐 -->
+        </div>
+
+        <!-- 버튼 -->
+        <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+            <button onclick="closeSupplierMappingModal()"
+                style="padding: 10px 20px; background: #f1f5f9; color: #475569; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                취소
+            </button>
+            <button onclick="proceedWithNewSuppliers()"
+                style="padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                <i class="fas fa-plus"></i> 새 업체로 등록
+            </button>
+            <button onclick="proceedWithMappedSuppliers()"
+                style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                <i class="fas fa-check"></i> 선택한 매핑 적용
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 단가 이력 업로드 모달 -->
+<div id="priceHistoryAdminModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999;">
+    <div
+        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; width: 500px; padding: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+        <div
+            style="padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 18px; color: #333;"><i class="fas fa-file-excel"></i> 식자재 단가 이력 업로드</h3>
+            <span onclick="document.getElementById('priceHistoryAdminModal').style.display='none'"
+                style="cursor: pointer; font-size: 24px; color: #999;">&times;</span>
+        </div>
+        <div style="padding: 20px;">
+            <div
+                style="background: #e8f4fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-size: 13px; color: #0c5460;">
+                <i class="fas fa-info-circle"></i> 엑셀 파일(.xlsx, .xls)을 업로드하여 기간별 단가를 일괄 등록합니다.<br>
+                기존 식자재 코드를 기준으로 매칭됩니다.
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #555;">단가 적용 기간</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="date" id="priceAdminStartDate"
+                        style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <span>~</span>
+                    <input type="date" id="priceAdminEndDate"
+                        style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+                        placeholder="종료일 (선택)">
+                </div>
+                <small style="color: #666; display: block; margin-top: 5px;">종료일을 비워두면 계속 적용됩니다.</small>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #555;">엑셀 파일 선택</label>
+                <input type="file" id="priceHistoryAdminFile" accept=".xlsx, .xls"
+                    style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+            </div>
+        </div>
+        <div
+            style="padding: 15px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="document.getElementById('priceHistoryAdminModal').style.display='none'"
+                class="btn btn-secondary">취소</button>
+            <button onclick="window.IngredientsModule.uploadPriceHistory()" class="btn btn-primary">업로드</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 모든 함수를 전역으로 노출
+    window.showImageModal = function () {
+        const modal = document.getElementById('imageModal');
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+    };
+
+    window.hideImageModal = function () {
+        const modal = document.getElementById('imageModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    };
+
+    // 전체 문서에 대한 드래그 앤 드롭 기본 동작 방지 (브라우저가 파일을 열지 않도록)
+    document.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    document.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    // 드래그 앤 드롭 파일 처리 함수
+    window.handleExcelDrop = function(event) {
+        const files = event.dataTransfer?.files;
+        if (!files || files.length === 0) {
+            console.log('[드래그] 파일이 없습니다');
+            return;
+        }
+
+        const file = files[0];
+        console.log('[드래그] 파일 드롭됨:', file.name);
+
+        // Excel 파일 검증
+        const isExcel = file.name.endsWith('.xls') || file.name.endsWith('.xlsx');
+        if (!isExcel) {
+            alert('❌ Excel 파일(.xls, .xlsx)만 업로드 가능합니다.');
+            return;
+        }
+
+        // 파일 input에 파일 설정 (DataTransfer 사용)
+        const fileInput = document.getElementById('excel-file-input');
+        if (fileInput) {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+
+            // 파일 정보 표시
+            const fileInfo = document.getElementById('file-info');
+            const fileName = document.getElementById('file-name');
+            const fileSize = document.getElementById('file-size');
+
+            if (fileInfo && fileName && fileSize) {
+                fileName.textContent = file.name;
+                fileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+                fileInfo.style.display = 'block';
+            }
+
+            console.log('[드래그] 파일 설정 완료:', file.name);
+        }
+    };
+
+    window.uploadExcelFile = async function () {
+        const fileInput = document.getElementById('excel-file-input');
+
+        // 파일이 선택되지 않았으면 파일 선택 창 열기
+        if (!fileInput?.files?.length) {
+            console.log('[업로드] 파일 미선택 - 파일 선택 창 열기');
+            fileInput.click();
+            return;
+        }
+
+        const file = fileInput.files[0];
+        console.log('[업로드] 파일 선택됨:', file.name);
+
+        // 진행률 모달 표시
+        const progressModal = document.getElementById('upload-progress');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const progressPercentage = document.getElementById('progress-percentage');
+
+        if (progressModal) {
+            progressModal.style.display = 'block';
+            progressText.textContent = '업로드 시작 중...';
+            progressPercentage.textContent = '0%';
+            progressFill.style.width = '0%';
+        }
+
+        try {
+            // 날짜 정보 확인 (필수)
+            let startDate = document.getElementById('upload-start-date').value;
+            let endDate = document.getElementById('upload-end-date').value;
+
+            // 시작일 미입력 시
+            if (!startDate) {
+                if (progressModal) progressModal.style.display = 'none';
+                alert('⚠️ 단가 적용 시작일을 입력해주세요.');
+                document.getElementById('upload-start-date').focus();
+
+                // 날짜 입력 후 자동 업로드 (일회성 이벤트)
+                const startInput = document.getElementById('upload-start-date');
+                const endInput = document.getElementById('upload-end-date');
+
+                const autoUpload = function() {
+                    if (startInput.value && endInput.value) {
+                        startInput.removeEventListener('change', autoUpload);
+                        endInput.removeEventListener('change', autoUpload);
+                        setTimeout(() => window.uploadExcelFile(), 100);
+                    }
+                };
+                startInput.addEventListener('change', autoUpload);
+                endInput.addEventListener('change', autoUpload);
+                return;
+            }
+
+            // 종료일 미입력 시
+            if (!endDate) {
+                if (progressModal) progressModal.style.display = 'none';
+                alert('⚠️ 단가 적용 종료일을 입력해주세요.\n\n종료일 입력 후 자동으로 업로드가 진행됩니다.');
+                document.getElementById('upload-end-date').focus();
+
+                // 종료일 입력 후 자동 업로드 (일회성 이벤트)
+                const endInput = document.getElementById('upload-end-date');
+                const autoUploadEnd = function() {
+                    if (endInput.value) {
+                        endInput.removeEventListener('change', autoUploadEnd);
+                        setTimeout(() => window.uploadExcelFile(), 100);
+                    }
+                };
+                endInput.addEventListener('change', autoUploadEnd);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // 날짜 정보 추가
+            console.log(`[업로드] 날짜 지정됨: ${startDate} ~ ${endDate}`);
+            formData.append('start_date', startDate);
+            formData.append('end_date', endDate);
+
+            // 협력업체 선택 정보 추가
+            const supplierSelect = document.getElementById('upload-supplier-select');
+            const selectedSupplier = supplierSelect ? supplierSelect.value : '';
+            if (selectedSupplier) {
+                formData.append('override_supplier', selectedSupplier);
+                console.log(`[업로드] 협력업체 지정됨: ${selectedSupplier}`);
+            }
+
+            // === 협력업체 검증 단계 ===
+            progressText.textContent = '협력업체명 검증 중...';
+
+            // 1. 엑셀에서 협력업체명 추출
+            const supplierNames = await extractSuppliersFromExcel(file);
+            console.log('[검증] 추출된 협력업체:', supplierNames);
+
+            if (supplierNames.length > 0) {
+                // 2. 서버에서 검증
+                const validateResponse = await fetch('/api/admin/validate-supplier-names', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ supplier_names: supplierNames })
+                });
+
+                const validateResult = await validateResponse.json();
+                console.log('[검증] 결과:', validateResult);
+
+                if (validateResult.success && validateResult.data.unmatched.length > 0) {
+                    // 매칭되지 않은 업체가 있으면 모달 표시
+                    if (progressModal) progressModal.style.display = 'none';
+
+                    showSupplierMappingModal(
+                        validateResult.data.unmatched,
+                        validateResult.data.existing_suppliers,
+                        formData
+                    );
+                    return;  // 모달에서 사용자 선택 후 진행
+                }
+            }
+
+            // 매칭되지 않은 업체가 없거나 검증 생략 시 바로 업로드
+            await executeUpload(formData, {});
+
+        } catch (error) {
+            console.error('[업로드] 에러:', error);
+            if (progressModal) {
+                progressModal.style.display = 'none';
+            }
+            alert(`❌ 업로드 중 오류 발생: ${error.message}`);
+        }
+    };
+
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            window.hideImageModal();
+            closeSupplierMappingModal();
+        }
+    });
+
+    // ========== 협력업체 매핑 관련 변수 및 함수 ==========
+    let pendingUploadData = null;  // 대기 중인 업로드 데이터
+    let supplierMappingData = {};  // 사용자가 선택한 매핑 데이터
+    let unmatchedSuppliers = [];   // 매칭되지 않은 협력업체 목록
+    let existingSuppliers = [];    // 기존 협력업체 목록
+
+    // 협력업체 매핑 모달 닫기
+    window.closeSupplierMappingModal = function() {
+        document.getElementById('supplier-mapping-modal').style.display = 'none';
+        pendingUploadData = null;
+        supplierMappingData = {};
+    };
+
+    // 새 업체로 등록 (매핑 없이 진행)
+    window.proceedWithNewSuppliers = function() {
+        document.getElementById('supplier-mapping-modal').style.display = 'none';
+        if (pendingUploadData) {
+            executeUpload(pendingUploadData.formData, {});  // 빈 매핑으로 진행
+        }
+    };
+
+    // 선택한 매핑 적용하여 진행
+    window.proceedWithMappedSuppliers = function() {
+        document.getElementById('supplier-mapping-modal').style.display = 'none';
+
+        // 각 드롭다운에서 선택된 값 수집
+        const mapping = {};
+        unmatchedSuppliers.forEach((item, idx) => {
+            const select = document.getElementById(`supplier-map-${idx}`);
+            if (select && select.value) {
+                mapping[item.name] = select.value;
+            }
+        });
+
+        console.log('[매핑] 적용할 매핑:', mapping);
+
+        if (pendingUploadData) {
+            executeUpload(pendingUploadData.formData, mapping);
+        }
+    };
+
+    // 매핑 모달에 데이터 표시
+    function showSupplierMappingModal(unmatched, suppliers, formData) {
+        unmatchedSuppliers = unmatched;
+        existingSuppliers = suppliers;
+        pendingUploadData = { formData };
+
+        const container = document.getElementById('unmatched-suppliers-list');
+
+        let html = '';
+        unmatched.forEach((item, idx) => {
+            const similarOptions = item.similar.map(s =>
+                `<option value="${s.name}">${s.name} (${s.similarity}% 유사)</option>`
+            ).join('');
+
+            const allOptions = suppliers.map(s =>
+                `<option value="${s.name}">${s.name}</option>`
+            ).join('');
+
+            html += `
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                <span style="background: #fef2f2; color: #dc2626; padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: 600;">
+                                    ❓ ${item.name}
+                                </span>
+                                <span style="font-size: 12px; color: #6b7280;">(파일에 있는 이름)</span>
+                            </div>
+                            ${item.similar.length > 0 ? `
+                                <div style="font-size: 12px; color: #059669; margin-bottom: 5px;">
+                                    <i class="fas fa-lightbulb"></i> 유사한 업체: ${item.similar.map(s => s.name).join(', ')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div style="min-width: 250px;">
+                            <label style="display: block; font-size: 11px; color: #64748b; margin-bottom: 4px;">기존 업체로 매핑:</label>
+                            <select id="supplier-map-${idx}" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;">
+                                <option value="">-- 새 업체로 등록 --</option>
+                                ${item.similar.length > 0 ? `
+                                    <optgroup label="🔥 유사한 업체 (추천)">
+                                        ${similarOptions}
+                                    </optgroup>
+                                ` : ''}
+                                <optgroup label="📋 전체 협력업체">
+                                    ${allOptions}
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        document.getElementById('supplier-mapping-modal').style.display = 'block';
+    }
+
+    // 실제 업로드 실행
+    async function executeUpload(formData, supplierMapping) {
+        const progressModal = document.getElementById('upload-progress');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const progressPercentage = document.getElementById('progress-percentage');
+
+        if (progressModal) {
+            progressModal.style.display = 'block';
+            progressText.textContent = '업로드 진행 중...';
+            progressPercentage.textContent = '0%';
+            progressFill.style.width = '0%';
+        }
+
+        try {
+            // 매핑 데이터 추가
+            if (Object.keys(supplierMapping).length > 0) {
+                formData.append('supplier_mapping', JSON.stringify(supplierMapping));
+            }
+
+            console.log('[업로드] API 호출 시작: /api/admin/upload-ingredients');
+
+            const response = await fetch('/api/admin/upload-ingredients', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            console.log('[업로드] 응답:', result);
+
+            if (progressModal) {
+                progressModal.style.display = 'none';
+            }
+
+            if (result.success) {
+                alert(`✅ 업로드 성공!\n\n등록: ${result.inserted}개\n수정: ${result.updated}개\n오류: ${result.errors}개`);
+                // 페이지 새로고침 또는 목록 갱신
+                if (window.IngredientsModule?.loadIngredients) {
+                    window.IngredientsModule.loadIngredients();
+                }
+            } else {
+                alert(`❌ 업로드 실패: ${result.error || '알 수 없는 오류'}`);
+            }
+        } catch (error) {
+            console.error('[업로드] 에러:', error);
+            if (progressModal) {
+                progressModal.style.display = 'none';
+            }
+            alert(`❌ 업로드 중 오류 발생: ${error.message}`);
+        }
+
+        // 파일 입력 초기화
+        const fileInput = document.getElementById('excel-file-input');
+        if (fileInput) fileInput.value = '';
+        pendingUploadData = null;
+    }
+
+    // 엑셀 파일에서 협력업체명 추출 (SheetJS 사용)
+    async function extractSuppliersFromExcel(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    // XLSX 라이브러리가 로드되어 있는지 확인
+                    if (typeof XLSX === 'undefined') {
+                        console.warn('[추출] XLSX 라이브러리 없음 - 검증 건너뜀');
+                        resolve([]);
+                        return;
+                    }
+
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                    // 거래처명/업체명 컬럼 찾기
+                    const supplierColumns = ['거래처명', '업체명', '공급업체', '협력업체', '업체'];
+                    const suppliers = new Set();
+
+                    jsonData.forEach(row => {
+                        for (const col of supplierColumns) {
+                            if (row[col] && String(row[col]).trim()) {
+                                suppliers.add(String(row[col]).trim());
+                            }
+                        }
+                    });
+
+                    console.log('[추출] 발견된 협력업체:', [...suppliers]);
+                    resolve([...suppliers]);
+                } catch (err) {
+                    console.error('[추출] 엑셀 파싱 오류:', err);
+                    resolve([]);  // 오류 시 빈 배열 반환 (검증 건너뜀)
+                }
+            };
+            reader.onerror = () => resolve([]);
+            reader.readAsArrayBuffer(file);
+        });
+    }
+</script>
+
+<!-- 샘플 상세 데이터 섹션 -->
+<div class="sample-data-section">
+    <div class="section-header">
+        <h3>📊 협력업체별 식자재 현황</h3>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="toggleSampleData()">
+                <i class="fas fa-eye"></i> 토글 보기
+            </button>
+        </div>
+    </div>
+
+    <div id="sample-data-content" class="sample-data-content">
+        <div class="data-summary">
+            <div id="supplier-stats-container" class="supplier-stats">
+                <!-- 실제 데이터가 JavaScript로 로드됩니다 -->
+                <div style="text-align: center; padding: 20px; color: #666;">
+                    <i class="fas fa-spinner fa-spin"></i> 데이터 로딩 중...
+                </div>
+            </div>
+        </div>
+
+        <!-- 샘플 이미지 제거 (이미 위에 추가함) -->
+
+        <div class="link-user-page">
+            <h4>식자재 상세 조회 및 단위당 단가 계산</h4>
+            <p>엑셀 파일 업로드 후 <strong>단위당 단가</strong>가 자동으로 계산됩니다.</p>
+            <p>등록된 식자재의 상세 정보와 계산된 단위당 단가는 사용자 화면에서 확인할 수 있습니다.</p>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+                <button class="btn btn-primary" onclick="window.open('/ingredients_management.html', '_blank')">
+                    <i class="fas fa-external-link-alt"></i> 사용자 식자재 관리 화면
+                </button>
+                <button class="btn btn-success" onclick="window.IngredientsModule.calculatePricePerUnit()">
+                    <i class="fas fa-calculator"></i> 단위당 단가 재계산
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 식자재 목록 섹션 -->
+<div class="ingredients-list-section">
+    <div class="section-header">
+        <h3>📋 식자재 목록</h3>
+        <div class="header-controls">
+            <div class="search-group">
+                <input type="text" id="ingredients-search" class="search-input" placeholder="식자재명, 코드로 검색...">
+                <button class="btn btn-search" onclick="searchIngredients()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <select id="supplier-filter" class="filter-select" onchange="filterBySupplier()">
+                <option value="">전체 협력업체</option>
+                <option value="삼성웰스토리">삼성웰스토리</option>
+                <option value="현대그린푸드">현대그린푸드</option>
+                <option value="CJ">CJ</option>
+                <option value="푸디스트">푸디스트</option>
+                <option value="동원홈푸드">동원홈푸드</option>
+            </select>
+            <select id="category-filter" class="filter-select" onchange="filterByCategory()">
+                <option value="">전체 카테고리</option>
+                <option value="농산">농산</option>
+                <option value="축산">축산</option>
+                <option value="수산">수산</option>
+                <option value="가공식품">가공식품</option>
+                <option value="조미료">조미료</option>
+                <option value="유제품">유제품</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Filter checkboxes -->
+    <div class="filter-checkboxes" style="margin: 15px 0; display: flex; gap: 20px; align-items: center;">
+        <div class="checkbox-group">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" id="exclude-unpublished" checked style="cursor: pointer;"
+                    onchange="window.IngredientsModule.loadIngredients()">
+                <span>미게시 식자재 제외</span>
+            </label>
+        </div>
+        <div class="checkbox-group">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" id="exclude-no-price" checked style="cursor: pointer;"
+                    onchange="window.IngredientsModule.loadIngredients()">
+                <span>입고가 없는 식자재 제외</span>
+            </label>
+        </div>
+        <div class="checkbox-group">
+            <label
+                style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; background: #e8f5e9; padding: 6px 12px; border-radius: 6px; border: 1px solid #4caf50;">
+                <input type="checkbox" id="show-recent-only" style="cursor: pointer;"
+                    onchange="window.IngredientsModule.loadIngredients()">
+                <span style="font-weight: 600; color: #2e7d32;">✨ 최근 업로드만 보기 (7일)</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- 현재 표시 중인 데이터 정보 -->
+    <div id="current-view-info"
+        style="margin: 15px 0; padding: 12px 20px; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 8px; border-left: 4px solid #2196f3; display: none;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 20px;">ℹ️</span>
+            <div>
+                <div id="view-info-text" style="font-size: 14px; font-weight: 600; color: #1565c0; margin-bottom: 4px;">
+                </div>
+                <div id="view-info-detail" style="font-size: 12px; color: #1976d2;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>분류(대분류)</th>
+                    <th>기본식자재(세분류)</th>
+                    <th>고유코드</th>
+                    <th>식자재명</th>
+                    <th>원산지</th>
+                    <th>게시유무</th>
+                    <th>규격</th>
+                    <th>단위</th>
+                    <th>면세</th>
+                    <th>선발주일</th>
+                    <th>단위당 단가</th>
+                    <th>재계산</th>
+                    <th>입고가</th>
+                    <th>판매가</th>
+                    <th>거래처명</th>
+                    <th>비고</th>
+                    <th>등록일</th>
+                </tr>
+            </thead>
+            <tbody id="ingredients-table-body">
+                <tr>
+                    <td colspan="17" class="loading-cell">
+                        <i class="fas fa-spinner fa-spin"></i> 데이터를 불러오는 중...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination" id="ingredients-pagination">
+        <!-- 페이지네이션이 여기에 동적으로 생성됩니다 -->
+    </div>
+</div>
+
+<style>
+    /* 식자재 관리 전용 스타일 */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: transform 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-icon {
+        font-size: 32px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #95a5a6;
+        margin-top: 5px;
+    }
+
+    .upload-section-container {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .section-header h3 {
+        font-size: 14px;
+        /* Reduced from 16px */
+        color: #2c3e50;
+        font-weight: 700;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .upload-area {
+        border: 2px dashed #cbd5e0;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        background: #f7fafc;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .upload-area:hover {
+        border-color: #667eea;
+        background: #edf2f7;
+    }
+
+    .upload-area.dragover {
+        border-color: #48bb78;
+        background: #f0fff4;
+    }
+
+    .upload-icon {
+        font-size: 48px;
+        color: #cbd5e0;
+        margin-bottom: 15px;
+    }
+
+    .upload-area h4 {
+        color: #4a5568;
+        margin-bottom: 10px;
+    }
+
+    .upload-hint {
+        color: #a0aec0;
+        font-size: 14px;
+    }
+
+    .file-info {
+        margin-top: 20px;
+        padding: 15px;
+        background: #f7fafc;
+        border-radius: 8px;
+        display: none;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .file-details {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #4a5568;
+    }
+
+    .file-details i {
+        font-size: 24px;
+        color: #48bb78;
+    }
+
+    .ingredients-list-section {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .search-group {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px 0 0 6px;
+        font-size: 14px;
+    }
+
+    .btn-search {
+        padding: 8px 15px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 0 6px 6px 0;
+        cursor: pointer;
+    }
+
+    .filter-select {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+    }
+
+    .table-container {
+        margin-top: 15px;
+        /* Reduced from 20px */
+        overflow-x: auto;
+        max-height: 600px;
+        /* Limit height for scrolling */
+        overflow-y: auto;
+        /* Enable vertical scroll */
+        border: 1px solid #e2e8f0;
+        /* Add border */
+        border-radius: 6px;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: separate;
+        /* Required for sticky header */
+        border-spacing: 0;
+    }
+
+    .data-table th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f7fafc;
+        padding: 4px 6px;
+        /* Further reduced from 5px 8px */
+        text-align: left;
+        font-size: 10px;
+        /* Further reduced from 11px */
+        font-weight: 600;
+        color: #4a5568;
+        border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
+        /* Prevent wrapping for compact view */
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        /* Subtle shadow for depth */
+    }
+
+    .data-table td {
+        padding: 4px 6px;
+        /* Further reduced from 8px */
+        font-size: 10px;
+        /* Further reduced from 11px */
+        color: #2d3748;
+        border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
+        /* Keep content one line if possible */
+        max-width: 200px;
+        /* Prevent extremely long columns */
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .data-table tbody tr:hover {
+        background: #f7fafc;
+    }
+
+    .loading-cell {
+        text-align: center;
+        padding: 40px !important;
+        color: #a0aec0;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin-top: 20px;
+    }
+
+    .pagination button {
+        padding: 6px 12px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: #4a5568;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .pagination button:hover {
+        background: #f7fafc;
+    }
+
+    .pagination button.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .pagination button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* 버튼 스타일 */
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5a67d8;
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+
+    .btn-secondary:hover {
+        background: #cbd5e0;
+    }
+
+    .btn-danger {
+        background: #fc8181;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #f56565;
+    }
+
+    .btn-success {
+        background: #48bb78;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #38a169;
+    }
+
+    /* 액션 버튼 */
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+    }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    /* 샘플 데이터 섹션 스타일 */
+    .sample-data-section {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .sample-data-content {
+        margin-top: 20px;
+    }
+
+    .data-summary {
+        margin-bottom: 30px;
+    }
+
+    .data-summary h4 {
+        font-size: 16px;
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+
+    .supplier-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 4px;
+        margin-bottom: 15px;
+    }
+
+    .supplier-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 6px 4px;
+        border-radius: 4px;
+        text-align: center;
+        transition: transform 0.2s;
+        min-height: 45px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .supplier-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .supplier-name {
+        font-size: 9px;
+        margin-bottom: 3px;
+        opacity: 0.95;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .supplier-count {
+        font-size: 13px;
+        font-weight: bold;
+        margin-bottom: 2px;
+    }
+
+    .supplier-percentage {
+        font-size: 8px;
+        opacity: 0.85;
+    }
+
+    .sample-table-container {
+        margin-bottom: 30px;
+    }
+
+    .sample-table-container h4 {
+        font-size: 16px;
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+
+    .sample-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .sample-table th {
+        background: #f7fafc;
+        padding: 10px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: #4a5568;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .sample-table td {
+        padding: 10px;
+        font-size: 13px;
+        color: #2d3748;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: #48bb78;
+        color: white;
+    }
+
+    .sample-excel-image {
+        margin-bottom: 30px;
+    }
+
+    .sample-excel-image h4 {
+        font-size: 16px;
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+
+    .excel-image-container {
+        text-align: center;
+        padding: 20px;
+        background: #f7fafc;
+        border-radius: 8px;
+    }
+
+    .image-caption {
+        margin-top: 10px;
+        font-size: 13px;
+        color: #718096;
+        font-style: italic;
+    }
+
+    .link-user-page {
+        margin-top: 30px;
+        padding: 20px;
+        background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%);
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .link-user-page h4 {
+        font-size: 16px;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .link-user-page p {
+        color: #4a5568;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    .upload-notice {
+        background: #fff8dc;
+        border: 1px solid #ffd700;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .upload-notice h4 {
+        color: #d4a017;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    .upload-notice ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .upload-notice li {
+        color: #806517;
+        font-size: 12px;
+        margin-bottom: 5px;
+        line-height: 1.5;
+    }
+
+    .upload-notice strong {
+        color: #d4a017;
+        font-weight: 600;
+    }
+</style>
+
+<script>
+    // 전역 함수로 노출
+    window.handleFileChange = function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        console.log('[파일 선택] 파일이 선택됨:', file.name, file.size);
+
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const fileSize = document.getElementById('file-size');
+
+        if (fileInfo && fileName && fileSize) {
+            fileName.textContent = file.name;
+            fileSize.textContent = '(' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+            fileInfo.style.display = 'flex';
+            console.log('[파일 선택] UI 업데이트 완료');
+        }
+
+        // 파일 선택 즉시 확인 메시지
+        if (confirm(`📁 ${file.name}\n크기: ${(file.size / 1024 / 1024).toFixed(2)} MB\n\n바로 업로드하시겠습니까?`)) {
+            window.uploadExcelFile();
+        }
+    };
+
+    window.clearFileSelection = function () {
+        const fileInput = document.getElementById('excel-file-input');
+        const fileInfo = document.getElementById('file-info');
+
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        if (fileInfo) {
+            fileInfo.style.display = 'none';
+        }
+    };
+
+    // 협력업체 드롭다운 로드 (전역 함수로 노출)
+    window.loadSupplierDropdown = async function() {
+        const select = document.getElementById('upload-supplier-select');
+        if (!select) {
+            console.log('[협력업체 드롭다운] select 요소 없음');
+            return;
+        }
+
+        // 이미 로드되었는지 확인
+        if (select.options.length > 1) {
+            console.log('[협력업체 드롭다운] 이미 로드됨');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/admin/suppliers');
+            const data = await response.json();
+
+            if (data.success && data.suppliers) {
+                // 협력업체 옵션 추가
+                data.suppliers.forEach(supplier => {
+                    if (supplier.is_active !== false && supplier.is_active !== 0) {  // 활성 업체만
+                        const option = document.createElement('option');
+                        option.value = supplier.name;
+                        option.textContent = `${supplier.name} (${supplier.ingredient_count || 0}개 식자재)`;
+                        select.appendChild(option);
+                    }
+                });
+                console.log('[협력업체 드롭다운] 로드 완료:', data.suppliers.length + '개');
+            }
+        } catch (error) {
+            console.error('[협력업체 드롭다운] 로드 실패:', error);
+        }
+    };
+
+    // 이벤트 리스너 연결 (DOM 로드 후)
+    (function () {
+        // 이미 DOM이 로드되었다면 즉시 실행
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initFileInput);
+        } else {
+            initFileInput();
+        }
+
+        function initFileInput() {
+            const fileInput = document.getElementById('excel-file-input');
+            if (fileInput) {
+                fileInput.addEventListener('change', window.handleFileChange);
+                console.log('[파일 입력] 이벤트 리스너 연결됨');
+            }
+
+            // 협력업체 드롭다운 로드
+            window.loadSupplierDropdown();
+        }
+    })();
+</script>

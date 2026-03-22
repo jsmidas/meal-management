@@ -1,0 +1,479 @@
+/**
+ * 사업장 선택기 스타일
+ * 3단계 드릴다운 메뉴 UI
+ */
+
+/* 컨테이너 */
+.site-selector {
+    position: relative;
+    display: inline-block;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.site-selector-wrapper {
+    position: relative;
+    z-index: 9999;
+}
+
+/* 트리거 버튼 */
+.site-selector-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #1a202c;
+    transition: all 0.2s ease;
+    min-width: 160px;
+    max-width: 280px;
+}
+
+.site-selector-trigger:hover {
+    border-color: #3182ce;
+    box-shadow: 0 2px 4px rgba(49, 130, 206, 0.1);
+}
+
+.site-selector-trigger:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.2);
+}
+
+.site-selector-icon {
+    display: flex;
+    align-items: center;
+    color: #4a5568;
+}
+
+.site-selector-text {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.site-selector-arrow {
+    display: flex;
+    align-items: center;
+    color: #a0aec0;
+    transition: transform 0.2s ease;
+}
+
+.site-selector-dropdown.open ~ .site-selector-trigger .site-selector-arrow,
+.site-selector-wrapper:has(.site-selector-dropdown.open) .site-selector-arrow {
+    transform: rotate(180deg);
+}
+
+/* 드롭다운 */
+.site-selector-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 280px;
+    max-width: 360px;
+    max-height: 520px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 99999;
+}
+
+.site-selector-dropdown.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* 드롭다운 내부 스크롤 */
+.site-selector-dropdown-inner {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+/* 섹션 */
+.site-selector-section {
+    padding: 8px;
+}
+
+.site-selector-section-title {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.site-selector-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 8px 0;
+}
+
+/* 로딩/빈 상태 */
+.site-selector-loading,
+.site-selector-empty {
+    padding: 24px;
+    text-align: center;
+    color: #a0aec0;
+    font-size: 14px;
+}
+
+.site-selector-empty-category,
+.site-selector-empty-sites {
+    padding: 8px 12px;
+    color: #a0aec0;
+    font-size: 13px;
+    font-style: italic;
+}
+
+/* 그룹 */
+.site-selector-group {
+    margin-bottom: 4px;
+}
+
+.site-selector-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #f7fafc;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.site-selector-group-header:hover {
+    background: #edf2f7;
+}
+
+.site-selector-expand-icon {
+    font-size: 10px;
+    color: #a0aec0;
+    transition: transform 0.2s ease;
+}
+
+.site-selector-group.expanded > .site-selector-group-header .site-selector-expand-icon {
+    transform: rotate(90deg);
+}
+
+.site-selector-group-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 14px;
+    color: #2d3748;
+}
+
+.site-selector-count {
+    padding: 2px 8px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #718096;
+}
+
+.site-selector-group-content {
+    display: none;
+    padding-left: 12px;
+    margin-top: 4px;
+}
+
+.site-selector-group.expanded > .site-selector-group-content {
+    display: block;
+}
+
+/* 카테고리 */
+.site-selector-category {
+    margin-bottom: 2px;
+}
+
+.site-selector-category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.site-selector-category-header:hover {
+    background: #f7fafc;
+}
+
+.site-selector-category.expanded > .site-selector-category-header .site-selector-expand-icon {
+    transform: rotate(90deg);
+}
+
+.site-selector-category-name {
+    flex: 1;
+    font-weight: 500;
+    font-size: 13px;
+    color: #4a5568;
+}
+
+.site-selector-category-content {
+    display: none;
+    padding-left: 12px;
+}
+
+.site-selector-category.expanded > .site-selector-category-content {
+    display: block;
+}
+
+/* 사업장 아이템 */
+.site-selector-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.site-selector-item:hover {
+    background: #ebf8ff;
+}
+
+.site-selector-item.current {
+    background: #ebf8ff;
+    border-left: 3px solid #3182ce;
+}
+
+.site-selector-item.favorite {
+    background: #fffff0;
+}
+
+.site-selector-item.favorite:hover {
+    background: #fefcbf;
+}
+
+.site-selector-item-icon {
+    font-size: 14px;
+    width: 20px;
+    text-align: center;
+}
+
+.site-selector-item-icon.star {
+    color: #d69e2e;
+}
+
+.site-selector-item-text {
+    flex: 1;
+    font-size: 13px;
+    color: #2d3748;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 즐겨찾기 버튼 */
+.site-selector-favorite-btn {
+    padding: 2px 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: #cbd5e0;
+    transition: all 0.15s ease;
+    border-radius: 4px;
+}
+
+.site-selector-favorite-btn:hover {
+    color: #d69e2e;
+    background: rgba(214, 158, 46, 0.1);
+}
+
+.site-selector-favorite-btn.active {
+    color: #d69e2e;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+    .site-selector-trigger {
+        min-width: 120px;
+        padding: 6px 10px;
+    }
+
+    .site-selector-dropdown {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        min-width: 100%;
+        max-width: 100%;
+        max-height: 70vh;
+        border-radius: 16px 16px 0 0;
+        transform: translateY(100%);
+    }
+
+    .site-selector-dropdown.open {
+        transform: translateY(0);
+    }
+
+    /* 모바일에서 오버레이 추가 */
+    .site-selector-dropdown.open::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: -1;
+    }
+
+    .site-selector-group-header,
+    .site-selector-category-header,
+    .site-selector-item {
+        padding: 12px 16px;
+    }
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+    .site-selector-trigger {
+        background: #1a202c;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+
+    .site-selector-trigger:hover {
+        border-color: #63b3ed;
+    }
+
+    .site-selector-dropdown {
+        background: #1a202c;
+        border-color: #4a5568;
+    }
+
+    .site-selector-section-title {
+        color: #a0aec0;
+    }
+
+    .site-selector-divider {
+        background: #4a5568;
+    }
+
+    .site-selector-group-header {
+        background: #2d3748;
+    }
+
+    .site-selector-group-header:hover {
+        background: #4a5568;
+    }
+
+    .site-selector-group-name,
+    .site-selector-item-text {
+        color: #e2e8f0;
+    }
+
+    .site-selector-category-name {
+        color: #cbd5e0;
+    }
+
+    .site-selector-count {
+        background: #4a5568;
+        color: #a0aec0;
+    }
+
+    .site-selector-item:hover {
+        background: #2c5282;
+    }
+
+    .site-selector-item.current {
+        background: #2c5282;
+    }
+
+    .site-selector-item.favorite {
+        background: #44337a;
+    }
+}
+
+/* 로딩 애니메이션 */
+.site-selector.loading .site-selector-trigger::after {
+    content: '';
+    position: absolute;
+    right: 36px;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #e2e8f0;
+    border-top-color: #3182ce;
+    border-radius: 50%;
+    animation: site-selector-spin 0.8s linear infinite;
+}
+
+@keyframes site-selector-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 헤더 통합 스타일 (대시보드 헤더에 배치 시) */
+.header-site-selector {
+    margin-left: auto;
+    margin-right: 16px;
+}
+
+.header-site-selector .site-selector-trigger {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.header-site-selector .site-selector-trigger:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.header-site-selector .site-selector-icon,
+.header-site-selector .site-selector-arrow {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* 🎯 표준 크기 클래스 - 모든 페이지에서 일관된 크기 */
+.site-selector-standard .site-selector-trigger {
+    min-width: 140px;
+    max-width: 200px;
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.site-selector-standard .site-selector-text {
+    font-size: 13px;
+}
+
+.site-selector-standard .site-selector-icon {
+    font-size: 14px;
+}
+
+/* 컴팩트 버전 (좁은 공간용) */
+.site-selector-compact .site-selector-trigger {
+    min-width: 120px;
+    max-width: 160px;
+    padding: 5px 8px;
+    font-size: 12px;
+}
+
+.site-selector-compact .site-selector-text {
+    font-size: 12px;
+}
+
+/* 오른쪽 정렬 헬퍼 */
+.site-selector-right {
+    margin-left: auto;
+}
