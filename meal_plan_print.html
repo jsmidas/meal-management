@@ -1002,7 +1002,7 @@
         <!-- 사이드바 -->
         <nav class="sidebar">
             <div class="logo">
-                <img src="/static/images/logo.png?v=20251027" alt="다함푸드 로고">
+                <img src="/static/images/logo.png?v=20251027" alt="급식관리 로고">
             </div>
             <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i>대시보드</a>
             <a href="meal_count_management.html" class="nav-item"><i class="fas fa-users"></i>식수 관리</a>
@@ -1142,7 +1142,7 @@
                 </div>
 
                 <!-- 사업장명 (숨김) -->
-                <input type="hidden" id="siteName" value="다함푸드 주간 식단표">
+                <input type="hidden" id="siteName" value="주간 식단표">
                 <input type="hidden" id="currentSiteId" value="">
 
                 <!-- 카테고리 선택 섹션 -->
@@ -1167,8 +1167,8 @@
 
                 <div class="control-section">
                     <div class="section-title"><i class="fas fa-image"></i> 배경 이미지 선택</div>
-                    <!-- 🌟 다함 브랜드 배경 (밝은 톤) -->
-                    <div style="font-size: 11px; color: #a0aec0; margin-bottom: 8px; padding-left: 4px;">🏢 다함 브랜드</div>
+                    <!-- 🌟 급식관리 배경 (밝은 톤) -->
+                    <div style="font-size: 11px; color: #a0aec0; margin-bottom: 8px; padding-left: 4px;">🏢 급식관리</div>
                     <div class="bg-selector" style="margin-bottom: 12px;">
                         <div class="bg-option active" data-bg="daham_white" onclick="selectBackground('daham_white')">
                             <img src="/static/images/backgrounds/bg_pure_white.jpg" alt="순백">
@@ -1375,11 +1375,11 @@
                     <div class="meal-bg-overlay" id="mealBgOverlay"></div>
                     <!-- ★ 로고 오버레이 (항상 맨 앞) -->
                     <div class="logo-overlay" id="logoOverlay" style="display: none;">
-                        <img src="/static/images/backgrounds/daham_logo.png" alt="다함 로고" id="logoImage">
+                        <img src="/static/images/backgrounds/daham_logo.png" alt="급식관리 로고" id="logoImage">
                     </div>
                     <div class="meal-content">
                         <div class="table-header">
-                            <div class="site-name" id="displaySiteName" contenteditable="true" title="클릭하여 수정">다함푸드 주간 식단표</div>
+                            <div class="site-name" id="displaySiteName" contenteditable="true" title="클릭하여 수정">주간 식단표</div>
                             <div class="period" id="displayPeriod" contenteditable="true" title="클릭하여 수정">2025년 12월 4주차</div>
                         </div>
 
@@ -1447,7 +1447,7 @@
         let isLoadingMealData = false;  // 데이터 로딩 중 플래그
 
         const backgrounds = {
-            // 🏢 다함 브랜드 배경 (밝은 톤)
+            // 🏢 급식관리 배경 (밝은 톤)
             daham_white: {
                 url: '/static/images/backgrounds/bg_pure_white.jpg',
                 overlay: 'transparent'
@@ -2677,7 +2677,7 @@
                 bgEl.style.opacity = '1';
             }
 
-            // ★ 밝은 배경(다함 브랜드)이면 라이트 테마 적용
+            // ★ 밝은 배경(급식관리)이면 라이트 테마 적용
             const wrapper = document.querySelector('.meal-table-wrapper');
             const logoCheckbox = document.getElementById('logoEnabled');
             if (wrapper) {
@@ -3066,9 +3066,9 @@
         }
 
         function updateSiteName() {
-            // ★ 항상 "다함푸드 주간 식단표"로 표시 (사업장 선택과 무관)
+            // ★ 항상 "주간 식단표"로 표시 (사업장 선택과 무관)
             const el = document.getElementById('displaySiteName');
-            if (el) el.textContent = '다함푸드 주간 식단표';
+            if (el) el.textContent = '주간 식단표';
         }
 
         function editSiteName() {

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-다함 식자재 관리 시스템 - Smart Monolith Main Application
+급식관리 시스템 - Smart Monolith Main Application
 Railway 호환 버전 (식수 삭제 API 추가)
 """
 

@@ -1,5 +1,5 @@
 /**
- * 다함 식자재 관리 시스템 설정 파일
+ * 급식관리 시스템 설정 파일
  * 🔧 환경별 자동 설정 (로컬/Railway/GCP 배포 모두 자동 처리)
  *
  * 지원 환경:
@@ -31,7 +31,7 @@ function detectEnvironment() {
         return 'local';
     }
 
-    // 다함 도메인 (GCP 배포 후 도메인 연결)
+    // 도메인 (GCP 배포 후 도메인 연결)
     if (hostname === 'dahamfood.kr' || hostname.includes('dahamfood')) {
         return 'daham_domain';
     }
@@ -62,7 +62,7 @@ window.CONFIG = window.CONFIG || {
 
     // 브랜딩 설정 (화이트라벨용)
     BRANDING: {
-        COMPANY_NAME: '다함푸드',
+        COMPANY_NAME: '급식관리',
         SYSTEM_NAME: '급식관리',
         LOGO_PATH: '/static/images/logo.png?v=20251027',
         SIDEBAR_TITLE: '급식관리',

@@ -3,7 +3,7 @@ Configuration settings for the application
 """
 import os
 
-# App Mode: "simple" (카테고리 숨김, suffix 없음) / "advanced" (다함푸드 전체 기능)
+# App Mode: "simple" (카테고리 숨김, suffix 없음) / "advanced" (전체 기능)
 APP_MODE = os.getenv("APP_MODE", "simple")
 APP_TITLE = os.getenv("APP_TITLE", "급식관리 시스템")
 
@@ -34,7 +34,6 @@ ALLOWED_HEADERS = ["*"]
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_EXTENSIONS = {'.xlsx', '.xls', '.csv'}
 
-# Application Info
-APP_TITLE = "다함 식자재 관리 시스템"
-APP_VERSION = "2.0.0"
-APP_DESCRIPTION = "Fast API 모듈 구조화 버전"
+# Application Info (APP_TITLE은 상단에서 환경변수로 설정)
+APP_VERSION = "1.0.0"
+APP_DESCRIPTION = "급식관리 시스템"
