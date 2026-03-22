@@ -268,6 +268,15 @@ async def startup_db_migration():
                     updated_at TIMESTAMP DEFAULT NOW()
                 );
             """)
+            # user_site_access
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS user_site_access (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER REFERENCES users(id),
+                    site_id INTEGER,
+                    is_active BOOLEAN DEFAULT TRUE
+                );
+            """)
             # category_slots + slot_clients
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS category_slots (
@@ -322,19 +331,29 @@ async def startup_db_migration():
             conn.commit()
             print("[DB] 핵심 테이블 + tenants 생성/확인 완료")
 
-            # users.tenant_id 추가
+            # users 테이블 누락 컬럼 추가
+            for col_def in [
+                ("tenant_id", "INTEGER REFERENCES tenants(id)"),
+                ("password_hash", "VARCHAR(255)"),
+                ("is_active", "BOOLEAN DEFAULT TRUE"),
+                ("managed_site", "VARCHAR(200)"),
+            ]:
+                try:
+                    cursor.execute(f"""
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = '{col_def[0]}')
+                            THEN ALTER TABLE users ADD COLUMN {col_def[0]} {col_def[1]};
+                            END IF;
+                        END $$;
+                    """)
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+
+            # password → password_hash 동기화
             try:
-                cursor.execute("""
-                    DO $$
-                    BEGIN
-                        IF NOT EXISTS (
-                            SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'users' AND column_name = 'tenant_id'
-                        ) THEN
-                            ALTER TABLE users ADD COLUMN tenant_id INTEGER REFERENCES tenants(id);
-                        END IF;
-                    END $$;
-                """)
+                cursor.execute("UPDATE users SET password_hash = password WHERE password_hash IS NULL AND password IS NOT NULL")
                 conn.commit()
             except Exception:
                 conn.rollback()
