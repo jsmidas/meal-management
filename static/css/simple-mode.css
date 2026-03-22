@@ -1,0 +1,68 @@
+/**
+ * Simple 모드: 카테고리/suffix 관련 UI 숨김
+ * body.mode-simple 클래스가 있을 때만 적용
+ */
+
+/* === 레시피 관리 (menu_recipe_management.html) === */
+/* 접미사(suffix) 입력 필드 + 레이블 */
+body.mode-simple #menuSuffix,
+body.mode-simple label[for="menuSuffix"] {
+    display: none !important;
+}
+/* 접미사 포함한 표시명 미리보기 영역 */
+body.mode-simple #menuDisplayPreview {
+    display: none !important;
+}
+/* 레시피 카테고리 선택 (도시락/운반/학교/요양원) */
+body.mode-simple #recipeCategoryContainer {
+    display: none !important;
+}
+
+/* === 식단 관리 (meal_plan_advanced.html) === */
+/* 상단 카테고리 탭 (전체/도시락/운반/학교/요양원) */
+body.mode-simple .category-toolbar,
+body.mode-simple #categoryToolbar {
+    display: none !important;
+}
+/* 카테고리 정보 표시 */
+body.mode-simple .category-info,
+body.mode-simple #currentCategoryInfo {
+    display: none !important;
+}
+/* 모달 내 카테고리 탭 */
+body.mode-simple #modalCategoryTabs {
+    display: none !important;
+}
+
+/* === 조리지시서 (cooking_instruction_management.html) === */
+/* 카테고리 필터 버튼 */
+body.mode-simple .category-filter {
+    display: none !important;
+}
+/* 출력 카테고리 선택 */
+body.mode-simple #printCategoryOptions {
+    display: none !important;
+}
+
+/* === 소분지시서 (portion_instruction_management.html) === */
+/* 카테고리 필터 버튼 그룹 */
+body.mode-simple .category-filter-btn {
+    display: none !important;
+}
+
+/* === 전처리지시서 (preprocessing_management.html) === */
+body.mode-simple #categoryFilterBar {
+    display: none !important;
+}
+
+/* === 각종 일지 (logs_management.html) === */
+body.mode-simple .logs-category-filter {
+    display: none !important;
+}
+
+/* === 공통: suffix 관련 컬럼/필드 === */
+body.mode-simple .suffix-field,
+body.mode-simple .suffix-column,
+body.mode-simple [data-field="suffix"] {
+    display: none !important;
+}

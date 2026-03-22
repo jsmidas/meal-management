@@ -1984,11 +1984,11 @@ class MenuRecipeManagement {
         const cookingNote = document.getElementById('cookingNote')?.value || '';
         const cookingYieldRate = parseFloat(document.getElementById('cookingYieldRate')?.value) || 100;
 
-        // 접두사/접미사 가져오기
+        // 접두사/접미사 가져오기 (simple 모드에서는 suffix 항상 빈 문자열)
         const menuPrefix = document.getElementById('menuPrefix')?.value.trim() || '';
-        const menuSuffix = document.getElementById('menuSuffix')?.value.trim() || '';
+        const menuSuffix = window.isSimpleMode?.() ? '' : (document.getElementById('menuSuffix')?.value.trim() || '');
         console.log('[saveMenu] menuPrefix:', menuPrefix);
-        console.log('[saveMenu] menuSuffix:', menuSuffix);
+        console.log('[saveMenu] menuSuffix:', menuSuffix, window.isSimpleMode?.() ? '(simple mode)' : '');
 
         console.log('[saveMenu] 3. FormData 생성');
         const formData = new FormData();

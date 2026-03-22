@@ -441,10 +441,11 @@ async def save_recipe(request: Request):
         recipe_id = form.get('recipe_id')  # 수정인 경우
         cooking_yield_rate = float(form.get('cooking_yield_rate', 100) or 100)  # 조리수율
 
-        # 접두사/접미사
+        # 접두사/접미사 (simple 모드에서는 suffix 강제 빈 문자열)
+        from core.config import APP_MODE
         prefix = form.get('prefix', '') or ''
-        suffix = form.get('suffix', '') or ''
-        print(f"[레시피 저장] prefix='{prefix}', suffix='{suffix}'")  # 디버깅
+        suffix = '' if APP_MODE == 'simple' else (form.get('suffix', '') or '')
+        print(f"[레시피 저장] prefix='{prefix}', suffix='{suffix}', mode='{APP_MODE}'")  # 디버깅
 
         # 작성자 정보 가져오기
         created_by = ''
@@ -814,12 +815,12 @@ async def save_recipe(request: Request):
                 if missing_required_grams:
                     print(f"[레시피저장] ⚠️ 인당량(required_grams) 누락: {recipe_name} - {', '.join(missing_required_grams)}")
 
-            # 형제 레시피 감지 (동기화 프롬프트용)
+            # 형제 레시피 감지 (동기화 프롬프트용) — simple 모드에서는 스킵
             warnings = []
             sibling_prompt = None
 
-            # suffix가 '요'가 아닌 경우에만 형제 동기화 제안
-            if suffix != '요' and not sibling_auto_copied:
+            # suffix가 '요'가 아닌 경우에만 형제 동기화 제안 (simple 모드 제외)
+            if APP_MODE != 'simple' and suffix != '요' and not sibling_auto_copied:
                 cursor.execute("""
                     SELECT id, recipe_name, COALESCE(suffix, '') as suffix, COALESCE(prefix, '') as prefix,
                            (SELECT COUNT(*) FROM menu_recipe_ingredients WHERE recipe_id = mr.id) as ing_count

@@ -25,7 +25,7 @@ from fastapi import FastAPI, Request, Body, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.wsgi import WSGIMiddleware
+# from starlette.middleware.wsgi import WSGIMiddleware  # Blog app 제거됨
 from typing import Optional
 
 # .env 파일 로드 (Railway DB 연결용)
@@ -65,9 +65,10 @@ from datetime import datetime, timedelta
 # 라우터 임포트
 from routers import ingredients, auth, users, suppliers, recipes, admin, site_structure, user_context, orders, order_instructions, order_calculation, supplier_portal, uploads, notices, system_requests, sales, instructions, ingredient_bulk_change, health_certificates, event_templates, events, event_orders, backup, hierarchy, meal_counts, meal_templates, meal_slot_settings
 # 설정값
-APP_TITLE = "다함 식자재 관리 시스템"
+from core.config import APP_MODE, APP_TITLE as _CONFIG_TITLE
+APP_TITLE = _CONFIG_TITLE
 APP_VERSION = "1.0.0"
-APP_DESCRIPTION = "Smart Monolith 버전"
+APP_DESCRIPTION = "급식관리 시스템"
 
 # Railway/GCP 환경변수 지원 (하위 호환성 포함)
 PORT = int(os.environ.get("PORT", os.environ.get("API_PORT", 8080)))
@@ -419,22 +420,7 @@ try:
 except Exception as e:
     print(f"Static files mounting failed: {e}")
 
-# Blog app 정적 파일 직접 마운트 (WSGIMiddleware에서 정적 파일 서빙 안 됨)
-try:
-    app.mount("/blog-app/static", StaticFiles(directory="blog_app/static"), name="blog-static")
-    print("[BLOG] Blog static files mounted at /blog-app/static")
-except Exception as e:
-    print(f"[BLOG] Blog static files mounting failed: {e}")
-
-# Blog app (Flask) mount
-try:
-    from blog_app.app import app as flask_blog_app
-    app.mount("/blog-app", WSGIMiddleware(flask_blog_app))
-    print("[BLOG] Flask blog app mounted at /blog-app")
-except Exception as e:
-    import traceback
-    traceback.print_exc()
-    print(f"[BLOG] Blog app mount failed: {e}")
+# Blog app 제거됨 (판매용 버전에서는 불필요)
 
 # Railway 호환성: 템플릿 파일 직접 서빙
 @app.get("/static/templates/{template_name}")
@@ -816,7 +802,7 @@ async def root():
 async def api_status():
     return {
         "status": "ok",
-        "message": "다함 식자재 관리 API 서버",
+        "message": f"{APP_TITLE} API 서버",
         "version": APP_VERSION,
         "architecture": "smart_monolith"
     }
@@ -3584,7 +3570,7 @@ async def delete_meal_plan_background(bg_id: int):
 
 
 if __name__ == "__main__":
-    print(f"[다함] 식자재 관리 시스템 시작")
+    print(f"[{APP_TITLE}] 시스템 시작 (mode={APP_MODE})")
     print(f"[서버] 주소: http://{HOST}:{PORT}")
     print(f"[아키텍처] Smart Monolith")
     print(f"[환경] {'Railway' if 'RAILWAY_ENVIRONMENT' in os.environ else 'Local'}")

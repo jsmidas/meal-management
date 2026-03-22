@@ -4653,6 +4653,8 @@ window.jumpWeek = jumpWeek;
  * @param {string} category - 선택할 카테고리 (전체/도시락/운반/학교/요양원)
  */
 async function selectMealCategory(category) {
+    // Simple 모드에서는 항상 '전체' 카테고리
+    if (window.isSimpleMode?.()) category = '전체';
     currentMealCategory = category;
 
     // 탭 UI 업데이트
