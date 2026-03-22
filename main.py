@@ -268,35 +268,6 @@ async def startup_db_migration():
                     updated_at TIMESTAMP DEFAULT NOW()
                 );
             """)
-            # 누락 컬럼 추가 (새 DB용)
-            for tbl_col in [
-                ("site_groups", "group_code", "VARCHAR(50)"),
-                ("site_groups", "group_name", "VARCHAR(200)"),
-                ("menu_recipes", "created_by", "VARCHAR(100)"),
-                ("business_locations", "abbreviation", "VARCHAR(50)"),
-                ("business_locations", "contract_end_date", "DATE"),
-                ("business_locations", "contract_start_date", "DATE"),
-                ("business_locations", "health_cert_expiry", "DATE"),
-                ("business_locations", "category_id", "INTEGER"),
-                ("business_locations", "display_order", "INTEGER DEFAULT 0"),
-                ("site_categories", "meal_types", "TEXT"),
-                ("site_categories", "meal_items", "TEXT"),
-                ("site_categories", "address", "TEXT"),
-                ("site_categories", "region", "TEXT"),
-                ("site_categories", "abbreviation", "VARCHAR(50)"),
-            ]:
-                try:
-                    cursor.execute(f"""
-                        DO $$ BEGIN
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = '{tbl_col[0]}' AND column_name = '{tbl_col[1]}')
-                            THEN ALTER TABLE {tbl_col[0]} ADD COLUMN {tbl_col[1]} {tbl_col[2]};
-                            END IF;
-                        END $$;
-                    """)
-                except Exception:
-                    pass
-            conn.commit()
-
             # business_locations
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS business_locations (
@@ -322,6 +293,33 @@ async def startup_db_migration():
                     user_id INTEGER REFERENCES users(id),
                     site_id INTEGER,
                     is_active BOOLEAN DEFAULT TRUE
+                );
+            """)
+            # preprocessing_yields + cooking_yields
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS preprocessing_yields (
+                    id SERIAL PRIMARY KEY,
+                    ingredient_id INTEGER,
+                    yield_rate FLOAT DEFAULT 100,
+                    cut_type VARCHAR(100) DEFAULT '',
+                    notes TEXT,
+                    created_at TIMESTAMP DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS cooking_yields (
+                    id SERIAL PRIMARY KEY,
+                    menu_name VARCHAR(200),
+                    ingredient_id INTEGER,
+                    site_id INTEGER,
+                    yield_rate FLOAT DEFAULT 100,
+                    created_at TIMESTAMP DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS ingredient_prices (
+                    id SERIAL PRIMARY KEY,
+                    ingredient_code VARCHAR(50),
+                    price FLOAT DEFAULT 0,
+                    effective_date DATE,
+                    supplier_name VARCHAR(200),
+                    created_at TIMESTAMP DEFAULT NOW()
                 );
             """)
             # category_slots + slot_clients
@@ -405,74 +403,42 @@ async def startup_db_migration():
             except Exception:
                 conn.rollback()
 
-            # meal_counts 테이블에 menu_order 컬럼 추가 (없으면)
-            cursor.execute("""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'meal_counts' AND column_name = 'menu_order'
-                    ) THEN
-                        ALTER TABLE meal_counts ADD COLUMN menu_order INTEGER DEFAULT 0;
-                    END IF;
-                END $$;
-            """)
-
-            # meal_counts 테이블에 work_date 컬럼 추가 (meal_counts.py 라우터에서 사용)
-            cursor.execute("""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'meal_counts' AND column_name = 'work_date'
-                    ) THEN
-                        ALTER TABLE meal_counts ADD COLUMN work_date DATE;
-                    END IF;
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'meal_counts' AND column_name = 'business_type'
-                    ) THEN
-                        ALTER TABLE meal_counts ADD COLUMN business_type VARCHAR(50);
-                    END IF;
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'meal_counts' AND column_name = 'menu_name'
-                    ) THEN
-                        ALTER TABLE meal_counts ADD COLUMN menu_name VARCHAR(100);
-                    END IF;
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'meal_counts' AND column_name = 'matching_name'
-                    ) THEN
-                        ALTER TABLE meal_counts ADD COLUMN matching_name VARCHAR(100);
-                    END IF;
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'meal_counts' AND column_name = 'site_name'
-                    ) THEN
-                        ALTER TABLE meal_counts ADD COLUMN site_name VARCHAR(100);
-                    END IF;
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'meal_counts' AND column_name = 'meal_count'
-                    ) THEN
-                        ALTER TABLE meal_counts ADD COLUMN meal_count INTEGER DEFAULT 0;
-                    END IF;
-                END $$;
-            """)
-
-            # users 테이블에 full_name 컬럼 추가 (없으면)
-            cursor.execute("""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'users' AND column_name = 'full_name'
-                    ) THEN
-                        ALTER TABLE users ADD COLUMN full_name VARCHAR(100);
-                    END IF;
-                END $$;
-            """)
+            # 추가 누락 컬럼 일괄 추가 (개별 try-except)
+            extra_columns = [
+                ("meal_counts", "menu_order", "INTEGER DEFAULT 0"),
+                ("meal_counts", "work_date", "DATE"),
+                ("meal_counts", "business_type", "VARCHAR(50)"),
+                ("meal_counts", "menu_name", "VARCHAR(100)"),
+                ("meal_counts", "matching_name", "VARCHAR(100)"),
+                ("meal_counts", "site_name", "VARCHAR(100)"),
+                ("meal_counts", "meal_count", "INTEGER DEFAULT 0"),
+                ("users", "full_name", "VARCHAR(100)"),
+                ("site_categories", "meal_types", "TEXT"),
+                ("site_categories", "meal_items", "TEXT"),
+                ("site_categories", "address", "TEXT"),
+                ("site_categories", "region", "TEXT"),
+                ("site_categories", "abbreviation", "VARCHAR(50)"),
+                ("business_locations", "abbreviation", "VARCHAR(50)"),
+                ("business_locations", "contract_end_date", "DATE"),
+                ("business_locations", "contract_start_date", "DATE"),
+                ("business_locations", "health_cert_expiry", "DATE"),
+                ("business_locations", "category_id", "INTEGER"),
+                ("business_locations", "display_order", "INTEGER DEFAULT 0"),
+                ("menu_recipes", "created_by", "VARCHAR(100)"),
+                ("site_groups", "group_code", "VARCHAR(50)"),
+            ]
+            for tbl, col, typ in extra_columns:
+                try:
+                    cursor.execute(f"""
+                        DO $$ BEGIN
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = '{tbl}' AND column_name = '{col}')
+                            THEN ALTER TABLE {tbl} ADD COLUMN {col} {typ};
+                            END IF;
+                        END $$;
+                    """)
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
 
             # preprocessing_instructions 테이블 생성 (없으면)
             cursor.execute("""
