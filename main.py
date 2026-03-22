@@ -268,6 +268,24 @@ async def startup_db_migration():
                     updated_at TIMESTAMP DEFAULT NOW()
                 );
             """)
+            # 누락 컬럼 추가 (새 DB용)
+            for tbl_col in [
+                ("site_groups", "group_code", "VARCHAR(50)"),
+                ("site_groups", "group_name", "VARCHAR(200)"),
+                ("menu_recipes", "created_by", "VARCHAR(100)"),
+            ]:
+                try:
+                    cursor.execute(f"""
+                        DO $$ BEGIN
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = '{tbl_col[0]}' AND column_name = '{tbl_col[1]}')
+                            THEN ALTER TABLE {tbl_col[0]} ADD COLUMN {tbl_col[1]} {tbl_col[2]};
+                            END IF;
+                        END $$;
+                    """)
+                except Exception:
+                    pass
+            conn.commit()
+
             # business_locations
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS business_locations (
