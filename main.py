@@ -274,6 +274,11 @@ async def startup_db_migration():
                 ("site_groups", "group_name", "VARCHAR(200)"),
                 ("menu_recipes", "created_by", "VARCHAR(100)"),
                 ("business_locations", "abbreviation", "VARCHAR(50)"),
+                ("business_locations", "contract_end_date", "DATE"),
+                ("business_locations", "contract_start_date", "DATE"),
+                ("business_locations", "health_cert_expiry", "DATE"),
+                ("business_locations", "category_id", "INTEGER"),
+                ("business_locations", "display_order", "INTEGER DEFAULT 0"),
             ]:
                 try:
                     cursor.execute(f"""
