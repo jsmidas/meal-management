@@ -188,7 +188,10 @@
 
             <div class="form-group">
                 <label for="password">비밀번호</label>
-                <input type="password" id="password" name="password" required>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" required style="padding-right: 40px;">
+                    <span onclick="togglePassword()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; color: #999; user-select: none;" id="pwToggle" title="비밀번호 보기">👁</span>
+                </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 10px;">
@@ -211,6 +214,20 @@
     </div>
 
     <script>
+        function togglePassword() {
+            const pw = document.getElementById('password');
+            const icon = document.getElementById('pwToggle');
+            if (pw.type === 'password') {
+                pw.type = 'text';
+                icon.textContent = '🔒';
+                icon.title = '비밀번호 숨기기';
+            } else {
+                pw.type = 'password';
+                icon.textContent = '👁';
+                icon.title = '비밀번호 보기';
+            }
+        }
+
         // 로그인 유형 (user 또는 supplier)
         let loginType = 'user';
 
