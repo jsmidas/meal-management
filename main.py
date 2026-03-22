@@ -268,6 +268,39 @@ async def startup_db_migration():
                     updated_at TIMESTAMP DEFAULT NOW()
                 );
             """)
+            # category_slots + slot_clients
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS category_slots (
+                    id SERIAL PRIMARY KEY,
+                    category_id INTEGER NOT NULL REFERENCES site_categories(id) ON DELETE CASCADE,
+                    slot_code VARCHAR(50),
+                    slot_name VARCHAR(200) NOT NULL,
+                    description TEXT,
+                    target_cost INTEGER DEFAULT 0,
+                    selling_price INTEGER DEFAULT 0,
+                    display_order INTEGER DEFAULT 0,
+                    meal_type VARCHAR(50),
+                    is_active BOOLEAN DEFAULT TRUE,
+                    modified_by VARCHAR(100),
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS slot_clients (
+                    id SERIAL PRIMARY KEY,
+                    slot_id INTEGER NOT NULL REFERENCES category_slots(id) ON DELETE CASCADE,
+                    business_location_id INTEGER,
+                    client_code VARCHAR(50),
+                    client_name VARCHAR(200) NOT NULL,
+                    display_order INTEGER DEFAULT 0,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    start_date DATE,
+                    end_date DATE,
+                    operating_days TEXT DEFAULT '{"mon":true,"tue":true,"wed":true,"thu":true,"fri":true,"sat":true,"sun":true}',
+                    modified_by VARCHAR(100),
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                );
+            """)
             # ★ 체험판 관리: tenants 테이블 (핵심 테이블과 함께 생성)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS tenants (
