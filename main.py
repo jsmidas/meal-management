@@ -268,6 +268,24 @@ async def startup_db_migration():
                     updated_at TIMESTAMP DEFAULT NOW()
                 );
             """)
+            # business_locations
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS business_locations (
+                    id SERIAL PRIMARY KEY,
+                    group_id INTEGER,
+                    site_code VARCHAR(50),
+                    site_name VARCHAR(200),
+                    site_type VARCHAR(50),
+                    business_category VARCHAR(100),
+                    address TEXT,
+                    region TEXT,
+                    manager_name VARCHAR(100),
+                    manager_phone VARCHAR(50),
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                );
+            """)
             # user_site_access
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS user_site_access (
