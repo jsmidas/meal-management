@@ -22,15 +22,21 @@
                 document.title = document.title.replace(/다함푸드 급식관리|다함 식자재 관리 시스템/g, config.title);
             }
 
-            if (isSimpleMode()) {
-                document.body.classList.add('mode-simple');
+            function applyMode(mode) {
+                var el = document.body || document.documentElement;
+                if (el) el.classList.add(mode === 'simple' ? 'mode-simple' : 'mode-advanced');
+            }
+
+            if (document.body) {
+                applyMode(config.mode);
             } else {
-                document.body.classList.add('mode-advanced');
+                document.addEventListener('DOMContentLoaded', function() { applyMode(config.mode); });
             }
 
             document.dispatchEvent(new CustomEvent('app-mode-ready', { detail: config }));
         })
-        .catch(() => {
-            document.body.classList.add('mode-simple');
+        .catch(function() {
+            if (document.body) document.body.classList.add('mode-simple');
+            else document.addEventListener('DOMContentLoaded', function() { document.body.classList.add('mode-simple'); });
         });
 })();
