@@ -941,7 +941,7 @@ async def update_supplier_status(supplier_id: int, request: Request):
     """협력업체 상태 변경 (프론트엔드 호환용)"""
     try:
         data = await request.json()
-        is_active = 1 if data.get("isActive") else 0
+        is_active = True if data.get("isActive") else False
 
         with get_db_connection() as conn:
             cursor = conn.cursor()

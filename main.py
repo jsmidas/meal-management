@@ -778,7 +778,7 @@ async def startup_db_migration():
                     has_categories BOOLEAN DEFAULT FALSE,
                     display_order INTEGER DEFAULT 0,
                     contract_end_date DATE,
-                    is_active INTEGER DEFAULT 1,
+                    is_active BOOLEAN DEFAULT TRUE,
                     created_at TIMESTAMP DEFAULT NOW(),
                     updated_at TIMESTAMP DEFAULT NOW()
                 )
@@ -3211,7 +3211,7 @@ async def get_base_weight_stats(site_id: Optional[int] = None):
                     SELECT DISTINCT s.name
                     FROM customer_supplier_mappings csm
                     JOIN suppliers s ON csm.supplier_id = s.id
-                    WHERE csm.customer_id = %s AND csm.is_active = 1
+                    WHERE csm.customer_id = %s AND csm.is_active = TRUE
                 """, (site_id,))
                 supplier_rows = cursor.fetchall()
                 if supplier_rows:
