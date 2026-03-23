@@ -3297,6 +3297,8 @@ async function addNewSiteOneStop() {
             body: JSON.stringify({
                 slot_name: slotName,
                 category_id: parseInt(categoryId) || null,
+                group_id: getCurrentGroupId(),  // ★ 카테고리 자동 생성용
+                group_name: getCurrentGroupName(),
                 meal_type: mealType,  // ★ 끼니 타입 추가
                 client_name: clientName,
                 display_order: displayOrder,

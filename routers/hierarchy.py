@@ -548,29 +548,41 @@ async def create_client(request: Request):
 
             # ★ category_id가 없으면 기본 카테고리 자동 생성
             if not category_id and slot_name:
-                # 현재 사용자의 그룹에서 기본 카테고리 찾기 또는 생성
-                cursor.execute("SELECT id FROM site_categories WHERE is_active = TRUE ORDER BY id LIMIT 1")
+                req_group_id = data.get('group_id')
+                req_group_name = data.get('group_name', '기본')
+
+                if req_group_id:
+                    # 해당 그룹의 기본 카테고리 찾기
+                    cursor.execute("SELECT id FROM site_categories WHERE group_id = %s AND is_active = TRUE ORDER BY id LIMIT 1", (req_group_id,))
+                else:
+                    cursor.execute("SELECT id FROM site_categories WHERE is_active = TRUE ORDER BY id LIMIT 1")
+
                 existing_cat = cursor.fetchone()
                 if existing_cat:
                     category_id = existing_cat[0]
                 else:
-                    # site_groups에서 첫 그룹 가져오기
-                    cursor.execute("SELECT id, group_name FROM site_groups WHERE is_active = TRUE ORDER BY id LIMIT 1")
-                    group_row = cursor.fetchone()
-                    if group_row:
-                        group_id = group_row[0]
-                        group_name = group_row[1]
-                        cursor.execute("""
-                            INSERT INTO site_categories (group_id, category_code, category_name, display_order)
-                            VALUES (%s, 'DEFAULT', %s, 0)
-                            RETURNING id
-                        """, (group_id, group_name))
-                        category_id = cursor.fetchone()[0]
-                        conn.commit()
-                        print(f"[원스탑] 기본 카테고리 자동 생성: {group_name} (ID: {category_id})")
+                    # 그룹 정보 결정
+                    if req_group_id:
+                        group_id = req_group_id
+                        group_name = req_group_name
                     else:
-                        cursor.close()
-                        return {"success": False, "error": "사업장 그룹이 없습니다. 먼저 그룹을 생성해주세요."}
+                        cursor.execute("SELECT id, group_name FROM site_groups WHERE is_active = TRUE ORDER BY id LIMIT 1")
+                        group_row = cursor.fetchone()
+                        if group_row:
+                            group_id = group_row[0]
+                            group_name = group_row[1]
+                        else:
+                            cursor.close()
+                            return {"success": False, "error": "사업장 그룹이 없습니다. 먼저 그룹을 생성해주세요."}
+
+                    cursor.execute("""
+                        INSERT INTO site_categories (group_id, category_code, category_name, display_order)
+                        VALUES (%s, 'DEFAULT', %s, 0)
+                        RETURNING id
+                    """, (group_id, group_name))
+                    category_id = cursor.fetchone()[0]
+                    conn.commit()
+                    print(f"[원스탑] 기본 카테고리 자동 생성: {group_name} (ID: {category_id})")
 
             # 슬롯 자동 생성 로직
             meal_type = data.get('meal_type', '').strip()
