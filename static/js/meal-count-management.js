@@ -6,13 +6,16 @@
 function getCurrentGroupId() {
     if (typeof SiteSelector !== 'undefined') {
         const context = SiteSelector.getCurrentContext();
-        return context?.group_id || 1;  // 기본값: 본사(1)
+        if (context?.group_id) return context.group_id;
     }
-    return 1;
+    return window._defaultGroupId || 1;
 }
 function getCurrentGroupName() {
-    const groupId = getCurrentGroupId();
-    return groupId === 1 ? '본사' : groupId === 2 ? '영남지사' : `그룹${groupId}`;
+    if (typeof SiteSelector !== 'undefined') {
+        const context = SiteSelector.getCurrentContext();
+        if (context?.group_name) return context.group_name;
+    }
+    return window._defaultGroupName || '본사';
 }
 
 // ★ 현재 로그인한 사용자명 반환 (수정자 추적용)
@@ -5679,6 +5682,14 @@ async function bulkAssignByDayType(targetDaysOfWeek, dayType) {
 document.addEventListener('DOMContentLoaded', function () {
     // ★ 그룹에 따른 페이지 타이틀 업데이트는 siteChange 이벤트에서 처리
     // (SiteSelector가 초기화된 후에 실행됨)
+
+    // ★ 기본 그룹 정보 로드 (SiteSelector 실패 시 폴백용)
+    fetch('/api/v2/groups').then(r => r.json()).then(result => {
+        if (result.success && result.data && result.data.length > 0) {
+            window._defaultGroupId = result.data[0].id;
+            window._defaultGroupName = result.data[0].group_name;
+        }
+    }).catch(() => {});
 
     updateDateTime();
     setInterval(updateDateTime, 60000);

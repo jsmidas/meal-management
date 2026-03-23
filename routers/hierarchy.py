@@ -18,6 +18,23 @@ from core.database import get_db_connection
 router = APIRouter()
 
 
+@router.get("/api/v2/groups")
+async def get_groups_v2():
+    """그룹 목록 조회"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, group_name, group_code, display_order FROM site_groups WHERE is_active = TRUE ORDER BY display_order")
+            rows = cursor.fetchall()
+            cursor.close()
+            return {"success": True, "data": [
+                {"id": r[0], "group_name": r[1], "group_code": r[2], "display_order": r[3]}
+                for r in rows
+            ]}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 def normalize_client_name(name: str) -> str:
     """사업장명 정규화: strip + 연속공백 제거 + NFC 정규화"""
     if not name:
@@ -561,10 +578,24 @@ async def create_client(request: Request):
                 if existing_cat:
                     category_id = existing_cat[0]
                 else:
-                    # 그룹 정보 결정
+                    # 그룹 정보 결정 (없으면 자동 생성)
                     if req_group_id:
-                        group_id = req_group_id
-                        group_name = req_group_name
+                        cursor.execute("SELECT id, group_name FROM site_groups WHERE id = %s", (req_group_id,))
+                        group_row = cursor.fetchone()
+                        if group_row:
+                            group_id = group_row[0]
+                            group_name = group_row[1]
+                        else:
+                            # 그룹이 없으면 자동 생성
+                            cursor.execute("""
+                                INSERT INTO site_groups (group_name, group_code, display_order, is_active)
+                                VALUES (%s, 'DEFAULT', 0, TRUE)
+                                RETURNING id
+                            """, (req_group_name,))
+                            group_id = cursor.fetchone()[0]
+                            group_name = req_group_name
+                            conn.commit()
+                            print(f"[원스탑] 기본 그룹 자동 생성: {group_name} (ID: {group_id})")
                     else:
                         cursor.execute("SELECT id, group_name FROM site_groups WHERE is_active = TRUE ORDER BY id LIMIT 1")
                         group_row = cursor.fetchone()
@@ -572,8 +603,16 @@ async def create_client(request: Request):
                             group_id = group_row[0]
                             group_name = group_row[1]
                         else:
-                            cursor.close()
-                            return {"success": False, "error": "사업장 그룹이 없습니다. 먼저 그룹을 생성해주세요."}
+                            # 그룹이 아예 없으면 생성
+                            cursor.execute("""
+                                INSERT INTO site_groups (group_name, group_code, display_order, is_active)
+                                VALUES ('본사', 'DEFAULT', 0, TRUE)
+                                RETURNING id
+                            """)
+                            group_id = cursor.fetchone()[0]
+                            group_name = '본사'
+                            conn.commit()
+                            print(f"[원스탑] 기본 그룹 자동 생성: {group_name} (ID: {group_id})")
 
                     cursor.execute("""
                         INSERT INTO site_categories (group_id, category_code, category_name, display_order)
