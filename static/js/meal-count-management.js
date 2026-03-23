@@ -429,8 +429,7 @@ function buildSlotOptions(selectedValue, categoryId = null, categoryName = null)
     }
 
     // ★★★ 카테고리 이름 가져오기 (slotClientsCache 확인용) ★★★
-    let categoryName = null;
-    if (categoryId) {
+    if (!categoryName && categoryId) {
         for (const [name, id] of Object.entries(categoryNameToIdMap)) {
             if (String(id) === String(categoryId)) {
                 categoryName = name;
