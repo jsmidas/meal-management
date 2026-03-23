@@ -3137,8 +3137,41 @@ async function loadSiteManagementCategories() {
             });
             console.log(`✅ [v2] 카테고리 로드 (${groupName}): ${result.data.length}개`);
         } else {
-            categorySelect.innerHTML = '<option value="">카테고리 없음</option>';
-            console.warn('⚠️ 카테고리 데이터 없음');
+            // ★ 카테고리가 없으면 기본 카테고리 자동 생성
+            console.warn('⚠️ 카테고리 없음 → 기본 카테고리 자동 생성 시도');
+            try {
+                const createRes = await fetch('/api/v2/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        category_code: 'DEFAULT',
+                        category_name: groupName || '기본',
+                        display_order: 0
+                    })
+                });
+                const createResult = await createRes.json();
+                if (createResult.success && createResult.id) {
+                    const catName = groupName || '기본';
+                    const catId = createResult.id;
+                    siteManagementCategories = [{ id: catId, category_name: catName, group_id: groupId }];
+                    categorySelect.innerHTML = '';
+                    const option = document.createElement('option');
+                    option.value = catId;
+                    option.setAttribute('data-cat-id', catId);
+                    option.setAttribute('data-cat-name', catName);
+                    option.textContent = catName;
+                    option.selected = true;
+                    categorySelect.appendChild(option);
+                    console.log(`✅ 기본 카테고리 자동 생성 완료: ${catName} (id=${catId})`);
+                } else {
+                    categorySelect.innerHTML = '<option value="">카테고리 없음</option>';
+                    console.warn('⚠️ 기본 카테고리 생성 실패:', createResult.error);
+                }
+            } catch (createError) {
+                categorySelect.innerHTML = '<option value="">카테고리 없음</option>';
+                console.error('기본 카테고리 생성 오류:', createError);
+            }
         }
     } catch (error) {
         console.error('카테고리 로드 오류:', error);
