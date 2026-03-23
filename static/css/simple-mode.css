@@ -67,8 +67,9 @@ body.mode-simple [data-field="suffix"] {
     display: none !important;
 }
 
-/* === 식수 관리: 상단 요약 카드 숨김 (탭 옆으로 통합) === */
-body.mode-simple .summary-cards.mode-advanced-only {
+/* === 식수 관리: 상단 요약 카드 + 템플릿 영역 숨김 === */
+body.mode-simple .summary-cards.mode-advanced-only,
+body.mode-simple .mode-advanced-only {
     display: none !important;
 }
 
