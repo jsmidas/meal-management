@@ -3522,7 +3522,9 @@ function renderSiteList(sites) {
         '기타': '#607d8b'
     };
 
-    categoryOrder.forEach(businessType => {
+    // ★ categoryOrder에 없는 카테고리도 포함 (자동 생성된 '기본' 등)
+    const allCategories = new Set([...categoryOrder, ...Object.keys(grouped)]);
+    allCategories.forEach(businessType => {
         if (!grouped[businessType]) return;
 
         const categoryColor = categoryColors[businessType] || '#607d8b';
