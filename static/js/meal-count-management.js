@@ -3231,10 +3231,20 @@ async function loadSiteManagementCategories() {
 
 async function closeSiteManagementModal() {
     document.getElementById('siteManagementModal').style.display = 'none';
-    // ★ 모달 닫을 때 캐시 갱신 + 배지 실시간 반영
-    const groupId = getCurrentGroupId();
-    await refreshSiteStructureCache(groupId);
-    refreshAllMealTypeBadges();
+    // ★ 모달 닫을 때 전체 데이터 새로고침 (meal_type 변경 등 반영)
+    try {
+        const siteId = getCurrentSiteId();
+        const workDate = document.getElementById('meal-count-date').value;
+        // 캐시 무효화
+        siteDataCache.delete(`${siteId}_${workDate}`);
+        await loadInitData();
+        if (businessTypes.length > 0) {
+            businessTypes.forEach((_, i) => updateTabSlotDropdowns(i));
+        }
+        refreshAllMealTypeBadges();
+    } catch(e) {
+        console.warn('모달 닫기 후 새로고침 실패:', e);
+    }
 }
 
 // v2 API로 슬롯 로드 (카테고리 변경 시 호출) - datalist용
