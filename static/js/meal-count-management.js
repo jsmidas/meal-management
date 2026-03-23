@@ -3257,10 +3257,6 @@ async function addNewSiteOneStop() {
     let clientName = clientNameInput.value.trim();
 
     // 유효성 검사
-    if (!categoryId) {
-        alert('카테고리를 선택해주세요.');
-        return;
-    }
     if (!slotName) {
         alert('슬롯명을 입력해주세요.');
         return;
@@ -3300,7 +3296,7 @@ async function addNewSiteOneStop() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 slot_name: slotName,
-                category_id: parseInt(categoryId),
+                category_id: parseInt(categoryId) || null,
                 meal_type: mealType,  // ★ 끼니 타입 추가
                 client_name: clientName,
                 display_order: displayOrder,
