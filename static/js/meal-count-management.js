@@ -5908,8 +5908,21 @@ async function initializePage() {
             console.log('📦 초기 데이터 로드 시작 (최적화)');
             showLoading('데이터 로딩 중...');
             try {
+                // ★ _defaultGroupId가 없으면 직접 확보
+                if (!window._defaultGroupId) {
+                    try {
+                        const grpRes = await fetch('/api/v2/groups');
+                        const grpData = await grpRes.json();
+                        if (grpData.success && grpData.data?.length > 0) {
+                            window._defaultGroupId = grpData.data[0].id;
+                            window._defaultGroupName = grpData.data[0].group_name;
+                            console.log(`🏢 그룹 ID 확보: ${window._defaultGroupId}`);
+                        }
+                    } catch(e) {}
+                }
+
                 const siteId = getCurrentSiteId();
-                console.log(`🏢 초기 로드: site_id=${siteId}`);
+                console.log(`🏢 초기 로드: site_id=${siteId}, groupId=${getCurrentGroupId()}`);
 
                 // ★ 카테고리 매핑 로드 (슬롯은 통합 API에서 받음)
                 await loadCategoryNameMapping(getCurrentGroupId());
