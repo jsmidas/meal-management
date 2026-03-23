@@ -401,11 +401,14 @@ function updateAllSlotDropdowns() {
 }
 
 // 슬롯 드롭다운 옵션 생성 (display_name을 value로 사용)
-function buildSlotOptions(selectedValue, categoryId = null) {
-    // 카테고리 ID가 주어지면 해당 캐시 사용, 아니면 전역 categorySlots 사용
+function buildSlotOptions(selectedValue, categoryId = null, categoryName = null) {
+    // 카테고리 ID/이름으로 캐시 조회, 없으면 전역 categorySlots
     let slots = categorySlots;
-    if (categoryId) {
-        // 숫자/문자열 키 모두 확인, 카테고리 이름으로도 조회
+
+    // categoryName이 직접 주어진 경우
+    if (categoryName && categorySlotsCache[categoryName]) {
+        slots = categorySlotsCache[categoryName];
+    } else if (categoryId) {
         const catName = Object.keys(categoryNameToIdMap).find(
             name => categoryNameToIdMap[name] == categoryId
         );
@@ -413,6 +416,12 @@ function buildSlotOptions(selectedValue, categoryId = null) {
                 categorySlotsCache[String(categoryId)] ||
                 (catName ? categorySlotsCache[catName] : null) ||
                 categorySlots;
+    }
+
+    // ★ 여전히 비어있으면 캐시의 첫 번째 항목 사용
+    if ((!slots || slots.length === 0) && Object.keys(categorySlotsCache).length > 0) {
+        const firstKey = Object.keys(categorySlotsCache)[0];
+        slots = categorySlotsCache[firstKey] || [];
     }
 
     if (!slots || slots.length === 0) {
@@ -941,10 +950,10 @@ function updateTabSlotDropdowns(tabIndex) {
     // 탭의 카테고리 ID 가져오기
     const categoryName = businessTypes[tabIndex];
     const categoryId = categoryNameToIdMap[categoryName];
-    const slots = categorySlotsCache[categoryId] || [];
+    const slots = categorySlotsCache[categoryId] || categorySlotsCache[categoryName] || [];
 
     const selects = table.querySelectorAll('.menu-name-select');
-    console.log(`🔄 탭 ${tabIndex} (${categoryName}) 드롭다운 업데이트: ${selects.length}개, 슬롯: ${slots.length}개`);
+    console.log(`🔄 탭 ${tabIndex} (${categoryName}) 드롭다운 업데이트: ${selects.length}개, 슬롯: ${slots.length}개, catId=${categoryId}`);
 
     if (selects.length === 0) {
         console.log(`⚠️ 탭 ${tabIndex}에 드롭다운이 없음`);
@@ -953,7 +962,7 @@ function updateTabSlotDropdowns(tabIndex) {
 
     selects.forEach(select => {
         const currentValue = select.value;
-        const newOptions = buildSlotOptions(currentValue, categoryId);
+        const newOptions = buildSlotOptions(currentValue, categoryId, categoryName);
         select.innerHTML = newOptions;
         if (currentValue) {
             select.value = currentValue;
@@ -1146,7 +1155,7 @@ function createMenuSection(tabIndex, groupIndex, menuIndex, mealType, menuName) 
     // 슬롯 드롭다운 옵션 생성 (해당 탭의 카테고리 슬롯 사용)
     const categoryName = businessTypes[tabIndex];
     const categoryId = categoryNameToIdMap[categoryName];
-    const slotOptions = buildSlotOptions(menuName, categoryId);
+    const slotOptions = buildSlotOptions(menuName, categoryId, categoryName);
 
     // ★ meal_type을 슬롯 마스터 데이터에서 자동 결정
     const resolvedMealType = menuName ? getMealTypeForSlot(menuName, categoryId) : (mealType || '중식');
