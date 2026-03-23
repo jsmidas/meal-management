@@ -445,6 +445,30 @@ async def startup_db_migration():
                 except Exception:
                     conn.rollback()
 
+            # ★ 기본 그룹 시딩 (site_groups가 비어있으면)
+            try:
+                cursor.execute("SELECT COUNT(*) FROM site_groups")
+                if cursor.fetchone()[0] == 0:
+                    cursor.execute("""
+                        INSERT INTO site_groups (group_name, group_code, display_order, is_active)
+                        VALUES ('본사', 'HQ', 0, TRUE)
+                    """)
+                    conn.commit()
+                    print("[DB] 기본 그룹 '본사' 시딩 완료")
+
+                    # 기본 카테고리도 함께 생성
+                    cursor.execute("SELECT id FROM site_groups WHERE group_code = 'HQ' LIMIT 1")
+                    hq_id = cursor.fetchone()[0]
+                    cursor.execute("""
+                        INSERT INTO site_categories (group_id, category_code, category_name, display_order, is_active)
+                        VALUES (%s, 'DEFAULT', '기본', 0, TRUE)
+                    """, (hq_id,))
+                    conn.commit()
+                    print("[DB] 기본 카테고리 '기본' 시딩 완료")
+            except Exception as seed_err:
+                print(f"[DB] 기본 그룹 시딩 스킵: {seed_err}")
+                conn.rollback()
+
             # preprocessing_instructions 테이블 생성 (없으면)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS preprocessing_instructions (

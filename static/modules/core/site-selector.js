@@ -710,9 +710,12 @@ const SiteSelector = (function() {
             console.log('[SiteSelector] 사용자 할당 사업장:', assignedSites);
 
             if (assignedSites.length === 0) {
-                // 할당된 사업장 없음 - admin이면 전체, 아니면 선택 대기
-                if (userInfo.role === 'admin' || userInfo.role === 'operator') {
-                    console.log('[SiteSelector] 관리자/운영자 - 전체 사업장 접근 가능');
+                // 할당된 사업장 없음 - admin이면 첫 그룹 자동 선택
+                if ((userInfo.role === 'admin' || userInfo.role === 'operator') && _structure && _structure.length > 0) {
+                    const firstGroup = _structure[0];
+                    console.log('[SiteSelector] 관리자 - 첫 그룹 자동 선택:', firstGroup.name);
+                    await _selectGroup(firstGroup.id, firstGroup.name, firstGroup);
+                    return true;
                 }
                 return false;
             }
