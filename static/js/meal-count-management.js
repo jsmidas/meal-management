@@ -3350,14 +3350,19 @@ async function addNewSiteOneStop() {
 
             // ★★★ 캐시 통합 갱신 (API에서 날짜/요일 필터링된 데이터 가져오기) ★★★
             const groupId = getCurrentGroupId();
-            await refreshSiteStructureCache(groupId);
-            refreshAllMealTypeBadges();  // ★ meal_type 배지 실시간 갱신
-            console.log(`✅ 캐시 갱신 완료 (날짜/요일 필터 적용됨)`);
+            try {
+                await refreshSiteStructureCache(groupId);
+                refreshAllMealTypeBadges();
+                console.log(`✅ 캐시 갱신 완료 (날짜/요일 필터 적용됨)`);
+            } catch (cacheErr) {
+                console.warn('⚠️ 캐시 갱신 실패 (무시):', cacheErr);
+            }
 
             // datalist 새로고침 (사업장 관리 모달용)
-            await loadSlotsForSiteManagement();
+            try { await loadSlotsForSiteManagement(); } catch(e) { console.warn('슬롯 로드 실패:', e); }
 
             // 사업장 관리 모달 목록 새로고침
+            console.log('🔄 loadMealCountSites 호출');
             await loadMealCountSites();
 
             // ★★★ 식수입력 UI 갱신 ★★★
@@ -3396,11 +3401,13 @@ async function addNewSiteOneStop() {
 
 async function loadMealCountSites() {
     const container = document.getElementById('siteList');
+    if (!container) { console.error('siteList 컨테이너 없음'); return; }
     container.innerHTML = '<div style="text-align: center; padding: 30px; color: #999;"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>';
 
     try {
         const groupId = getCurrentGroupId();
         const groupName = getCurrentGroupName();
+        console.log(`🔍 loadMealCountSites: groupId=${groupId}, groupName=${groupName}`);
 
         // ★★★ 슬롯과 고객사 둘 다 조회 (빈 슬롯도 표시하기 위해) ★★★
         let [clientsResponse, slotsResponse] = await Promise.all([
