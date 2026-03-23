@@ -1739,11 +1739,36 @@ async function saveFoodCountData() {
 
 // ★ 구조 저장 (현재 화면 구조를 선택된 템플릿의 해당 요일 타입에 저장)
 async function saveStructureToTemplate() {
-    const selectedTemplateId = document.getElementById('mealTemplateSelect')?.value;
+    let selectedTemplateId = document.getElementById('mealTemplateSelect')?.value;
 
+    // ★ 템플릿이 없으면 기본 템플릿 자동 생성
     if (!selectedTemplateId) {
-        showToast('⚠️ 먼저 템플릿을 선택해주세요.', 'warning', 3000);
-        return;
+        try {
+            const res = await fetch('/api/meal-templates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    template_name: '기본 템플릿',
+                    description: '자동 생성된 기본 템플릿',
+                    template_data: {}
+                })
+            });
+            const result = await res.json();
+            if (result.success && result.id) {
+                selectedTemplateId = result.id;
+                mealTemplates.push({ id: result.id, template_name: '기본 템플릿', template_data: {} });
+                updateMealTemplateSelect();
+                const select = document.getElementById('mealTemplateSelect');
+                if (select) select.value = selectedTemplateId;
+                showToast('📋 기본 템플릿이 자동 생성되었습니다.', 'info', 2000);
+            } else {
+                showToast('❌ 템플릿 생성 실패: ' + (result.error || ''), 'error', 3000);
+                return;
+            }
+        } catch (e) {
+            showToast('❌ 템플릿 생성 오류', 'error', 3000);
+            return;
+        }
     }
 
     const selectedTemplate = mealTemplates.find(t => t.id == selectedTemplateId);
