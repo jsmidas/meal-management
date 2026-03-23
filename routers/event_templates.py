@@ -14,24 +14,59 @@ def init_event_tables():
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
-            # event_templates 테이블에 새 컬럼 추가
+            # event_categories 테이블 생성
             cursor.execute("""
-                ALTER TABLE event_templates
-                ADD COLUMN IF NOT EXISTS total_ingredient_cost DECIMAL(12, 2) DEFAULT 0
-            """)
-            cursor.execute("""
-                ALTER TABLE event_templates
-                ADD COLUMN IF NOT EXISTS ingredient_cost_ratio DECIMAL(5, 2) DEFAULT 0
+                CREATE TABLE IF NOT EXISTS event_categories (
+                    id SERIAL PRIMARY KEY,
+                    code VARCHAR(50) UNIQUE NOT NULL,
+                    name VARCHAR(200) NOT NULL,
+                    description TEXT,
+                    is_system BOOLEAN DEFAULT FALSE,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    sort_order INTEGER DEFAULT 0,
+                    created_by INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
             """)
 
-            # event_categories 테이블에 새 컬럼 추가
+            # event_templates 테이블 생성
             cursor.execute("""
-                ALTER TABLE event_categories
-                ADD COLUMN IF NOT EXISTS is_system BOOLEAN DEFAULT FALSE
+                CREATE TABLE IF NOT EXISTS event_templates (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(200) NOT NULL,
+                    category VARCHAR(50),
+                    category_name VARCHAR(200),
+                    price_tier VARCHAR(50),
+                    selling_price DECIMAL(12, 2) DEFAULT 0,
+                    base_serving INTEGER DEFAULT 1,
+                    description TEXT,
+                    notes TEXT,
+                    tags TEXT,
+                    is_shared BOOLEAN DEFAULT FALSE,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    total_ingredient_cost DECIMAL(12, 2) DEFAULT 0,
+                    ingredient_cost_ratio DECIMAL(5, 2) DEFAULT 0,
+                    ingredient_cost_per_person DECIMAL(12, 2) DEFAULT 0,
+                    created_by INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
             """)
+
+            # event_template_menus 테이블 생성
             cursor.execute("""
-                ALTER TABLE event_categories
-                ADD COLUMN IF NOT EXISTS created_by INTEGER
+                CREATE TABLE IF NOT EXISTS event_template_menus (
+                    id SERIAL PRIMARY KEY,
+                    template_id INTEGER NOT NULL REFERENCES event_templates(id) ON DELETE CASCADE,
+                    menu_id INTEGER,
+                    menu_name VARCHAR(200),
+                    quantity DECIMAL(10, 2) DEFAULT 1,
+                    unit VARCHAR(50),
+                    unit_price DECIMAL(12, 2) DEFAULT 0,
+                    notes TEXT,
+                    sort_order INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
             """)
 
             # 기본 카테고리 is_system=true로 업데이트
@@ -68,6 +103,26 @@ def init_event_tables():
             cursor.execute("""
                 ALTER TABLE event_template_menu_ingredients
                 ADD COLUMN IF NOT EXISTS base_quantity DECIMAL(10, 2) DEFAULT 0
+            """)
+
+            # 누락 컬럼 추가 (기존 테이블인 경우)
+            cursor.execute("ALTER TABLE event_templates ADD COLUMN IF NOT EXISTS ingredient_cost_per_person DECIMAL(12, 2) DEFAULT 0")
+            cursor.execute("ALTER TABLE event_templates ADD COLUMN IF NOT EXISTS total_ingredient_cost DECIMAL(12, 2) DEFAULT 0")
+            cursor.execute("ALTER TABLE event_templates ADD COLUMN IF NOT EXISTS ingredient_cost_ratio DECIMAL(5, 2) DEFAULT 0")
+
+            # event_categories에 sort_order 컬럼 (display_order로 만들어진 경우 대비)
+            cursor.execute("ALTER TABLE event_categories ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0")
+
+            # event_template_images 테이블 생성
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS event_template_images (
+                    id SERIAL PRIMARY KEY,
+                    template_id INTEGER NOT NULL REFERENCES event_templates(id) ON DELETE CASCADE,
+                    image_data TEXT,
+                    image_order INTEGER DEFAULT 0,
+                    caption VARCHAR(200),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
             """)
 
             conn.commit()
@@ -226,11 +281,11 @@ async def search_ingredients_for_event(
                     supplier_name_for_filter = supplier_row[0]
                     supplier_filter = " AND supplier_name = %s"
 
-            # 비활성 업체(is_active = 0) 목록 조회 - 특정 협력업체 필터 없을 때만
+            # 비활성 업체(is_active = false) 목록 조회 - 특정 협력업체 필터 없을 때만
             inactive_filter = ""
             inactive_suppliers = []
             if not supplier_id:
-                cursor.execute("SELECT name FROM suppliers WHERE is_active = 0")
+                cursor.execute("SELECT name FROM suppliers WHERE is_active = false")
                 inactive_suppliers = [row[0] for row in cursor.fetchall()]
                 if inactive_suppliers:
                     placeholders = ','.join(['%s'] * len(inactive_suppliers))

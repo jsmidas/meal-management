@@ -230,8 +230,8 @@ async def get_supplier_sites(supplier_id: int = Query(...)):
                 SELECT DISTINCT bl.id, bl.site_name, bl.site_code
                 FROM customer_supplier_mappings csm
                 JOIN business_locations bl ON csm.customer_id = bl.id
-                WHERE csm.supplier_id = %s AND csm.is_active = 1
-                  AND bl.is_active = 1
+                WHERE csm.supplier_id = %s AND csm.is_active = true
+                  AND bl.is_active = true
                   AND (bl.contract_end_date IS NULL OR bl.contract_end_date > CURRENT_DATE)
                 ORDER BY bl.site_name
             """, (supplier_id,))

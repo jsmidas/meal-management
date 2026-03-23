@@ -181,7 +181,7 @@ async def get_accessible_structure(request: Request):
                         cursor.execute("""
                             SELECT id, site_code, site_name, display_order
                             FROM business_locations
-                            WHERE category_id = %s AND is_active = 1
+                            WHERE category_id = %s AND is_active = true
                               AND (contract_end_date IS NULL OR contract_end_date > CURRENT_DATE)
                             ORDER BY display_order
                         """, (category["id"],))
@@ -189,7 +189,7 @@ async def get_accessible_structure(request: Request):
                         cursor.execute("""
                             SELECT id, site_code, site_name, display_order
                             FROM business_locations
-                            WHERE category_id = %s AND is_active = 1
+                            WHERE category_id = %s AND is_active = true
                               AND (contract_end_date IS NULL OR contract_end_date > CURRENT_DATE)
                             AND id = ANY(%s)
                             ORDER BY display_order
@@ -245,7 +245,7 @@ async def get_accessible_sites(request: Request):
                     FROM business_locations bl
                     LEFT JOIN site_groups sg ON bl.group_id = sg.id
                     LEFT JOIN site_categories sc ON bl.category_id = sc.id
-                    WHERE bl.is_active = 1
+                    WHERE bl.is_active = true
                       AND (bl.contract_end_date IS NULL OR bl.contract_end_date > CURRENT_DATE)
                     ORDER BY sg.display_order, sc.display_order, bl.display_order
                 """)
@@ -259,7 +259,7 @@ async def get_accessible_sites(request: Request):
                     LEFT JOIN site_categories sc ON bl.category_id = sc.id
                     INNER JOIN user_site_access usa ON
                         (usa.site_id = bl.id OR usa.group_id = bl.group_id)
-                    WHERE bl.is_active = 1
+                    WHERE bl.is_active = true
                       AND (bl.contract_end_date IS NULL OR bl.contract_end_date > CURRENT_DATE)
                     AND usa.user_id = %s AND usa.is_active = TRUE
                     ORDER BY sg.display_order, sc.display_order, bl.display_order
@@ -322,7 +322,7 @@ async def get_current_context(request: Request):
                 FROM business_locations bl
                 LEFT JOIN site_groups sg ON bl.group_id = sg.id
                 LEFT JOIN site_categories sc ON bl.category_id = sc.id
-                WHERE bl.is_active = 1
+                WHERE bl.is_active = true
                 ORDER BY sg.display_order, sc.display_order, bl.display_order
                 LIMIT 1
             """)

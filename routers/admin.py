@@ -52,7 +52,7 @@ async def get_dashboard_stats_compat(site_id: Optional[int] = None, group_id: Op
                         SELECT DISTINCT s.name
                         FROM customer_supplier_mappings csm
                         JOIN suppliers s ON csm.supplier_id = s.id
-                        WHERE csm.customer_id = %s AND csm.is_active = 1
+                        WHERE csm.customer_id = %s AND csm.is_active = true
                     """, (site_id,))
                 else:
                     # 그룹에 속한 모든 사업장의 협력업체
@@ -61,7 +61,7 @@ async def get_dashboard_stats_compat(site_id: Optional[int] = None, group_id: Op
                         FROM customer_supplier_mappings csm
                         JOIN suppliers s ON csm.supplier_id = s.id
                         JOIN business_locations bl ON csm.customer_id = bl.id
-                        WHERE bl.group_id = %s AND csm.is_active = 1
+                        WHERE bl.group_id = %s AND csm.is_active = true
                     """, (group_id,))
                 supplier_rows = pg_cursor.fetchall()
                 supplier_names = [row[0] for row in supplier_rows] if supplier_rows else []
@@ -82,7 +82,7 @@ async def get_dashboard_stats_compat(site_id: Optional[int] = None, group_id: Op
             total_recipes = pg_cursor.fetchone()[0]
 
             # 2-1. 사용자 수
-            pg_cursor.execute("SELECT COUNT(*) FROM users WHERE is_active = 1")
+            pg_cursor.execute("SELECT COUNT(*) FROM users WHERE is_active = true")
             total_users = pg_cursor.fetchone()[0]
 
             # 2-2. 사업장 수
@@ -97,12 +97,12 @@ async def get_dashboard_stats_compat(site_id: Optional[int] = None, group_id: Op
             else:
                 pg_cursor.execute("""
                     SELECT COUNT(*) FROM suppliers
-                    WHERE is_active = 1 AND (portal_enabled IS NULL OR portal_enabled = true)
+                    WHERE is_active = true AND (portal_enabled IS NULL OR portal_enabled = true)
                 """)
                 total_suppliers = pg_cursor.fetchone()[0]
                 pg_cursor.execute("""
                     SELECT name FROM suppliers
-                    WHERE is_active = 1 AND (portal_enabled IS NULL OR portal_enabled = true)
+                    WHERE is_active = true AND (portal_enabled IS NULL OR portal_enabled = true)
                     LIMIT 3
                 """)
                 main_suppliers = [row[0] for row in pg_cursor.fetchall()]
@@ -419,7 +419,7 @@ async def get_business_locations(include_ended: int = 0):
                 SELECT csm.customer_id, s.name as supplier_name
                 FROM customer_supplier_mappings csm
                 JOIN suppliers s ON csm.supplier_id = s.id
-                WHERE csm.is_active = 1 OR csm.is_active IS NULL
+                WHERE csm.is_active = true OR csm.is_active IS NULL
                 ORDER BY csm.customer_id, s.name
             """)
             supplier_map = {}
@@ -1817,7 +1817,7 @@ async def validate_supplier_names(request: Request):
             cursor.execute("""
                 SELECT id, name, supplier_code
                 FROM suppliers
-                WHERE is_active = 1
+                WHERE is_active = true
                 ORDER BY name
             """)
             existing_suppliers = [{"id": row[0], "name": row[1], "code": row[2]} for row in cursor.fetchall()]
@@ -2148,7 +2148,7 @@ async def upload_ingredients(
             print(f"[UPLOAD] 업로드 파일의 협력업체: {unique_suppliers}", flush=True)
 
             # 2. 현재 suppliers 테이블에 등록된 업체 조회
-            cursor.execute("SELECT name FROM suppliers WHERE is_active = 1")
+            cursor.execute("SELECT name FROM suppliers WHERE is_active = true")
             registered_suppliers = set(row[0] for row in cursor.fetchall())
             print(f"[UPLOAD] 등록된 협력업체: {registered_suppliers}", flush=True)
 

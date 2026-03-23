@@ -79,7 +79,7 @@ async def get_users():
                     SELECT id, username, role, contact_info, department, is_active, created_at, full_name,
                            operator, semi_operator, managed_site, managed_groups, managed_categories, permissions
                     FROM users
-                    WHERE is_active = 1 OR is_active IS NULL
+                    WHERE is_active = true OR is_active IS NULL
                     ORDER BY id DESC
                 """)
                 has_new_columns = True
@@ -90,7 +90,7 @@ async def get_users():
                     SELECT id, username, role, contact_info, department, is_active, created_at, full_name,
                            operator, semi_operator, managed_site
                     FROM users
-                    WHERE is_active = 1 OR is_active IS NULL
+                    WHERE is_active = true OR is_active IS NULL
                     ORDER BY id DESC
                 """)
                 has_new_columns = False
@@ -368,7 +368,7 @@ async def delete_user(user_id: int):
 
             pg_cursor.execute("""
                 UPDATE users
-                SET is_active = 0, updated_at = CURRENT_TIMESTAMP
+                SET is_active = false, updated_at = CURRENT_TIMESTAMP
                 WHERE id = %s
             """, (user_id,))
 

@@ -141,6 +141,8 @@ async def startup_db_migration():
                     group_id INTEGER REFERENCES site_groups(id),
                     category_code VARCHAR(50),
                     category_name VARCHAR(200) NOT NULL,
+                    meal_types JSONB DEFAULT '["조식", "중식", "석식"]',
+                    meal_items JSONB DEFAULT '["일반"]',
                     display_order INTEGER DEFAULT 0,
                     is_active BOOLEAN DEFAULT TRUE
                 );
@@ -282,6 +284,49 @@ async def startup_db_migration():
                 END $$;
             """)
 
+            # meal_counts 테이블에 work_date 컬럼 추가 (meal_counts.py 라우터에서 사용)
+            cursor.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'meal_counts' AND column_name = 'work_date'
+                    ) THEN
+                        ALTER TABLE meal_counts ADD COLUMN work_date DATE;
+                    END IF;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'meal_counts' AND column_name = 'business_type'
+                    ) THEN
+                        ALTER TABLE meal_counts ADD COLUMN business_type VARCHAR(50);
+                    END IF;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'meal_counts' AND column_name = 'menu_name'
+                    ) THEN
+                        ALTER TABLE meal_counts ADD COLUMN menu_name VARCHAR(100);
+                    END IF;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'meal_counts' AND column_name = 'matching_name'
+                    ) THEN
+                        ALTER TABLE meal_counts ADD COLUMN matching_name VARCHAR(100);
+                    END IF;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'meal_counts' AND column_name = 'site_name'
+                    ) THEN
+                        ALTER TABLE meal_counts ADD COLUMN site_name VARCHAR(100);
+                    END IF;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'meal_counts' AND column_name = 'meal_count'
+                    ) THEN
+                        ALTER TABLE meal_counts ADD COLUMN meal_count INTEGER DEFAULT 0;
+                    END IF;
+                END $$;
+            """)
+
             # users 테이블에 full_name 컬럼 추가 (없으면)
             cursor.execute("""
                 DO $$
@@ -333,7 +378,10 @@ async def startup_db_migration():
             cursor.execute("""
                 DO $$
                 BEGIN
-                    IF NOT EXISTS (
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.tables
+                        WHERE table_name = 'preprocessing_yields'
+                    ) AND NOT EXISTS (
                         SELECT 1 FROM information_schema.columns
                         WHERE table_name = 'preprocessing_yields' AND column_name = 'cut_type'
                     ) THEN
@@ -576,6 +624,151 @@ async def startup_db_migration():
                     END IF;
                 END $$;
             """)
+
+            # ★ 식자재 단가 이력: ingredient_prices 테이블
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS ingredient_prices (
+                    id SERIAL PRIMARY KEY,
+                    ingredient_id INTEGER NOT NULL REFERENCES ingredients(id),
+                    price NUMERIC(12,2),
+                    unit_price NUMERIC(12,4),
+                    effective_from DATE NOT NULL,
+                    effective_to DATE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW(),
+                    UNIQUE(ingredient_id, effective_from)
+                )
+            """)
+            print("[DB] ingredient_prices 테이블 확인/생성 완료")
+
+            # ★ 창고 관리: warehouses 테이블
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS warehouses (
+                    id SERIAL PRIMARY KEY,
+                    site_id INTEGER,
+                    name VARCHAR(200) NOT NULL,
+                    code VARCHAR(50),
+                    address TEXT,
+                    contact_name VARCHAR(100),
+                    contact_phone VARCHAR(50),
+                    is_default BOOLEAN DEFAULT FALSE,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+            print("[DB] warehouses 테이블 확인/생성 완료")
+
+            # ★ 사업장 관리: business_locations 테이블
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS business_locations (
+                    id SERIAL PRIMARY KEY,
+                    site_code VARCHAR(50),
+                    site_name VARCHAR(200) NOT NULL,
+                    site_type VARCHAR(50) DEFAULT '급식업체',
+                    business_category VARCHAR(50) DEFAULT 'management',
+                    group_id INTEGER,
+                    category_id INTEGER,
+                    region VARCHAR(100),
+                    address TEXT,
+                    phone VARCHAR(50),
+                    manager_name VARCHAR(100),
+                    manager_phone VARCHAR(50),
+                    abbreviation VARCHAR(20),
+                    has_categories BOOLEAN DEFAULT FALSE,
+                    display_order INTEGER DEFAULT 0,
+                    contract_end_date DATE,
+                    is_active INTEGER DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+            print("[DB] business_locations 테이블 확인/생성 완료")
+
+            # orders 테이블에 누락 컬럼 추가
+            for col_name, col_def in [
+                ('warehouse_id', 'INTEGER'),
+                ('total_items', 'INTEGER DEFAULT 0'),
+                ('created_by', 'INTEGER'),
+                ('confirmed_by', 'INTEGER'),
+                ('confirmed_at', 'TIMESTAMP'),
+                ('locked_at', 'TIMESTAMP'),
+                ('updated_at', 'TIMESTAMP DEFAULT NOW()'),
+                ('expected_delivery_date', 'DATE'),
+                ('parent_order_id', 'INTEGER'),
+                ('meal_counts_snapshot', 'JSONB'),
+                ('snapshot_created_at', 'TIMESTAMP'),
+            ]:
+                cursor.execute(f"""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns
+                            WHERE table_name = 'orders' AND column_name = '{col_name}'
+                        ) THEN
+                            ALTER TABLE orders ADD COLUMN {col_name} {col_def};
+                        END IF;
+                    END $$;
+                """)
+
+            # site_categories 테이블에 누락 컬럼 추가
+            cursor.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'site_categories' AND column_name = 'meal_types'
+                    ) THEN
+                        ALTER TABLE site_categories ADD COLUMN meal_types JSONB DEFAULT '["조식", "중식", "석식"]';
+                    END IF;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'site_categories' AND column_name = 'meal_items'
+                    ) THEN
+                        ALTER TABLE site_categories ADD COLUMN meal_items JSONB DEFAULT '["일반"]';
+                    END IF;
+                END $$;
+            """)
+            print("[DB] site_categories 누락 컬럼 추가 완료")
+
+            # site_groups 테이블에 group_code 컬럼 추가
+            cursor.execute("ALTER TABLE site_groups ADD COLUMN IF NOT EXISTS group_code VARCHAR(50)")
+
+            # ingredients 테이블에 purchase_price 컬럼 추가
+            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS purchase_price FLOAT DEFAULT 0")
+            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS ingredient_name VARCHAR(200)")
+            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS selling_price FLOAT DEFAULT 0")
+            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS posting_status VARCHAR(10) DEFAULT '유'")
+            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS origin VARCHAR(100)")
+            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS sub_category VARCHAR(100)")
+            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS tax_type VARCHAR(20)")
+            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS delivery_days VARCHAR(50)")
+            # customer_supplier_mappings 테이블 생성
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS customer_supplier_mappings (
+                    id SERIAL PRIMARY KEY,
+                    customer_id INTEGER NOT NULL,
+                    supplier_id INTEGER NOT NULL,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    updated_at TIMESTAMP DEFAULT NOW()
+                )
+            """)
+            print("[DB] site_groups, ingredients, customer_supplier_mappings 누락 컬럼/테이블 추가 완료")
+
+            # events 테이블에 site_id 컬럼 추가
+            cursor.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'events' AND column_name = 'site_id'
+                    ) THEN
+                        ALTER TABLE events ADD COLUMN site_id INTEGER;
+                    END IF;
+                END $$;
+            """)
+            print("[DB] events 누락 컬럼 추가 완료")
 
             conn.commit()
             cursor.close()
@@ -1655,6 +1848,7 @@ def ensure_events_table():
                     event_date DATE NOT NULL,
                     event_type VARCHAR(50) NOT NULL,
                     status VARCHAR(20) DEFAULT 'estimate',
+                    site_id INTEGER,
                     client_name VARCHAR(200),
                     contact_person VARCHAR(100),
                     phone VARCHAR(50),

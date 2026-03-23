@@ -1154,7 +1154,7 @@ async def get_structure_tree(refresh: Optional[int] = None):
             cursor.execute("""
                 SELECT id, site_code, site_name, category_id, group_id, display_order, is_active
                 FROM business_locations
-                WHERE is_active = 1
+                WHERE is_active = true
                   AND (contract_end_date IS NULL OR contract_end_date > CURRENT_DATE)
                 ORDER BY display_order
             """)
@@ -1563,7 +1563,7 @@ async def get_available_sites_for_assignment():
                 FROM business_locations bl
                 LEFT JOIN site_groups sg ON bl.group_id = sg.id
                 LEFT JOIN site_categories sc ON bl.category_id = sc.id
-                WHERE bl.is_active = 1
+                WHERE bl.is_active = true
                   AND (sg.group_code IS NULL OR sg.group_code != 'Meal')
                   AND (bl.contract_end_date IS NULL OR bl.contract_end_date > CURRENT_DATE)
                 ORDER BY sg.display_order, sc.display_order, bl.site_name

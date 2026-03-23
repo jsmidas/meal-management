@@ -935,7 +935,7 @@ async def calculate_order(request: Request):
             # 🚫 비활성 협력업체 조회 (거래중단 업체)
             inactive_suppliers = set()
             try:
-                cursor.execute("SELECT name FROM suppliers WHERE is_active = 0")
+                cursor.execute("SELECT name FROM suppliers WHERE is_active = false")
                 inactive_suppliers = set(row[0] for row in cursor.fetchall())
                 if inactive_suppliers:
                     print(f"[DEBUG] 비활성 협력업체 {len(inactive_suppliers)}개: {list(inactive_suppliers)[:5]}...")

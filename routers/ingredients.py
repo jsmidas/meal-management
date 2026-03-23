@@ -29,7 +29,7 @@ def get_inactive_suppliers():
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT name FROM suppliers WHERE is_active = 0")
+            cursor.execute("SELECT name FROM suppliers WHERE is_active = false")
             result = [row[0] for row in cursor.fetchall()]
             cursor.close()
             _inactive_suppliers_cache[cache_key] = result
@@ -294,7 +294,7 @@ async def get_admin_ingredients_enhanced(
                 SELECT DISTINCT s.name
                 FROM customer_supplier_mappings csm
                 JOIN suppliers s ON csm.supplier_id = s.id
-                WHERE csm.customer_id = %s AND csm.is_active = 1
+                WHERE csm.customer_id = %s AND csm.is_active = true
             """, (site_id,))
             supplier_rows = cursor.fetchall()
             if supplier_rows:

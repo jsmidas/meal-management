@@ -66,3 +66,23 @@ body.mode-simple .suffix-column,
 body.mode-simple [data-field="suffix"] {
     display: none !important;
 }
+
+/* === 레이아웃 보정: 카테고리 toolbar 숨김 시 간격 조정 === */
+body.mode-simple .workspace > .category-toolbar + *,
+body.mode-simple .main-content > .category-toolbar + * {
+    margin-top: 0 !important;
+}
+
+/* === 발주 관리: 카테고리 관련 컬럼 숨김 === */
+body.mode-simple .category-column,
+body.mode-simple [data-field="category"],
+body.mode-simple th.category-header {
+    display: none !important;
+}
+
+/* === 테이블 suffix 컬럼 숨김 시 너비 자동 조정 === */
+body.mode-simple table .suffix-column {
+    width: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}

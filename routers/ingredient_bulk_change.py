@@ -478,7 +478,7 @@ async def search_ingredients_used_in_recipes(
                     FROM customer_supplier_mappings csm
                     JOIN suppliers s ON csm.supplier_id = s.id
                     JOIN business_locations bl ON csm.customer_id = bl.id
-                    WHERE bl.group_id = %s AND csm.is_active = 1
+                    WHERE bl.group_id = %s AND csm.is_active = true
                 """, (group_id,))
                 supplier_names = [row[0] for row in cursor.fetchall()]
                 if supplier_names:
@@ -578,14 +578,14 @@ async def search_ingredients_for_replace(
                     FROM customer_supplier_mappings csm
                     JOIN suppliers s ON csm.supplier_id = s.id
                     JOIN business_locations bl ON csm.customer_id = bl.id
-                    WHERE bl.group_id = %s AND csm.is_active = 1
+                    WHERE bl.group_id = %s AND csm.is_active = true
                 """, (group_id,))
                 supplier_names = [row[0] for row in cursor.fetchall()]
                 if supplier_names:
                     placeholders = ','.join(['%s'] * len(supplier_names))
                     supplier_filter = f" AND i.supplier_name IN ({placeholders})"
 
-            # 활성화된 공급업체의 식자재만 검색 (suppliers.is_active = 1)
+            # 활성화된 공급업체의 식자재만 검색 (suppliers.is_active = true)
             # 다함직구매 우선, 그 다음 단위당 단가 낮은 순
             query = f"""
                 SELECT
@@ -600,7 +600,7 @@ async def search_ingredients_for_replace(
                 LEFT JOIN suppliers s ON i.supplier_name = s.name
                 WHERE (i.ingredient_name ILIKE %s OR i.ingredient_code ILIKE %s)
                   AND i.posting_status IN ('유', '판매중', '무')
-                  AND (s.is_active = 1 OR s.is_active IS NULL)
+                  AND (s.is_active = true OR s.is_active IS NULL)
                   {supplier_filter}
             """
             params = [f'%{keyword}%', f'%{keyword}%'] + supplier_names

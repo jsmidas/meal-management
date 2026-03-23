@@ -266,16 +266,21 @@ def deactivate_expired_ingredients():
                 conn.rollback()  # 트랜잭션 롤백 후 계속 진행
 
             # ingredient_prices 테이블 기준: 모든 이력의 effective_to가 오늘 이전인 식자재
-            cursor.execute("""
-                UPDATE ingredients SET posting_status = '무', updated_at = NOW()
-                WHERE id IN (
-                    SELECT ingredient_id FROM ingredient_prices
-                    GROUP BY ingredient_id
-                    HAVING MAX(COALESCE(effective_to, '9999-12-31'::date)) < CURRENT_DATE
-                )
-                AND posting_status != '무'
-            """)
-            count_prices = cursor.rowcount
+            try:
+                cursor.execute("""
+                    UPDATE ingredients SET posting_status = '무', updated_at = NOW()
+                    WHERE id IN (
+                        SELECT ingredient_id FROM ingredient_prices
+                        GROUP BY ingredient_id
+                        HAVING MAX(COALESCE(effective_to, '9999-12-31'::date)) < CURRENT_DATE
+                    )
+                    AND posting_status != '무'
+                """)
+                count_prices = cursor.rowcount
+            except Exception as e:
+                print(f"[만료처리] ingredient_prices 테이블 없음 (무시): {e}")
+                conn.rollback()
+                count_prices = 0
 
             conn.commit()
             cursor.close()

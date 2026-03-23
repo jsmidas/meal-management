@@ -906,7 +906,7 @@ async def get_recipes(site_id: Optional[int] = None):
                 cursor.execute("""
                     SELECT s.name FROM customer_supplier_mappings csm
                     JOIN suppliers s ON csm.supplier_id = s.id
-                    WHERE csm.customer_id = %s AND csm.is_active = 1
+                    WHERE csm.customer_id = %s AND csm.is_active = true
                 """, (site_id,))
                 allowed_suppliers = set(row[0] for row in cursor.fetchall())
                 print(f"[발주가능] 사업장 {site_id}의 허용 협력업체: {len(allowed_suppliers)}개")
@@ -924,8 +924,8 @@ async def get_recipes(site_id: Optional[int] = None):
                 supplier_agg AS (
                     SELECT mri.recipe_id,
                            string_agg(DISTINCT mri.supplier_name, ', ') FILTER (WHERE mri.supplier_name IS NOT NULL) as all_supplier_names,
-                           string_agg(DISTINCT s.name, ', ') FILTER (WHERE s.is_active = 0) as inactive_supplier_names,
-                           bool_or(s.is_active = 0) as has_inactive_supplier
+                           string_agg(DISTINCT s.name, ', ') FILTER (WHERE s.is_active = false) as inactive_supplier_names,
+                           bool_or(s.is_active = false) as has_inactive_supplier
                     FROM menu_recipe_ingredients mri
                     LEFT JOIN suppliers s ON mri.supplier_name = s.name
                     GROUP BY mri.recipe_id

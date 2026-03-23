@@ -244,7 +244,7 @@ async def get_suppliers_stats():
 
             cursor.execute("""
                 SELECT COUNT(*) FROM suppliers
-                WHERE is_active = 1 AND (portal_enabled IS NULL OR portal_enabled = true)
+                WHERE is_active = true AND (portal_enabled IS NULL OR portal_enabled = true)
             """)
             active_registered = cursor.fetchone()[0] or 0
 
@@ -883,8 +883,7 @@ async def deactivate_supplier(supplier_id: int):
             has_is_active = cursor.fetchone() is not None
 
             if has_is_active:
-                # INTEGER 타입일 수 있으므로 0 사용
-                cursor.execute("UPDATE suppliers SET is_active = 0 WHERE id = %s", (supplier_id,))
+                cursor.execute("UPDATE suppliers SET is_active = false WHERE id = %s", (supplier_id,))
                 conn.commit()
                 clear_inactive_suppliers_cache()
                 return {
@@ -923,7 +922,7 @@ async def activate_supplier(supplier_id: int):
 
             if has_is_active:
                 # INTEGER 타입일 수 있으므로 1 사용
-                cursor.execute("UPDATE suppliers SET is_active = 1 WHERE id = %s", (supplier_id,))
+                cursor.execute("UPDATE suppliers SET is_active = true WHERE id = %s", (supplier_id,))
                 conn.commit()
                 clear_inactive_suppliers_cache()
                 return {
