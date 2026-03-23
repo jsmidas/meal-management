@@ -1551,7 +1551,10 @@ function updateSummaryCards() {
     });
 
     // 총 식수 업데이트
-    document.getElementById('total-meal-count').textContent = totalMealCount.toLocaleString();
+    const totalEl = document.getElementById('total-meal-count');
+    if (totalEl) totalEl.textContent = totalMealCount.toLocaleString();
+    const totalInlineEl = document.getElementById('total-meal-count-inline');
+    if (totalInlineEl) totalInlineEl.textContent = totalMealCount.toLocaleString();
 
     // 카테고리별 카드 동적 생성
     const categoryCardsContainer = document.getElementById('category-summary-cards');

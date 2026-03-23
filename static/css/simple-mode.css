@@ -67,6 +67,11 @@ body.mode-simple [data-field="suffix"] {
     display: none !important;
 }
 
+/* === 식수 관리: 상단 요약 카드 숨김 (탭 옆으로 통합) === */
+body.mode-simple .summary-cards.mode-advanced-only {
+    display: none !important;
+}
+
 /* === 레이아웃 보정: 카테고리 toolbar 숨김 시 간격 조정 === */
 body.mode-simple .workspace > .category-toolbar + *,
 body.mode-simple .main-content > .category-toolbar + * {

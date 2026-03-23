@@ -112,8 +112,8 @@
             </div>
 
             <div class="main-container">
-                <!-- 요약 정보 -->
-                <div class="summary-cards">
+                <!-- 요약 정보 (simple 모드에서는 탭 영역으로 통합) -->
+                <div class="summary-cards mode-advanced-only">
                     <div class="summary-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                         <h3>전체</h3>
                         <div class="number" id="total-meal-count">0</div>
@@ -200,19 +200,16 @@
 
                 <!-- 식시별 탭 및 요약 (동적 생성) -->
                 <div class="business-tabs-container">
-                    <div class="business-tabs" id="businessTabs">
+                    <div class="business-tabs" id="businessTabs" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <!-- 탭이 동적으로 생성됩니다 -->
                     </div>
-                    <!-- 식수 현황 요약 -->
-                    <div class="summary-section"
-                        style="margin: 0; padding: 15px; border-radius: 8px; min-width: 300px; background: #f8f9fa;">
-                        <div class="summary-header"
-                            style="margin-bottom: 10px; font-size: 14px; font-weight: bold; color: #667eea;">
-                            <i class="fas fa-chart-bar"></i> 식수 현황 요약
+                    <!-- 전체 식수 배지 (탭 옆에 표시) -->
+                    <div id="inline-total-badge" style="display: flex; align-items: center; gap: 12px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 18px; border-radius: 12px; text-align: center; min-width: 70px;">
+                            <div style="font-size: 22px; font-weight: 800;" id="total-meal-count-inline">0</div>
+                            <div style="font-size: 10px; opacity: 0.8;">전체</div>
                         </div>
-                        <div class="summary-stats" id="summaryStats"
-                            style="display: flex; gap: 10px; flex-wrap: wrap; min-height: 50px;">
-                            <!-- 통계 정보가 여기에 동적으로 표시됩니다 -->
+                        <div class="summary-stats" id="summaryStats" style="display: flex; gap: 8px; flex-wrap: wrap;">
                         </div>
                     </div>
                 </div>
@@ -821,7 +818,7 @@
 
     <!-- 사업장 선택기 -->
     <script src="/static/modules/core/site-selector.js?v=20260324a" defer></script>
-    <script src="/static/js/meal-count-management.js?v=20260324h" defer></script>
+    <script src="/static/js/meal-count-management.js?v=20260324i" defer></script>
 </body>
 
 </html>
