@@ -3403,13 +3403,31 @@ async function loadMealCountSites() {
         const groupName = getCurrentGroupName();
 
         // ★★★ 슬롯과 고객사 둘 다 조회 (빈 슬롯도 표시하기 위해) ★★★
-        const [clientsResponse, slotsResponse] = await Promise.all([
+        let [clientsResponse, slotsResponse] = await Promise.all([
             fetch(`/api/v2/clients?group_id=${groupId}&include_inactive=true`),
             fetch(`/api/v2/slots?group_id=${groupId}`)
         ]);
 
-        const clientsResult = await clientsResponse.json();
-        const slotsResult = await slotsResponse.json();
+        let clientsResult = await clientsResponse.json();
+        let slotsResult = await slotsResponse.json();
+
+        // ★ group_id 필터로 결과가 없으면 필터 없이 재시도
+        const hasData = (clientsResult.success && clientsResult.data && clientsResult.data.length > 0) ||
+                        (slotsResult.success && slotsResult.data && slotsResult.data.length > 0);
+        if (!hasData) {
+            console.log('⚠️ group_id 필터로 결과 없음 → 전체 조회 재시도');
+            [clientsResponse, slotsResponse] = await Promise.all([
+                fetch('/api/v2/clients?include_inactive=true'),
+                fetch('/api/v2/slots')
+            ]);
+            clientsResult = await clientsResponse.json();
+            slotsResult = await slotsResponse.json();
+            // 실제 group_id로 기본값 갱신
+            if (clientsResult.success && clientsResult.data && clientsResult.data.length > 0) {
+                window._defaultGroupId = clientsResult.data[0].group_id;
+                window._defaultGroupName = clientsResult.data[0].category_name;
+            }
+        }
 
         // 고객사 데이터 변환
         const sites = (clientsResult.success ? clientsResult.data : []).map(c => ({
