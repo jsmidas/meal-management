@@ -5337,15 +5337,9 @@ function addMissingSlotsFromCache() {
             tabIndex = businessTypes.length;
             businessTypes.push(categoryName);
 
-            // 탭 버튼 추가
-            const tabButtons = document.getElementById('tab-buttons');
-            if (tabButtons) {
-                const tabBtn = document.createElement('button');
-                tabBtn.className = 'tab-button';
-                tabBtn.textContent = categoryName;
-                tabBtn.onclick = () => switchBusinessTab(categoryName, tabIndex);
-                tabButtons.appendChild(tabBtn);
-            }
+            // ★ default 테이블 제거 (중복 방지)
+            const defaultTable = document.getElementById('table-default');
+            if (defaultTable) defaultTable.remove();
 
             // 탭 콘텐츠(테이블) 추가
             const container = document.getElementById('foodCountTables');
