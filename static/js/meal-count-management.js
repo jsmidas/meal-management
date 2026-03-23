@@ -5705,17 +5705,20 @@ async function bulkAssignByDayType(targetDaysOfWeek, dayType) {
 // ========================
 // 페이지 초기화
 // ========================
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     // ★ 그룹에 따른 페이지 타이틀 업데이트는 siteChange 이벤트에서 처리
     // (SiteSelector가 초기화된 후에 실행됨)
 
-    // ★ 기본 그룹 정보 로드 (SiteSelector 실패 시 폴백용)
-    fetch('/api/v2/groups').then(r => r.json()).then(result => {
-        if (result.success && result.data && result.data.length > 0) {
-            window._defaultGroupId = result.data[0].id;
-            window._defaultGroupName = result.data[0].group_name;
+    // ★ 기본 그룹 정보 로드 (SiteSelector 실패 시 폴백용 - 즉시 실행)
+    try {
+        const grpRes = await fetch('/api/v2/groups');
+        const grpData = await grpRes.json();
+        if (grpData.success && grpData.data && grpData.data.length > 0) {
+            window._defaultGroupId = grpData.data[0].id;
+            window._defaultGroupName = grpData.data[0].group_name;
+            console.log(`🏢 기본 그룹 로드: id=${window._defaultGroupId}, name=${window._defaultGroupName}`);
         }
-    }).catch(() => {});
+    } catch(e) { console.warn('기본 그룹 로드 실패:', e); }
 
     updateDateTime();
     setInterval(updateDateTime, 60000);
@@ -5770,9 +5773,9 @@ function clearDirty() {
 function getCurrentSiteId() {
     if (typeof SiteSelector !== 'undefined') {
         const context = SiteSelector.getCurrentContext();
-        return context?.site_id || null;
+        if (context?.site_id) return context.site_id;
     }
-    return null;
+    return window._defaultGroupId || null;
 }
 
 function getCurrentSiteName() {
@@ -5909,7 +5912,7 @@ async function initializePage() {
                 console.log(`🏢 초기 로드: site_id=${siteId}`);
 
                 // ★ 카테고리 매핑 로드 (슬롯은 통합 API에서 받음)
-                await loadCategoryNameMapping(1);
+                await loadCategoryNameMapping(getCurrentGroupId());
 
                 // 통합 API로 모든 데이터 로드 (식수 + 템플릿 + 슬롯)
                 await loadInitData();
