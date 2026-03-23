@@ -426,6 +426,11 @@ async def startup_db_migration():
                 ("business_locations", "display_order", "INTEGER DEFAULT 0"),
                 ("menu_recipes", "created_by", "VARCHAR(100)"),
                 ("site_groups", "group_code", "VARCHAR(50)"),
+                ("suppliers", "portal_enabled", "BOOLEAN DEFAULT TRUE"),
+                ("suppliers", "login_id", "VARCHAR(100)"),
+                ("suppliers", "password_hash", "VARCHAR(255)"),
+                ("suppliers", "supplier_name", "VARCHAR(200)"),
+                ("suppliers", "updated_at", "TIMESTAMP DEFAULT NOW()"),
             ]
             for tbl, col, typ in extra_columns:
                 try:

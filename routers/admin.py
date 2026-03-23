@@ -97,12 +97,12 @@ async def get_dashboard_stats_compat(site_id: Optional[int] = None, group_id: Op
             else:
                 pg_cursor.execute("""
                     SELECT COUNT(*) FROM suppliers
-                    WHERE is_active = true AND (portal_enabled IS NULL OR portal_enabled = true)
+                    WHERE is_active = true
                 """)
                 total_suppliers = pg_cursor.fetchone()[0]
                 pg_cursor.execute("""
                     SELECT name FROM suppliers
-                    WHERE is_active = true AND (portal_enabled IS NULL OR portal_enabled = true)
+                    WHERE is_active = true
                     LIMIT 3
                 """)
                 main_suppliers = [row[0] for row in pg_cursor.fetchall()]
