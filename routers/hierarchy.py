@@ -714,12 +714,26 @@ async def create_client(request: Request):
             if slot_created:
                 message = f"슬롯 '{slot_name}' + 고객사 '{client_name}' 자동 생성 완료"
 
+            # category_id로부터 group_id 조회
+            resp_group_id = None
+            try:
+                cursor2 = conn.cursor()
+                cursor2.execute("SELECT group_id FROM site_categories WHERE id = %s", (category_id,))
+                row = cursor2.fetchone()
+                if row:
+                    resp_group_id = row[0]
+                cursor2.close()
+            except:
+                pass
+
             return {
                 "success": True,
                 "id": client_id,
                 "slot_id": slot_id,
                 "slot_created": slot_created,
                 "slot_name": slot_name,
+                "category_id": category_id,
+                "group_id": resp_group_id,
                 "message": message
             }
     except Exception as e:

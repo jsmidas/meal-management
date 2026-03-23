@@ -3122,8 +3122,19 @@ async function loadSiteManagementCategories() {
     try {
         const groupId = getCurrentGroupId();
         const groupName = getCurrentGroupName();
-        const response = await fetch(`/api/v2/categories?group_id=${groupId}`);
-        const result = await response.json();
+        let response = await fetch(`/api/v2/categories?group_id=${groupId}`);
+        let result = await response.json();
+
+        // ★ group_id로 결과 없으면 전체 조회 재시도
+        if (result.success && (!result.data || result.data.length === 0)) {
+            response = await fetch('/api/v2/categories');
+            result = await response.json();
+            // 실제 group_id로 기본값 갱신
+            if (result.success && result.data && result.data.length > 0) {
+                window._defaultGroupId = result.data[0].group_id;
+                window._defaultGroupName = result.data[0].group_name || result.data[0].category_name;
+            }
+        }
 
         if (result.success && result.data && result.data.length > 0) {
             siteManagementCategories = result.data;
@@ -3315,6 +3326,11 @@ async function addNewSiteOneStop() {
         const result = await response.json();
 
         if (result.success) {
+            // ★ 서버에서 반환된 group_id로 기본값 갱신 (자동 생성된 경우)
+            if (result.group_id) {
+                window._defaultGroupId = result.group_id;
+            }
+
             alert(result.message);
 
             // 입력 필드 초기화
