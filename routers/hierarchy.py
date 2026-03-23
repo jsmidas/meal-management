@@ -877,7 +877,7 @@ async def delete_client(client_id: int):
 
 
 @router.get("/api/v2/categories")
-async def get_categories_v2(group_id: int = None, business_location_id: int = None):
+async def get_categories_v2(group_id: int = None):
     """카테고리 목록 조회"""
     try:
         with get_db_connection() as conn:
@@ -886,12 +886,10 @@ async def get_categories_v2(group_id: int = None, business_location_id: int = No
             query = """
                 SELECT
                     c.id, c.category_code, c.category_name, c.group_id,
-                    c.business_location_id, c.display_order, c.is_active,
-                    g.group_name,
-                    bl.site_name as business_location_name
+                    c.display_order, c.is_active,
+                    g.group_name
                 FROM site_categories c
                 JOIN site_groups g ON g.id = c.group_id
-                LEFT JOIN business_locations bl ON bl.id = c.business_location_id
                 WHERE c.is_active = TRUE
             """
             params = []
@@ -899,10 +897,6 @@ async def get_categories_v2(group_id: int = None, business_location_id: int = No
             if group_id:
                 query += " AND c.group_id = %s"
                 params.append(group_id)
-
-            if business_location_id:
-                query += " AND c.business_location_id = %s"
-                params.append(business_location_id)
 
             query += " ORDER BY c.display_order"
 
@@ -912,9 +906,8 @@ async def get_categories_v2(group_id: int = None, business_location_id: int = No
 
             categories = [{
                 "id": r[0], "category_code": r[1], "category_name": r[2],
-                "group_id": r[3], "business_location_id": r[4],
-                "display_order": r[5], "is_active": r[6],
-                "group_name": r[7], "business_location_name": r[8]
+                "group_id": r[3], "display_order": r[4], "is_active": r[5],
+                "group_name": r[6]
             } for r in rows]
 
             return {"success": True, "data": categories}
@@ -931,7 +924,7 @@ async def create_category(request: Request):
         group_id = data.get('group_id')
         category_name = data.get('category_name', '').strip()
         category_code = data.get('category_code', '')
-        business_location_id = data.get('business_location_id')
+        display_order = data.get('display_order', 0)
 
         if not group_id or not category_name:
             return {"success": False, "error": "그룹과 카테고리명은 필수입니다"}
@@ -946,10 +939,10 @@ async def create_category(request: Request):
                 category_code = f"CAT_{group_id}_{count+1}"
 
             cursor.execute("""
-                INSERT INTO site_categories (group_id, category_code, category_name, business_location_id)
+                INSERT INTO site_categories (group_id, category_code, category_name, display_order)
                 VALUES (%s, %s, %s, %s)
                 RETURNING id
-            """, (group_id, category_code, category_name, business_location_id))
+            """, (group_id, category_code, category_name, display_order))
 
             category_id = cursor.fetchone()[0]
             conn.commit()
