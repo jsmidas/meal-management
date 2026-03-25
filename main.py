@@ -2924,7 +2924,7 @@ async def create_new_site(request: Request):
                 if not meal_group:
                     cursor.execute("""
                         INSERT INTO site_groups (group_code, group_name, display_order, is_active)
-                        VALUES ('Meal', '위탁사업장', 10, TRUE)
+                        VALUES ('Meal', '사업장', 10, TRUE)
                         RETURNING id
                     """)
                     meal_group = cursor.fetchone()
