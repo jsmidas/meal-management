@@ -279,6 +279,12 @@ async def delete_group(group_id: int):
                 cursor.close()
                 return {"success": False, "error": f"이 그룹에 {site_count}개의 사업장이 연결되어 있습니다. 먼저 사업장을 이동하세요."}
 
+            # 하위 카테고리의 슬롯/클라이언트도 CASCADE 삭제
+            cursor.execute("SELECT id FROM site_categories WHERE group_id = %s", (group_id,))
+            cat_ids = [r[0] for r in cursor.fetchall()]
+            if cat_ids:
+                cursor.execute("DELETE FROM site_categories WHERE group_id = %s", (group_id,))
+
             cursor.execute("DELETE FROM site_groups WHERE id = %s", (group_id,))
             conn.commit()
 
@@ -819,7 +825,7 @@ async def create_site(request: Request):
             address = (data.get('address') or '').strip()
             manager_name = (data.get('manager_name') or '').strip()
             manager_phone = (data.get('contact_info') or '').strip()
-            is_active = 1 if data.get('is_active', True) else 0
+            is_active = True if data.get('is_active', True) else False
             group_id = data.get('group_id')
             category_id = data.get('category_id')
 
@@ -1165,7 +1171,7 @@ async def get_structure_tree(refresh: Optional[int] = None):
             cursor.execute("""
                 SELECT id, site_code, site_name, category_id, group_id, display_order, is_active
                 FROM business_locations
-                WHERE is_active = 1
+                WHERE is_active = TRUE
                   AND (contract_end_date IS NULL OR contract_end_date > CURRENT_DATE)
                 ORDER BY display_order
             """)
@@ -1574,7 +1580,7 @@ async def get_available_sites_for_assignment():
                 FROM business_locations bl
                 LEFT JOIN site_groups sg ON bl.group_id = sg.id
                 LEFT JOIN site_categories sc ON bl.category_id = sc.id
-                WHERE bl.is_active = 1
+                WHERE bl.is_active = TRUE
                   AND (sg.group_code IS NULL OR sg.group_code != 'Meal')
                   AND (bl.contract_end_date IS NULL OR bl.contract_end_date > CURRENT_DATE)
                 ORDER BY sg.display_order, sc.display_order, bl.site_name

@@ -3000,6 +3000,299 @@ async def create_new_site(request: Request):
         return {"success": False, "error": str(e)}
 
 
+# ==========================================
+# ★★★ V2 API — 식수관리 슬롯/클라이언트 CRUD ★★★
+# ==========================================
+
+@app.get("/api/v2/categories")
+async def v2_get_categories(group_id: Optional[int] = None, category_id: Optional[int] = None):
+    """카테고리 목록 조회"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            query = "SELECT id, group_id, category_code, category_name, meal_types, meal_items, display_order, is_active FROM site_categories WHERE is_active = TRUE"
+            params = []
+            if group_id:
+                query += " AND group_id = %s"
+                params.append(group_id)
+            if category_id:
+                query += " AND id = %s"
+                params.append(category_id)
+            query += " ORDER BY display_order"
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            cursor.close()
+            data = []
+            for r in rows:
+                data.append({
+                    "id": r[0], "group_id": r[1], "code": r[2], "name": r[3],
+                    "meal_types": r[4] if isinstance(r[4], list) else json.loads(r[4] or '[]'),
+                    "meal_items": r[5] if isinstance(r[5], list) else json.loads(r[5] or '[]'),
+                    "display_order": r[6], "is_active": bool(r[7])
+                })
+            return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/v2/slots")
+async def v2_get_slots(group_id: Optional[int] = None, category_id: Optional[int] = None):
+    """슬롯 목록 조회"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            query = """
+                SELECT cs.id, cs.category_id, cs.slot_code, cs.slot_name, cs.description,
+                       cs.target_cost, cs.selling_price, cs.display_order, cs.is_active,
+                       sc.category_name, cs.meal_type
+                FROM category_slots cs
+                JOIN site_categories sc ON cs.category_id = sc.id
+                WHERE cs.is_active = TRUE
+            """
+            params = []
+            if category_id:
+                query += " AND cs.category_id = %s"
+                params.append(category_id)
+            elif group_id:
+                query += " AND sc.group_id = %s"
+                params.append(group_id)
+            query += " ORDER BY sc.display_order, cs.display_order"
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            cursor.close()
+            data = []
+            for r in rows:
+                data.append({
+                    "id": r[0], "category_id": r[1], "slot_code": r[2], "slot_name": r[3],
+                    "description": r[4], "target_cost": r[5], "selling_price": r[6],
+                    "display_order": r[7], "is_active": bool(r[8]),
+                    "category_name": r[9], "meal_type": r[10] if len(r) > 10 else "중식"
+                })
+            return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/v2/clients")
+async def v2_get_clients(group_id: Optional[int] = None, category_id: Optional[int] = None, include_inactive: bool = False):
+    """클라이언트(사업장) 목록 조회"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            query = """
+                SELECT scl.id, scl.slot_id, scl.client_name, scl.display_order, scl.is_active,
+                       scl.start_date, scl.end_date, scl.operating_days, scl.modified_by,
+                       cs.slot_name, cs.category_id, sc.category_name, cs.meal_type,
+                       scl.operating_schedule, scl.special_dates
+                FROM slot_clients scl
+                JOIN category_slots cs ON scl.slot_id = cs.id
+                JOIN site_categories sc ON cs.category_id = sc.id
+                WHERE 1=1
+            """
+            params = []
+            if not include_inactive:
+                query += " AND scl.is_active = TRUE"
+            if category_id:
+                query += " AND cs.category_id = %s"
+                params.append(category_id)
+            elif group_id:
+                query += " AND sc.group_id = %s"
+                params.append(group_id)
+            query += " ORDER BY sc.display_order, cs.display_order, scl.display_order"
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            cursor.close()
+            data = []
+            for r in rows:
+                operating_days = r[7]
+                if isinstance(operating_days, str):
+                    try: operating_days = json.loads(operating_days)
+                    except: pass
+                operating_schedule = r[13]
+                if isinstance(operating_schedule, str):
+                    try: operating_schedule = json.loads(operating_schedule)
+                    except: operating_schedule = None
+                special_dates = r[14]
+                if isinstance(special_dates, str):
+                    try: special_dates = json.loads(special_dates)
+                    except: special_dates = None
+                data.append({
+                    "id": r[0], "slot_id": r[1], "client_name": r[2], "display_order": r[3],
+                    "is_active": bool(r[4]) if r[4] is not None else True,
+                    "start_date": str(r[5]) if r[5] else None,
+                    "end_date": str(r[6]) if r[6] else None,
+                    "operating_days": operating_days, "modified_by": r[8],
+                    "slot_name": r[9], "category_id": r[10], "category_name": r[11],
+                    "meal_type": r[12] or "중식",
+                    "operating_schedule": operating_schedule,
+                    "special_dates": special_dates
+                })
+            return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/v2/clients")
+async def v2_create_client(request: Request):
+    """클라이언트 추가 (원스탑 또는 기존 슬롯에 추가)"""
+    try:
+        data = json.loads((await request.body()).decode('utf-8'))
+        client_name = normalize_client_name(data.get('client_name', ''))
+        if not client_name:
+            return {"success": False, "error": "사업장명은 필수입니다"}
+
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            slot_id = data.get('slot_id')
+            slot_name = data.get('slot_name')
+            category_id = data.get('category_id')
+            meal_type = data.get('meal_type', '중식')
+
+            # 원스탑: slot_name + category_id → 슬롯 찾거나 생성
+            if slot_name and category_id and not slot_id:
+                cursor.execute("SELECT id FROM category_slots WHERE category_id = %s AND slot_name = %s AND is_active = TRUE", (category_id, slot_name))
+                existing = cursor.fetchone()
+                if existing:
+                    slot_id = existing[0]
+                else:
+                    cursor.execute("""
+                        INSERT INTO category_slots (category_id, slot_name, meal_type, display_order, is_active)
+                        VALUES (%s, %s, %s, 0, TRUE) RETURNING id
+                    """, (category_id, slot_name, meal_type))
+                    slot_id = cursor.fetchone()[0]
+
+            if not slot_id:
+                return {"success": False, "error": "슬롯 정보가 필요합니다 (slot_id 또는 slot_name+category_id)"}
+
+            # 중복 체크
+            cursor.execute("SELECT id FROM slot_clients WHERE slot_id = %s AND client_name = %s AND is_active = TRUE", (slot_id, client_name))
+            if cursor.fetchone():
+                cursor.close()
+                return {"success": False, "error": f"'{client_name}'은(는) 이미 해당 슬롯에 등록된 사업장입니다."}
+
+            display_order = data.get('display_order', 0)
+            start_date = data.get('start_date') or None
+            end_date = data.get('end_date') or None
+            operating_days = data.get('operating_days')
+            if operating_days and isinstance(operating_days, dict):
+                operating_days = json.dumps(operating_days)
+            modified_by = data.get('modified_by', '')
+
+            cursor.execute("""
+                INSERT INTO slot_clients (slot_id, client_name, display_order, is_active, start_date, end_date, operating_days, modified_by)
+                VALUES (%s, %s, %s, TRUE, %s, %s, %s, %s) RETURNING id
+            """, (slot_id, client_name, display_order, start_date, end_date, operating_days, modified_by))
+
+            new_id = cursor.fetchone()[0]
+            conn.commit()
+            cursor.close()
+            return {"success": True, "message": f"'{client_name}' 사업장이 추가되었습니다.", "data": {"id": new_id, "slot_id": slot_id}}
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return {"success": False, "error": str(e)}
+
+
+@app.put("/api/v2/clients/{client_id}")
+async def v2_update_client(client_id: int, request: Request):
+    """클라이언트 수정"""
+    try:
+        data = json.loads((await request.body()).decode('utf-8'))
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            updates = []
+            values = []
+            for field in ['client_name', 'display_order', 'start_date', 'end_date', 'modified_by']:
+                if field in data:
+                    val = data[field]
+                    if field == 'client_name' and val:
+                        val = normalize_client_name(val)
+                    if field in ('start_date', 'end_date') and val == '':
+                        val = None
+                    updates.append(f"{field} = %s")
+                    values.append(val)
+            if 'is_active' in data:
+                updates.append("is_active = %s")
+                values.append(bool(data['is_active']))
+            if 'operating_days' in data:
+                od = data['operating_days']
+                updates.append("operating_days = %s")
+                values.append(json.dumps(od) if isinstance(od, dict) else od)
+            if 'operating_schedule' in data:
+                os_val = data['operating_schedule']
+                updates.append("operating_schedule = %s")
+                values.append(json.dumps(os_val) if isinstance(os_val, (dict, list)) else os_val)
+            if 'special_dates' in data:
+                sd = data['special_dates']
+                updates.append("special_dates = %s")
+                values.append(json.dumps(sd) if isinstance(sd, (dict, list)) else sd)
+
+            if not updates:
+                return {"success": False, "error": "수정할 항목이 없습니다"}
+
+            updates.append("updated_at = NOW()")
+            values.append(client_id)
+            cursor.execute(f"UPDATE slot_clients SET {', '.join(updates)} WHERE id = %s", values)
+            conn.commit()
+            cursor.close()
+            return {"success": True, "message": "사업장이 수정되었습니다."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.delete("/api/v2/clients/{client_id}")
+async def v2_delete_client(client_id: int):
+    """클라이언트 삭제"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM slot_clients WHERE id = %s", (client_id,))
+            conn.commit()
+            cursor.close()
+            return {"success": True, "message": "사업장이 삭제되었습니다."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.put("/api/v2/slots/{slot_id}")
+async def v2_update_slot(slot_id: int, request: Request):
+    """슬롯 수정"""
+    try:
+        data = json.loads((await request.body()).decode('utf-8'))
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            updates = []
+            values = []
+            for field in ['slot_name', 'meal_type', 'description', 'target_cost', 'selling_price', 'display_order', 'modified_by']:
+                if field in data:
+                    updates.append(f"{field} = %s")
+                    values.append(data[field])
+            if not updates:
+                return {"success": False, "error": "수정할 항목이 없습니다"}
+            updates.append("updated_at = NOW()")
+            values.append(slot_id)
+            cursor.execute(f"UPDATE category_slots SET {', '.join(updates)} WHERE id = %s", values)
+            conn.commit()
+            cursor.close()
+            return {"success": True, "message": "슬롯이 수정되었습니다."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.delete("/api/v2/slots/{slot_id}")
+async def v2_delete_slot(slot_id: int):
+    """슬롯 삭제 (CASCADE로 하위 클라이언트도 삭제)"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM category_slots WHERE id = %s", (slot_id,))
+            conn.commit()
+            cursor.close()
+            return {"success": True, "message": "슬롯이 삭제되었습니다."}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 @app.delete("/api/admin/sites/{site_id}")
 async def delete_site(site_id: int):
     """사업장 삭제"""
