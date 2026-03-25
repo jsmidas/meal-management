@@ -2918,11 +2918,16 @@ async def create_new_site(request: Request):
 
             if business_category == 'management':
                 # 급식관리 사업장은 site_categories에 추가 (위탁사업장 그룹)
-                # 위탁사업장 그룹(group_code='Meal') ID 찾기
+                # 위탁사업장 그룹(group_code='Meal') ID 찾기, 없으면 자동 생성
                 cursor.execute("SELECT id FROM site_groups WHERE group_code = 'Meal'")
                 meal_group = cursor.fetchone()
                 if not meal_group:
-                    return {"success": False, "error": "위탁사업장 그룹이 없습니다"}
+                    cursor.execute("""
+                        INSERT INTO site_groups (group_code, group_name, display_order, is_active)
+                        VALUES ('Meal', '위탁사업장', 10, TRUE)
+                        RETURNING id
+                    """)
+                    meal_group = cursor.fetchone()
                 meal_group_id = meal_group[0]
 
                 # site_code 자동 생성
