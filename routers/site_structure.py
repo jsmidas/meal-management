@@ -418,20 +418,30 @@ async def create_category(group_id: int, category: CategoryCreate):
                 ))
                 site_id = cursor.fetchone()[0]
 
-            # 기본 끼니구분 자동 생성 (위탁사업장 그룹이 아닌 경우만)
-            if not is_consignment_group:
+            # 기본 끼니구분 자동 생성 (category_slots 테이블)
+            if is_consignment_group:
+                # 위탁사업장: 5개 슬롯 (조식/중식/석식/야식/행사)
                 default_slots = [
-                    ("조식", 1),
-                    ("중식", 2),
-                    ("석식", 3),
+                    ("조식", "BREAKFAST", "조식", 1),
+                    ("중식", "LUNCH", "중식", 2),
+                    ("석식", "DINNER", "석식", 3),
+                    ("야식", "NIGHT", "야식", 4),
+                    ("행사", "EVENT", "행사", 5),
                 ]
-                for slot_name, sort_order in default_slots:
-                    slot_key = f"cat{new_category_id}_slot{sort_order}"
-                    cursor.execute("""
-                        INSERT INTO meal_slot_settings (slot_key, display_name, sort_order, entity_type, entity_id, is_active)
-                        VALUES (%s, %s, %s, 'category', %s, TRUE)
-                        ON CONFLICT (slot_key, entity_type, entity_id) DO NOTHING
-                    """, (slot_key, slot_name, sort_order, new_category_id))
+            else:
+                # 본사/영남: 3개 슬롯
+                default_slots = [
+                    ("조식", "BREAKFAST", "조식", 1),
+                    ("중식", "LUNCH", "중식", 2),
+                    ("석식", "DINNER", "석식", 3),
+                ]
+            for slot_name, slot_suffix, meal_type, sort_order in default_slots:
+                slot_code = f"SLOT_{new_category_id}_{slot_suffix}"
+                cursor.execute("""
+                    INSERT INTO category_slots (category_id, slot_code, slot_name, meal_type, display_order, is_active)
+                    VALUES (%s, %s, %s, %s, %s, TRUE)
+                    ON CONFLICT DO NOTHING
+                """, (new_category_id, slot_code, slot_name, meal_type, sort_order))
 
             conn.commit()
 

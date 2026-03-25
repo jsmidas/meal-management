@@ -902,6 +902,50 @@ async def startup_db_migration():
             conn.commit()
             cursor.close()
             print("[DB] 마이그레이션 완료: 컬럼 추가 + 성능 인덱스")
+
+            # ★ 위탁사업장 기본 5개 슬롯 마이그레이션 (본사/영남 제외)
+            cursor2 = conn.cursor()
+            try:
+                # 위탁사업장 그룹의 카테고리 중 슬롯이 부족한 것 찾기
+                cursor2.execute("""
+                    SELECT sc.id as category_id, sc.category_name, sg.id as group_id, sg.group_name
+                    FROM site_categories sc
+                    JOIN site_groups sg ON sc.group_id = sg.id
+                    WHERE sg.group_name NOT IN ('본사', '영남지사')
+                      AND sc.is_active = TRUE
+                """)
+                categories = cursor2.fetchall()
+
+                default_slots = [
+                    ("조식", "BREAKFAST", "조식", 1),
+                    ("중식", "LUNCH", "중식", 2),
+                    ("석식", "DINNER", "석식", 3),
+                    ("야식", "NIGHT", "야식", 4),
+                    ("행사", "EVENT", "행사", 5),
+                ]
+
+                added_count = 0
+                for cat_id, cat_name, group_id_val, group_name in categories:
+                    for slot_name, slot_suffix, meal_type, sort_order in default_slots:
+                        slot_code = f"SLOT_{cat_id}_{slot_suffix}"
+                        cursor2.execute("""
+                            INSERT INTO category_slots (category_id, slot_code, slot_name, meal_type, display_order, is_active)
+                            VALUES (%s, %s, %s, %s, %s, TRUE)
+                            ON CONFLICT DO NOTHING
+                        """, (cat_id, slot_code, slot_name, meal_type, sort_order))
+                        if cursor2.rowcount > 0:
+                            added_count += 1
+
+                conn.commit()
+                if added_count > 0:
+                    print(f"[DB] 위탁사업장 기본 슬롯 추가: {added_count}개 슬롯 생성")
+            except Exception as e2:
+                print(f"[DB] 위탁사업장 슬롯 마이그레이션 오류 (무시): {e2}")
+                try: conn.rollback()
+                except: pass
+            finally:
+                cursor2.close()
+
     except Exception as e:
         print(f"[DB] 마이그레이션 오류 (무시): {e}")
 
