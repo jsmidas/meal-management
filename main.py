@@ -2937,8 +2937,8 @@ async def create_new_site(request: Request):
 
                 # site_categories에 추가
                 cursor.execute("""
-                    INSERT INTO site_categories (group_id, category_code, category_name, meal_types, meal_items, display_order, is_active, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, TRUE, NOW(), NOW())
+                    INSERT INTO site_categories (group_id, category_code, category_name, meal_types, meal_items, display_order, is_active)
+                    VALUES (%s, %s, %s, %s, %s, %s, TRUE)
                     RETURNING id, category_code
                 """, (meal_group_id, site_code, site_name, '["조식","중식","석식"]', '["일반"]', max_id + 1))
 
