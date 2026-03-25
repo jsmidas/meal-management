@@ -18,23 +18,6 @@ from core.database import get_db_connection
 router = APIRouter()
 
 
-@router.get("/api/v2/groups")
-async def get_groups_v2():
-    """그룹 목록 조회"""
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT id, group_name, group_code, display_order FROM site_groups WHERE is_active = TRUE ORDER BY display_order")
-            rows = cursor.fetchall()
-            cursor.close()
-            return {"success": True, "data": [
-                {"id": r[0], "group_name": r[1], "group_code": r[2], "display_order": r[3]}
-                for r in rows
-            ]}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
 def normalize_client_name(name: str) -> str:
     """사업장명 정규화: strip + 연속공백 제거 + NFC 정규화"""
     if not name:
@@ -563,66 +546,6 @@ async def create_client(request: Request):
 
             slot_created = False
 
-            # ★ category_id가 없으면 기본 카테고리 자동 생성
-            if not category_id and slot_name:
-                req_group_id = data.get('group_id')
-                req_group_name = data.get('group_name', '기본')
-
-                if req_group_id:
-                    # 해당 그룹의 기본 카테고리 찾기
-                    cursor.execute("SELECT id FROM site_categories WHERE group_id = %s AND is_active = TRUE ORDER BY id LIMIT 1", (req_group_id,))
-                else:
-                    cursor.execute("SELECT id FROM site_categories WHERE is_active = TRUE ORDER BY id LIMIT 1")
-
-                existing_cat = cursor.fetchone()
-                if existing_cat:
-                    category_id = existing_cat[0]
-                else:
-                    # 그룹 정보 결정 (없으면 자동 생성)
-                    if req_group_id:
-                        cursor.execute("SELECT id, group_name FROM site_groups WHERE id = %s", (req_group_id,))
-                        group_row = cursor.fetchone()
-                        if group_row:
-                            group_id = group_row[0]
-                            group_name = group_row[1]
-                        else:
-                            # 그룹이 없으면 자동 생성
-                            cursor.execute("""
-                                INSERT INTO site_groups (group_name, group_code, display_order, is_active)
-                                VALUES (%s, 'DEFAULT', 0, TRUE)
-                                RETURNING id
-                            """, (req_group_name,))
-                            group_id = cursor.fetchone()[0]
-                            group_name = req_group_name
-                            conn.commit()
-                            print(f"[원스탑] 기본 그룹 자동 생성: {group_name} (ID: {group_id})")
-                    else:
-                        cursor.execute("SELECT id, group_name FROM site_groups WHERE is_active = TRUE ORDER BY id LIMIT 1")
-                        group_row = cursor.fetchone()
-                        if group_row:
-                            group_id = group_row[0]
-                            group_name = group_row[1]
-                        else:
-                            # 그룹이 아예 없으면 생성
-                            cursor.execute("""
-                                INSERT INTO site_groups (group_name, group_code, display_order, is_active)
-                                VALUES ('본사', 'DEFAULT', 0, TRUE)
-                                RETURNING id
-                            """)
-                            group_id = cursor.fetchone()[0]
-                            group_name = '본사'
-                            conn.commit()
-                            print(f"[원스탑] 기본 그룹 자동 생성: {group_name} (ID: {group_id})")
-
-                    cursor.execute("""
-                        INSERT INTO site_categories (group_id, category_code, category_name, display_order)
-                        VALUES (%s, 'DEFAULT', %s, 0)
-                        RETURNING id
-                    """, (group_id, group_name))
-                    category_id = cursor.fetchone()[0]
-                    conn.commit()
-                    print(f"[원스탑] 기본 카테고리 자동 생성: {group_name} (ID: {category_id})")
-
             # 슬롯 자동 생성 로직
             meal_type = data.get('meal_type', '').strip()
             valid_meal_types = ['조식', '중식', '석식', '야식']
@@ -714,26 +637,12 @@ async def create_client(request: Request):
             if slot_created:
                 message = f"슬롯 '{slot_name}' + 고객사 '{client_name}' 자동 생성 완료"
 
-            # category_id로부터 group_id 조회
-            resp_group_id = None
-            try:
-                cursor2 = conn.cursor()
-                cursor2.execute("SELECT group_id FROM site_categories WHERE id = %s", (category_id,))
-                row = cursor2.fetchone()
-                if row:
-                    resp_group_id = row[0]
-                cursor2.close()
-            except:
-                pass
-
             return {
                 "success": True,
                 "id": client_id,
                 "slot_id": slot_id,
                 "slot_created": slot_created,
                 "slot_name": slot_name,
-                "category_id": category_id,
-                "group_id": resp_group_id,
                 "message": message
             }
     except Exception as e:
@@ -968,7 +877,7 @@ async def delete_client(client_id: int):
 
 
 @router.get("/api/v2/categories")
-async def get_categories_v2(group_id: int = None):
+async def get_categories_v2(group_id: int = None, business_location_id: int = None):
     """카테고리 목록 조회"""
     try:
         with get_db_connection() as conn:
@@ -977,10 +886,12 @@ async def get_categories_v2(group_id: int = None):
             query = """
                 SELECT
                     c.id, c.category_code, c.category_name, c.group_id,
-                    c.display_order, c.is_active,
-                    g.group_name
+                    c.business_location_id, c.display_order, c.is_active,
+                    g.group_name,
+                    bl.site_name as business_location_name
                 FROM site_categories c
                 JOIN site_groups g ON g.id = c.group_id
+                LEFT JOIN business_locations bl ON bl.id = c.business_location_id
                 WHERE c.is_active = TRUE
             """
             params = []
@@ -988,6 +899,10 @@ async def get_categories_v2(group_id: int = None):
             if group_id:
                 query += " AND c.group_id = %s"
                 params.append(group_id)
+
+            if business_location_id:
+                query += " AND c.business_location_id = %s"
+                params.append(business_location_id)
 
             query += " ORDER BY c.display_order"
 
@@ -997,8 +912,9 @@ async def get_categories_v2(group_id: int = None):
 
             categories = [{
                 "id": r[0], "category_code": r[1], "category_name": r[2],
-                "group_id": r[3], "display_order": r[4], "is_active": r[5],
-                "group_name": r[6]
+                "group_id": r[3], "business_location_id": r[4],
+                "display_order": r[5], "is_active": r[6],
+                "group_name": r[7], "business_location_name": r[8]
             } for r in rows]
 
             return {"success": True, "data": categories}
@@ -1015,7 +931,7 @@ async def create_category(request: Request):
         group_id = data.get('group_id')
         category_name = data.get('category_name', '').strip()
         category_code = data.get('category_code', '')
-        display_order = data.get('display_order', 0)
+        business_location_id = data.get('business_location_id')
 
         if not group_id or not category_name:
             return {"success": False, "error": "그룹과 카테고리명은 필수입니다"}
@@ -1030,12 +946,28 @@ async def create_category(request: Request):
                 category_code = f"CAT_{group_id}_{count+1}"
 
             cursor.execute("""
-                INSERT INTO site_categories (group_id, category_code, category_name, display_order)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO site_categories (group_id, category_code, category_name, business_location_id, meal_types)
+                VALUES (%s, %s, %s, %s, '["조식", "중식", "석식", "야식", "행사"]'::jsonb)
                 RETURNING id
-            """, (group_id, category_code, category_name, display_order))
+            """, (group_id, category_code, category_name, business_location_id))
 
             category_id = cursor.fetchone()[0]
+
+            # 본사(1), 영남지사(2) 제외한 사업장은 기본 5개 슬롯 자동 생성
+            if group_id not in (1, 2):
+                default_slots = [
+                    ('조식', '조식'), ('중식', '중식'), ('석식', '석식'),
+                    ('야식', '야식'), ('행사', '중식')
+                ]
+                for slot_name, meal_type in default_slots:
+                    slot_code = f"SLOT_{category_id}_{slot_name}"
+                    cursor.execute("""
+                        INSERT INTO category_slots (category_id, slot_code, slot_name, target_cost, selling_price, meal_type)
+                        VALUES (%s, %s, %s, 0, 0, %s)
+                        ON CONFLICT DO NOTHING
+                    """, (category_id, slot_code, slot_name, meal_type))
+                print(f"[카테고리 생성] {category_name}(id={category_id})에 기본 5개 슬롯 자동 생성")
+
             conn.commit()
             cursor.close()
 

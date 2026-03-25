@@ -6,16 +6,13 @@
 function getCurrentGroupId() {
     if (typeof SiteSelector !== 'undefined') {
         const context = SiteSelector.getCurrentContext();
-        if (context?.group_id) return context.group_id;
+        return context?.group_id || 1;  // 기본값: 본사(1)
     }
-    return window._defaultGroupId || 1;
+    return 1;
 }
 function getCurrentGroupName() {
-    if (typeof SiteSelector !== 'undefined') {
-        const context = SiteSelector.getCurrentContext();
-        if (context?.group_name) return context.group_name;
-    }
-    return window._defaultGroupName || '본사';
+    const groupId = getCurrentGroupId();
+    return groupId === 1 ? '본사' : groupId === 2 ? '영남지사' : `그룹${groupId}`;
 }
 
 // ★ 현재 로그인한 사용자명 반환 (수정자 추적용)
@@ -57,7 +54,9 @@ async function refreshSiteStructureCache(groupId) {
                          new Date().toISOString().split('T')[0];
         const siteId = groupId || getCurrentGroupId();
 
-        const response = await fetch(`/api/meal-management/init?site_id=${siteId}&date=${workDate}&_t=${Date.now()}`);
+        const ctx = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
+        const catParam = ctx?.category_id ? `&category_id=${ctx.category_id}` : '';
+        const response = await fetch(`/api/meal-management/init?site_id=${siteId}&date=${workDate}${catParam}&_t=${Date.now()}`);
         const result = await response.json();
 
         if (!result.success) {
@@ -401,27 +400,18 @@ function updateAllSlotDropdowns() {
 }
 
 // 슬롯 드롭다운 옵션 생성 (display_name을 value로 사용)
-function buildSlotOptions(selectedValue, categoryId = null, categoryName = null) {
-    // 카테고리 ID/이름으로 캐시 조회, 없으면 전역 categorySlots
+function buildSlotOptions(selectedValue, categoryId = null, categoryNameHint = null) {
+    // 카테고리 ID가 주어지면 해당 캐시 사용, 아니면 전역 categorySlots 사용
     let slots = categorySlots;
-
-    // categoryName이 직접 주어진 경우
-    if (categoryName && categorySlotsCache[categoryName]) {
-        slots = categorySlotsCache[categoryName];
-    } else if (categoryId) {
-        const catName = Object.keys(categoryNameToIdMap).find(
+    if (categoryId || categoryNameHint) {
+        // 숫자/문자열 키 모두 확인, 카테고리 이름으로도 조회
+        const catName = categoryNameHint || Object.keys(categoryNameToIdMap).find(
             name => categoryNameToIdMap[name] == categoryId
         );
-        slots = categorySlotsCache[categoryId] ||
-                categorySlotsCache[String(categoryId)] ||
+        slots = (categoryId ? categorySlotsCache[categoryId] : null) ||
+                (categoryId ? categorySlotsCache[String(categoryId)] : null) ||
                 (catName ? categorySlotsCache[catName] : null) ||
                 categorySlots;
-    }
-
-    // ★ 여전히 비어있으면 캐시의 첫 번째 항목 사용
-    if ((!slots || slots.length === 0) && Object.keys(categorySlotsCache).length > 0) {
-        const firstKey = Object.keys(categorySlotsCache)[0];
-        slots = categorySlotsCache[firstKey] || [];
     }
 
     if (!slots || slots.length === 0) {
@@ -429,6 +419,7 @@ function buildSlotOptions(selectedValue, categoryId = null, categoryName = null)
     }
 
     // ★★★ 카테고리 이름 가져오기 (slotClientsCache 확인용) ★★★
+    let categoryName = categoryNameHint || null;
     if (!categoryName && categoryId) {
         for (const [name, id] of Object.entries(categoryNameToIdMap)) {
             if (String(id) === String(categoryId)) {
@@ -446,14 +437,15 @@ function buildSlotOptions(selectedValue, categoryId = null, categoryName = null)
 
         // ★★★ 해당 슬롯에 사업장이 있는지 확인 ★★★
         // slotClientsCache에 사업장이 없으면 드롭다운에서 제외
-        if (categoryName) {
+        // ★ 단, 위탁사업장은 slot_clients 없이도 슬롯 표시 (식수 직접 입력)
+        const ctx = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
+        if (categoryName && !ctx?.is_consignment) {
             const categoryClients = slotClientsCache[categoryName];
             if (categoryClients) {
                 const clients = categoryClients[displayText];
                 if (!clients || clients.length === 0) {
                     // 현재 선택된 값이 아니면 스킵
                     if (displayText !== selectedValue) {
-                        console.log(`🚫 슬롯 필터링: ${categoryName} > ${displayText} (사업장 없음)`);
                         return;
                     }
                 }
@@ -472,6 +464,15 @@ function buildSlotOptions(selectedValue, categoryId = null, categoryName = null)
 function createBusinessTabs() {
     const tabsContainer = document.getElementById('businessTabs');
     tabsContainer.innerHTML = '';
+
+    // ★ 위탁사업장(is_consignment)이면 탭 버튼 숨김 (테이블은 정상 생성)
+    const ctx = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
+    if (ctx?.is_consignment) {
+        tabsContainer.style.display = 'none';
+        console.log('✅ 위탁사업장 - 탭 버튼 숨김');
+        return;
+    }
+    tabsContainer.style.display = '';
 
     // 아이콘 매핑
     const iconMap = {
@@ -952,7 +953,7 @@ function updateTabSlotDropdowns(tabIndex) {
     const slots = categorySlotsCache[categoryId] || categorySlotsCache[categoryName] || [];
 
     const selects = table.querySelectorAll('.menu-name-select');
-    console.log(`🔄 탭 ${tabIndex} (${categoryName}) 드롭다운 업데이트: ${selects.length}개, 슬롯: ${slots.length}개, catId=${categoryId}`);
+    console.log(`🔄 탭 ${tabIndex} (${categoryName}, catId=${categoryId}) 드롭다운 업데이트: ${selects.length}개, 슬롯: ${slots.length}개`);
 
     if (selects.length === 0) {
         console.log(`⚠️ 탭 ${tabIndex}에 드롭다운이 없음`);
@@ -1056,13 +1057,32 @@ function createBusinessTable(businessType, tabIndex) {
     menuSections.id = `menu-sections-${tabIndex}`;
 
     // 기본 메뉴 구조 생성
-    const structure = defaultMenuStructure[businessType] || [{ mealType: '중식', menus: ['메뉴1'] }];
-    structure.forEach((mealGroup, groupIndex) => {
-        mealGroup.menus.forEach((menuName, menuIndex) => {
-            const section = createMenuSection(tabIndex, groupIndex, menuIndex, mealGroup.mealType, menuName);
-            menuSections.appendChild(section);
+    const ctx = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
+    if (ctx?.is_consignment) {
+        // ★ 위탁사업장: categorySlotsCache에서 직접 슬롯 생성
+        const cachedSlots = categorySlotsCache[businessType] || [];
+        if (cachedSlots.length > 0) {
+            // 중복 슬롯명 제거 (slot_name 기준)
+            const seen = new Set();
+            cachedSlots.forEach((slot, idx) => {
+                const slotName = slot.slot_name || slot.display_name;
+                if (!slotName || seen.has(slotName)) return;
+                seen.add(slotName);
+                const mealType = slot.meal_type || '중식';
+                const section = createMenuSection(tabIndex, 0, idx, mealType, slotName);
+                menuSections.appendChild(section);
+            });
+            console.log(`📌 위탁사업장 ${businessType}: ${seen.size}개 슬롯 직접 생성`);
+        }
+    } else {
+        const structure = defaultMenuStructure[businessType] || [{ mealType: '중식', menus: ['메뉴1'] }];
+        structure.forEach((mealGroup, groupIndex) => {
+            mealGroup.menus.forEach((menuName, menuIndex) => {
+                const section = createMenuSection(tabIndex, groupIndex, menuIndex, mealGroup.mealType, menuName);
+                menuSections.appendChild(section);
+            });
         });
-    });
+    }
 
     tableDiv.appendChild(menuSections);
     return tableDiv;
@@ -1154,10 +1174,18 @@ function createMenuSection(tabIndex, groupIndex, menuIndex, mealType, menuName) 
     // 슬롯 드롭다운 옵션 생성 (해당 탭의 카테고리 슬롯 사용)
     const categoryName = businessTypes[tabIndex];
     const categoryId = categoryNameToIdMap[categoryName];
+    // ★ categoryId가 없어도 이름으로 직접 캐시 조회 가능하도록
     const slotOptions = buildSlotOptions(menuName, categoryId, categoryName);
 
-    // ★ meal_type을 슬롯 마스터 데이터에서 자동 결정
-    const resolvedMealType = menuName ? getMealTypeForSlot(menuName, categoryId) : (mealType || '중식');
+    // ★ meal_type을 슬롯 마스터 데이터에서 자동 결정 (categoryName fallback)
+    let resolvedMealType = mealType || '중식';
+    if (menuName) {
+        const cachedSlots = categorySlotsCache[categoryId] || categorySlotsCache[categoryName] || [];
+        const foundSlot = cachedSlots.find(s => (s.slot_name || s.display_name) === menuName);
+        if (foundSlot?.meal_type) {
+            resolvedMealType = foundSlot.meal_type;
+        }
+    }
 
     // ★★★ slotClients에서 해당 슬롯의 기본 사업장 목록 가져오기 ★★★
     let defaultBusinessHtml = '';
@@ -1177,7 +1205,9 @@ function createMenuSection(tabIndex, groupIndex, menuIndex, mealType, menuName) 
         });
         console.log('📋 ' + menuName + ': slotClients ' + slotClientsList.length + '개');
     } else {
-        defaultBusinessHtml = createDefaultBusinessItems(sectionId, 3);
+        // ★ 위탁사업장: 사업장 배정 없이 식수만 입력 → 1개 칸
+        const ctx2 = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
+        defaultBusinessHtml = createDefaultBusinessItems(sectionId, ctx2?.is_consignment ? 1 : 3);
     }
 
     section.innerHTML = `
@@ -1551,10 +1581,7 @@ function updateSummaryCards() {
     });
 
     // 총 식수 업데이트
-    const totalEl = document.getElementById('total-meal-count');
-    if (totalEl) totalEl.textContent = totalMealCount.toLocaleString();
-    const totalInlineEl = document.getElementById('total-meal-count-inline');
-    if (totalInlineEl) totalInlineEl.textContent = totalMealCount.toLocaleString();
+    document.getElementById('total-meal-count').textContent = totalMealCount.toLocaleString();
 
     // 카테고리별 카드 동적 생성
     const categoryCardsContainer = document.getElementById('category-summary-cards');
@@ -1739,36 +1766,18 @@ async function saveFoodCountData() {
 
 // ★ 구조 저장 (현재 화면 구조를 선택된 템플릿의 해당 요일 타입에 저장)
 async function saveStructureToTemplate() {
-    let selectedTemplateId = document.getElementById('mealTemplateSelect')?.value;
+    // ★ 위탁사업장은 구조 저장 차단 (다른 그룹 템플릿 보호)
+    const ctx = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
+    if (ctx?.is_consignment) {
+        showToast('⚠️ 위탁사업장에서는 구조 저장을 사용할 수 없습니다.', 'warning', 3000);
+        return;
+    }
 
-    // ★ 템플릿이 없으면 기본 템플릿 자동 생성
+    const selectedTemplateId = document.getElementById('mealTemplateSelect')?.value;
+
     if (!selectedTemplateId) {
-        try {
-            const res = await fetch('/api/meal-templates', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    template_name: '기본 템플릿',
-                    description: '자동 생성된 기본 템플릿',
-                    template_data: {}
-                })
-            });
-            const result = await res.json();
-            if (result.success && result.id) {
-                selectedTemplateId = result.id;
-                mealTemplates.push({ id: result.id, template_name: '기본 템플릿', template_data: {} });
-                updateMealTemplateSelect();
-                const select = document.getElementById('mealTemplateSelect');
-                if (select) select.value = selectedTemplateId;
-                showToast('📋 기본 템플릿이 자동 생성되었습니다.', 'info', 2000);
-            } else {
-                showToast('❌ 템플릿 생성 실패: ' + (result.error || ''), 'error', 3000);
-                return;
-            }
-        } catch (e) {
-            showToast('❌ 템플릿 생성 오류', 'error', 3000);
-            return;
-        }
+        showToast('⚠️ 먼저 템플릿을 선택해주세요.', 'warning', 3000);
+        return;
     }
 
     const selectedTemplate = mealTemplates.find(t => t.id == selectedTemplateId);
@@ -1985,7 +1994,9 @@ async function loadInitData() {
         } else {
             // 2️⃣ API 호출 (캐시 없을 때만)
             console.time('📦 API 호출');
-            const response = await fetch(`/api/meal-management/init?site_id=${siteId}&date=${workDate}`);
+            const ctx = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
+            const catParam = ctx?.category_id ? `&category_id=${ctx.category_id}` : '';
+            const response = await fetch(`/api/meal-management/init?site_id=${siteId}&date=${workDate}${catParam}`);
             result = await response.json();
             console.timeEnd('📦 API 호출');
 
@@ -2050,7 +2061,9 @@ async function applyInitData(result, workDate) {
     }
 
     // ★ 새로운 로직: 통합 API에서 받은 스케줄 데이터 사용 (API 호출 제거)
-    const scheduleResult = result.schedule;  // 통합 API에서 이미 로드됨
+    // ★ 위탁사업장은 템플릿 자동 적용 건너뜀 (다른 그룹 템플릿 오적용 방지)
+    const _ctx = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
+    const scheduleResult = _ctx?.is_consignment ? null : result.schedule;
     let templateApplied = false;
     let appliedTemplateId = null;
 
@@ -2069,8 +2082,8 @@ async function applyInitData(result, workDate) {
         }
     }
 
-    if (!templateApplied) {
-        // 캘린더에 지정된 템플릿이 없으면 자동 감지
+    if (!templateApplied && !_ctx?.is_consignment) {
+        // 캘린더에 지정된 템플릿이 없으면 자동 감지 (위탁사업장 제외)
         const templateMatch = findMatchingTemplate(workDate);
         if (templateMatch) {
             const dayTypeLabel = templateMatch._dayType ? DAY_TYPE_LABELS[templateMatch._dayType] : '기본';
@@ -2105,7 +2118,14 @@ async function applyInitData(result, workDate) {
         console.log(`✅ 데이터 ${currentData.length}건 적용`);
     } else if (!templateApplied) {
         // 아무것도 없으면 기본 테이블
-        console.log(`📭 템플릿도 없고 데이터도 없음 - 기본 테이블 생성`);
+        // ★ 위탁사업장: 사이트명으로 businessTypes 설정 후 테이블 생성
+        if (_ctx?.is_consignment) {
+            const siteName = _ctx.site_name || _ctx.category_name || '위탁사업장';
+            businessTypes = [siteName];
+            console.log(`📭 위탁사업장 기본 테이블: ${siteName}`);
+        } else {
+            console.log(`📭 템플릿도 없고 데이터도 없음 - 기본 테이블 생성`);
+        }
         createFoodCountTables();
         // ★ 사업장 관리 동기화: slotClientsCache에서 활성 슬롯 자동 추가
         addMissingSlotsFromCache();
@@ -3158,25 +3178,27 @@ async function loadSiteManagementCategories() {
     try {
         const groupId = getCurrentGroupId();
         const groupName = getCurrentGroupName();
-        let response = await fetch(`/api/v2/categories?group_id=${groupId}`);
-        let result = await response.json();
+        const ctx = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
 
-        // ★ group_id로 결과 없으면 전체 조회 재시도
-        if (result.success && (!result.data || result.data.length === 0)) {
-            response = await fetch('/api/v2/categories');
-            result = await response.json();
-            // 실제 group_id로 기본값 갱신
-            if (result.success && result.data && result.data.length > 0) {
-                window._defaultGroupId = result.data[0].group_id;
-                window._defaultGroupName = result.data[0].group_name || result.data[0].category_name;
-            }
+        // ★ 위탁사업장: category_id로 필터링 (해당 사업장만 표시)
+        let apiUrl = `/api/v2/categories?group_id=${groupId}`;
+        if (ctx?.is_consignment && ctx.category_id) {
+            apiUrl = `/api/v2/categories?group_id=${groupId}&category_id=${ctx.category_id}`;
+        }
+        const response = await fetch(apiUrl);
+        const result = await response.json();
+
+        let categories = result.success && result.data ? result.data : [];
+        // ★ 위탁사업장: API에 category_id 필터가 없으면 프론트에서 필터링
+        if (ctx?.is_consignment && ctx.category_id && categories.length > 1) {
+            categories = categories.filter(c => c.id === ctx.category_id);
         }
 
-        if (result.success && result.data && result.data.length > 0) {
-            siteManagementCategories = result.data;
+        if (categories.length > 0) {
+            siteManagementCategories = categories;
 
             categorySelect.innerHTML = '';
-            result.data.forEach((cat, index) => {
+            categories.forEach((cat, index) => {
                 const option = document.createElement('option');
                 option.value = cat.id;  // ★ value를 ID로 변경
                 option.setAttribute('data-cat-id', cat.id);
@@ -3187,41 +3209,8 @@ async function loadSiteManagementCategories() {
             });
             console.log(`✅ [v2] 카테고리 로드 (${groupName}): ${result.data.length}개`);
         } else {
-            // ★ 카테고리가 없으면 기본 카테고리 자동 생성
-            console.warn('⚠️ 카테고리 없음 → 기본 카테고리 자동 생성 시도');
-            try {
-                const createRes = await fetch('/api/v2/categories', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        group_id: groupId,
-                        category_code: 'DEFAULT',
-                        category_name: groupName || '기본',
-                        display_order: 0
-                    })
-                });
-                const createResult = await createRes.json();
-                if (createResult.success && createResult.id) {
-                    const catName = groupName || '기본';
-                    const catId = createResult.id;
-                    siteManagementCategories = [{ id: catId, category_name: catName, group_id: groupId }];
-                    categorySelect.innerHTML = '';
-                    const option = document.createElement('option');
-                    option.value = catId;
-                    option.setAttribute('data-cat-id', catId);
-                    option.setAttribute('data-cat-name', catName);
-                    option.textContent = catName;
-                    option.selected = true;
-                    categorySelect.appendChild(option);
-                    console.log(`✅ 기본 카테고리 자동 생성 완료: ${catName} (id=${catId})`);
-                } else {
-                    categorySelect.innerHTML = '<option value="">카테고리 없음</option>';
-                    console.warn('⚠️ 기본 카테고리 생성 실패:', createResult.error);
-                }
-            } catch (createError) {
-                categorySelect.innerHTML = '<option value="">카테고리 없음</option>';
-                console.error('기본 카테고리 생성 오류:', createError);
-            }
+            categorySelect.innerHTML = '<option value="">카테고리 없음</option>';
+            console.warn('⚠️ 카테고리 데이터 없음');
         }
     } catch (error) {
         console.error('카테고리 로드 오류:', error);
@@ -3231,20 +3220,10 @@ async function loadSiteManagementCategories() {
 
 async function closeSiteManagementModal() {
     document.getElementById('siteManagementModal').style.display = 'none';
-    // ★ 모달 닫을 때 전체 데이터 새로고침 (meal_type 변경 등 반영)
-    try {
-        const siteId = getCurrentSiteId();
-        const workDate = document.getElementById('meal-count-date').value;
-        // 캐시 무효화
-        siteDataCache.delete(`${siteId}_${workDate}`);
-        await loadInitData();
-        if (businessTypes.length > 0) {
-            businessTypes.forEach((_, i) => updateTabSlotDropdowns(i));
-        }
-        refreshAllMealTypeBadges();
-    } catch(e) {
-        console.warn('모달 닫기 후 새로고침 실패:', e);
-    }
+    // ★ 모달 닫을 때 캐시 갱신 + 배지 실시간 반영
+    const groupId = getCurrentGroupId();
+    await refreshSiteStructureCache(groupId);
+    refreshAllMealTypeBadges();
 }
 
 // v2 API로 슬롯 로드 (카테고리 변경 시 호출) - datalist용
@@ -3317,6 +3296,10 @@ async function addNewSiteOneStop() {
     let clientName = clientNameInput.value.trim();
 
     // 유효성 검사
+    if (!categoryId) {
+        alert('카테고리를 선택해주세요.');
+        return;
+    }
     if (!slotName) {
         alert('슬롯명을 입력해주세요.');
         return;
@@ -3356,9 +3339,7 @@ async function addNewSiteOneStop() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 slot_name: slotName,
-                category_id: parseInt(categoryId) || null,
-                group_id: getCurrentGroupId(),  // ★ 카테고리 자동 생성용
-                group_name: getCurrentGroupName(),
+                category_id: parseInt(categoryId),
                 meal_type: mealType,  // ★ 끼니 타입 추가
                 client_name: clientName,
                 display_order: displayOrder,
@@ -3372,11 +3353,6 @@ async function addNewSiteOneStop() {
         const result = await response.json();
 
         if (result.success) {
-            // ★ 서버에서 반환된 group_id로 기본값 갱신 (자동 생성된 경우)
-            if (result.group_id) {
-                window._defaultGroupId = result.group_id;
-            }
-
             alert(result.message);
 
             // 입력 필드 초기화
@@ -3396,19 +3372,14 @@ async function addNewSiteOneStop() {
 
             // ★★★ 캐시 통합 갱신 (API에서 날짜/요일 필터링된 데이터 가져오기) ★★★
             const groupId = getCurrentGroupId();
-            try {
-                await refreshSiteStructureCache(groupId);
-                refreshAllMealTypeBadges();
-                console.log(`✅ 캐시 갱신 완료 (날짜/요일 필터 적용됨)`);
-            } catch (cacheErr) {
-                console.warn('⚠️ 캐시 갱신 실패 (무시):', cacheErr);
-            }
+            await refreshSiteStructureCache(groupId);
+            refreshAllMealTypeBadges();  // ★ meal_type 배지 실시간 갱신
+            console.log(`✅ 캐시 갱신 완료 (날짜/요일 필터 적용됨)`);
 
             // datalist 새로고침 (사업장 관리 모달용)
-            try { await loadSlotsForSiteManagement(); } catch(e) { console.warn('슬롯 로드 실패:', e); }
+            await loadSlotsForSiteManagement();
 
             // 사업장 관리 모달 목록 새로고침
-            console.log('🔄 loadMealCountSites 호출');
             await loadMealCountSites();
 
             // ★★★ 식수입력 UI 갱신 ★★★
@@ -3447,23 +3418,23 @@ async function addNewSiteOneStop() {
 
 async function loadMealCountSites() {
     const container = document.getElementById('siteList');
-    if (!container) { console.error('siteList 컨테이너 없음'); return; }
     container.innerHTML = '<div style="text-align: center; padding: 30px; color: #999;"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</div>';
 
     try {
         const groupId = getCurrentGroupId();
         const groupName = getCurrentGroupName();
-        console.log(`🔍 loadMealCountSites: groupId=${groupId}, groupName=${groupName}`);
+        const ctx = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
 
-        // ★★★ 전체 조회 (group_id 필터 제거 — simple 모드 호환) ★★★
+        // ★★★ 슬롯과 고객사 둘 다 조회 (빈 슬롯도 표시하기 위해) ★★★
+        // ★ 위탁사업장: category_id로 필터링 (해당 사업장만)
+        const catFilter = ctx?.is_consignment && ctx.category_id ? `&category_id=${ctx.category_id}` : '';
         const [clientsResponse, slotsResponse] = await Promise.all([
-            fetch('/api/v2/clients?include_inactive=true'),
-            fetch('/api/v2/slots')
+            fetch(`/api/v2/clients?group_id=${groupId}&include_inactive=true${catFilter}`),
+            fetch(`/api/v2/slots?group_id=${groupId}${catFilter}`)
         ]);
 
         const clientsResult = await clientsResponse.json();
         const slotsResult = await slotsResponse.json();
-        console.log(`📋 사업장 목록: clients=${clientsResult.data?.length || 0}, slots=${slotsResult.data?.length || 0}`);
 
         // 고객사 데이터 변환
         const sites = (clientsResult.success ? clientsResult.data : []).map(c => ({
@@ -3548,7 +3519,7 @@ function renderSiteList(sites) {
     const container = document.getElementById('siteList');
 
     // 카테고리별 → 슬롯별 그룹화
-    const categoryOrder = ['도시락', '운반', '학교', '요양원', '기타'];
+    const knownCategories = ['도시락', '운반', '학교', '요양원', '기타'];
     const grouped = {};
 
     sites.forEach(site => {
@@ -3559,6 +3530,10 @@ function renderSiteList(sites) {
         grouped[businessType][slotName].push(site);
     });
 
+    // 정렬: 알려진 카테고리 먼저, 나머지(위탁사업장 등)는 이름순으로 뒤에
+    const extraCategories = Object.keys(grouped).filter(k => !knownCategories.includes(k)).sort();
+    const categoryOrder = [...knownCategories, ...extraCategories];
+
     let html = '';
     const categoryColors = {
         '도시락': '#ff9800',
@@ -3568,12 +3543,10 @@ function renderSiteList(sites) {
         '기타': '#607d8b'
     };
 
-    // ★ categoryOrder에 없는 카테고리도 포함 (자동 생성된 '기본' 등)
-    const allCategories = new Set([...categoryOrder, ...Object.keys(grouped)]);
-    allCategories.forEach(businessType => {
+    categoryOrder.forEach(businessType => {
         if (!grouped[businessType]) return;
 
-        const categoryColor = categoryColors[businessType] || '#607d8b';
+        const categoryColor = categoryColors[businessType] || '#795548';
         const slots = grouped[businessType];
         const totalCount = Object.values(slots).flat().length;
 
@@ -5140,19 +5113,29 @@ function applyTemplateData(templateData, skipMealData = false) {
     const mealData = skipMealData ? {} : (templateData.mealData || {});
 
     // ★ 템플릿의 카테고리들을 businessTypes로 설정 (항상 고정 순서 적용)
-    const categoryOrder = ['도시락', '운반', '학교', '요양원', '기타'];
-    const rawCategories = templateData.categoryOrder || Object.keys(menuStructure);
-    // 고정 순서로 재정렬
-    let templateCategories = categoryOrder.filter(c => rawCategories.includes(c));
-    rawCategories.forEach(c => {
-        if (!templateCategories.includes(c)) templateCategories.push(c);
-    });
-    if (templateCategories.length > 0) {
-        businessTypes = templateCategories;
+    const ctx = typeof SiteSelector !== 'undefined' ? SiteSelector.getCurrentContext() : {};
+    if (ctx?.is_consignment) {
+        // ★ 위탁사업장: 템플릿 카테고리 무시, 사이트명 하나만 사용
+        const siteName = ctx.site_name || ctx.category_name || '위탁사업장';
+        businessTypes = [siteName];
         currentTabIndex = 0;
-        // 탭 UI 재생성
         createBusinessTabs();
-        console.log('템플릿 카테고리 적용:', businessTypes);
+        console.log('위탁사업장 카테고리 강제:', businessTypes);
+    } else {
+        const categoryOrder = ['도시락', '운반', '학교', '요양원', '기타'];
+        const rawCategories = templateData.categoryOrder || Object.keys(menuStructure);
+        // 고정 순서로 재정렬
+        let templateCategories = categoryOrder.filter(c => rawCategories.includes(c));
+        rawCategories.forEach(c => {
+            if (!templateCategories.includes(c)) templateCategories.push(c);
+        });
+        if (templateCategories.length > 0) {
+            businessTypes = templateCategories;
+            currentTabIndex = 0;
+            // 탭 UI 재생성
+            createBusinessTabs();
+            console.log('템플릿 카테고리 적용:', businessTypes);
+        }
     }
 
     const container = document.getElementById('foodCountTables');
@@ -5327,11 +5310,35 @@ function applyTemplateData(templateData, skipMealData = false) {
     addMissingSlotsFromCache();
 }
 
-// ★★★ 새 함수: 템플릿에 없지만 slotClientsCache에 사업장이 있는 슬롯 자동 추가 ★★★
+// ★★★ 새 함수: 템플릿에 없지만 slotClientsCache 또는 categorySlotsCache에 있는 슬롯 자동 추가 ★★★
 function addMissingSlotsFromCache() {
-    if (!slotClientsCache || Object.keys(slotClientsCache).length === 0) {
-        console.log('⚠️ slotClientsCache가 비어있어 누락 슬롯 추가 생략');
+    const hasSlotClients = slotClientsCache && Object.keys(slotClientsCache).length > 0;
+    const hasCategorySlots = categorySlotsCache && Object.keys(categorySlotsCache).length > 0;
+
+    if (!hasSlotClients && !hasCategorySlots) {
+        console.log('⚠️ slotClientsCache와 categorySlotsCache 모두 비어있어 누락 슬롯 추가 생략');
         return;
+    }
+
+    // ★ 위탁사업장: slotClientsCache가 없어도 categorySlotsCache에서 슬롯 생성
+    if (!hasSlotClients && hasCategorySlots) {
+        console.log('📌 slotClientsCache 비어있지만 categorySlotsCache에서 슬롯 추가');
+        Object.entries(categorySlotsCache).forEach(([key, slots]) => {
+            // 숫자 키(category_id)는 건너뜀 — 이름 키만 사용
+            if (!isNaN(key)) return;
+            const categoryName = key;
+
+            if (!slotClientsCache[categoryName]) {
+                slotClientsCache[categoryName] = {};
+            }
+            slots.forEach(slot => {
+                const slotName = slot.slot_name || slot.display_name;
+                if (slotName && !slotClientsCache[categoryName][slotName]) {
+                    slotClientsCache[categoryName][slotName] = [];
+                }
+            });
+        });
+        console.log('📌 변환 결과:', JSON.stringify(slotClientsCache));
     }
 
     console.log('🔍 템플릿에 누락된 슬롯 확인 중...');
@@ -5347,9 +5354,15 @@ function addMissingSlotsFromCache() {
             tabIndex = businessTypes.length;
             businessTypes.push(categoryName);
 
-            // ★ default 테이블 제거 (중복 방지)
-            const defaultTable = document.getElementById('table-default');
-            if (defaultTable) defaultTable.remove();
+            // 탭 버튼 추가
+            const tabButtons = document.getElementById('tab-buttons');
+            if (tabButtons) {
+                const tabBtn = document.createElement('button');
+                tabBtn.className = 'tab-button';
+                tabBtn.textContent = categoryName;
+                tabBtn.onclick = () => switchBusinessTab(categoryName, tabIndex);
+                tabButtons.appendChild(tabBtn);
+            }
 
             // 탭 콘텐츠(테이블) 추가
             const container = document.getElementById('foodCountTables');
@@ -5393,7 +5406,7 @@ function addMissingSlotsFromCache() {
         Object.entries(slots).forEach(([slotName, clients]) => {
             // ★ 빈 슬롯명 스킵
             if (!slotName || slotName.trim() === '') return;
-            if (!clients || clients.length === 0) return;
+            // ★ 위탁사업장: clients가 비어있어도 슬롯은 생성 (식수 직접 입력용)
 
             if (!existingSlotNames.has(slotName)) {
                 console.log(`  ✅ 누락 슬롯 추가: ${categoryName} > ${slotName} (${clients.length}개 사업장)`);
@@ -5401,11 +5414,14 @@ function addMissingSlotsFromCache() {
                 // ★ 끼니타입: categorySlotsCache에서 조회 (마스터 설정), 없으면 '중식'
                 let mealType = '중식';
                 const categoryId = categoryNameToIdMap[categoryName];
-                const cachedSlots = categorySlotsCache[categoryId] || [];
-                const slotData = cachedSlots.find(s => s.display_name === slotName);
+                const cachedSlots = categorySlotsCache[categoryId] || categorySlotsCache[categoryName] || [];
+                const slotData = cachedSlots.find(s =>
+                    s.slot_name === slotName || s.display_name === slotName
+                );
                 if (slotData && slotData.meal_type) {
                     mealType = slotData.meal_type;
                 }
+                console.log(`    🏷️ ${slotName} → meal_type: ${mealType} (from cache: ${!!slotData})`);
 
                 const existingSections = menuSections.querySelectorAll('.menu-section').length;
                 const section = createMenuSection(tabIndex, 0, existingSections, mealType, slotName);
@@ -5745,20 +5761,9 @@ async function bulkAssignByDayType(targetDaysOfWeek, dayType) {
 // ========================
 // 페이지 초기화
 // ========================
-document.addEventListener('DOMContentLoaded', async function () {
+document.addEventListener('DOMContentLoaded', function () {
     // ★ 그룹에 따른 페이지 타이틀 업데이트는 siteChange 이벤트에서 처리
     // (SiteSelector가 초기화된 후에 실행됨)
-
-    // ★ 기본 그룹 정보 로드 (SiteSelector 실패 시 폴백용 - 즉시 실행)
-    try {
-        const grpRes = await fetch('/api/v2/groups');
-        const grpData = await grpRes.json();
-        if (grpData.success && grpData.data && grpData.data.length > 0) {
-            window._defaultGroupId = grpData.data[0].id;
-            window._defaultGroupName = grpData.data[0].group_name;
-            console.log(`🏢 기본 그룹 로드: id=${window._defaultGroupId}, name=${window._defaultGroupName}`);
-        }
-    } catch(e) { console.warn('기본 그룹 로드 실패:', e); }
 
     updateDateTime();
     setInterval(updateDateTime, 60000);
@@ -5813,9 +5818,9 @@ function clearDirty() {
 function getCurrentSiteId() {
     if (typeof SiteSelector !== 'undefined') {
         const context = SiteSelector.getCurrentContext();
-        if (context?.site_id) return context.site_id;
+        return context?.site_id || null;
     }
-    return window._defaultGroupId || null;
+    return null;
 }
 
 function getCurrentSiteName() {
@@ -5867,9 +5872,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 // ★★★ 상태 완전 리셋 (이전 데이터 오염 방지) ★★★
                 resetPageState();
 
-                // 모든 사업장에서 탭 없이 시작 (필요시 +카테고리 추가)
-                // 끼니 옵션은 모든 유형 포함
-                currentMealTypes = ['조식', '중식', '석식', '야식', '행사'];
+                // 끼니 옵션 설정
+                // 위탁사업장: DB의 meal_types 사용 (조/중/석/야/행사 5개)
+                // 본사/영남지사: 기존과 동일하게 5개 고정
+                if (context.is_consignment) {
+                    currentMealTypes = context.meal_types || ['조식', '중식', '석식', '야식', '행사'];
+                } else {
+                    currentMealTypes = ['조식', '중식', '석식', '야식', '행사'];
+                }
                 currentMealItems = ['일반'];
                 businessTypes = [];  // 탭 항상 비움
                 console.log('✅ 사업장 변경 - 탭 초기화 (빈 상태)');
@@ -5904,6 +5914,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 // 통합 API로 한 번에 로드 (성능 최적화)
                 await loadInitData();
                 _dataLoaded = true; // 중복 로드 방지
+
+                // ★ 위탁사업장: 템플릿이 잘못된 카테고리를 설정했을 수 있으므로 강제 보정
+                if (context.is_consignment) {
+                    const siteName = context.site_name || context.category_name || '위탁사업장';
+                    if (businessTypes.length === 0 || (businessTypes.length > 0 && !businessTypes.includes(siteName))) {
+                        businessTypes = [siteName];
+                        createBusinessTabs();
+                        createFoodCountTables();
+                        // 슬롯 클라이언트 캐시에서 섹션 추가
+                        addMissingSlotsFromCache();
+                    }
+                }
 
                 // ★ 드롭다운 업데이트 (슬롯은 통합 API에서 이미 캐시됨)
                 if (businessTypes.length > 0) {
@@ -5948,24 +5970,11 @@ async function initializePage() {
             console.log('📦 초기 데이터 로드 시작 (최적화)');
             showLoading('데이터 로딩 중...');
             try {
-                // ★ _defaultGroupId가 없으면 직접 확보
-                if (!window._defaultGroupId) {
-                    try {
-                        const grpRes = await fetch('/api/v2/groups');
-                        const grpData = await grpRes.json();
-                        if (grpData.success && grpData.data?.length > 0) {
-                            window._defaultGroupId = grpData.data[0].id;
-                            window._defaultGroupName = grpData.data[0].group_name;
-                            console.log(`🏢 그룹 ID 확보: ${window._defaultGroupId}`);
-                        }
-                    } catch(e) {}
-                }
-
                 const siteId = getCurrentSiteId();
-                console.log(`🏢 초기 로드: site_id=${siteId}, groupId=${getCurrentGroupId()}`);
+                console.log(`🏢 초기 로드: site_id=${siteId}`);
 
                 // ★ 카테고리 매핑 로드 (슬롯은 통합 API에서 받음)
-                await loadCategoryNameMapping(getCurrentGroupId());
+                await loadCategoryNameMapping(1);
 
                 // 통합 API로 모든 데이터 로드 (식수 + 템플릿 + 슬롯)
                 await loadInitData();

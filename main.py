@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-급식관리 시스템 - Smart Monolith Main Application
+다함 식자재 관리 시스템 - Smart Monolith Main Application
 Railway 호환 버전 (식수 삭제 API 추가)
 """
 
@@ -25,7 +25,7 @@ from fastapi import FastAPI, Request, Body, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-# from starlette.middleware.wsgi import WSGIMiddleware  # Blog app 제거됨
+from starlette.middleware.wsgi import WSGIMiddleware
 from typing import Optional
 
 # .env 파일 로드 (Railway DB 연결용)
@@ -63,12 +63,11 @@ from utils.batch_calculation import run_batch_calculation, batch_calculation_sta
 
 from datetime import datetime, timedelta
 # 라우터 임포트
-from routers import ingredients, auth, users, suppliers, recipes, admin, site_structure, user_context, orders, order_instructions, order_calculation, supplier_portal, uploads, notices, system_requests, sales, instructions, ingredient_bulk_change, health_certificates, event_templates, events, event_orders, backup, hierarchy, meal_counts, meal_templates, meal_slot_settings, tenants
+from routers import ingredients, auth, users, suppliers, recipes, admin, site_structure, user_context, orders, order_instructions, order_calculation, supplier_portal, uploads, notices, system_requests, sales, instructions, ingredient_bulk_change, health_certificates, event_templates, events, event_orders, backup, hierarchy, meal_counts, meal_templates, meal_slot_settings
 # 설정값
-from core.config import APP_MODE, APP_TITLE as _CONFIG_TITLE
-APP_TITLE = _CONFIG_TITLE
+APP_TITLE = "다함 식자재 관리 시스템"
 APP_VERSION = "1.0.0"
-APP_DESCRIPTION = "급식관리 시스템"
+APP_DESCRIPTION = "Smart Monolith 버전"
 
 # Railway/GCP 환경변수 지원 (하위 호환성 포함)
 PORT = int(os.environ.get("PORT", os.environ.get("API_PORT", 8080)))
@@ -109,365 +108,36 @@ async def shutdown_cleanup():
 # 서버 시작 시 DB 마이그레이션 실행
 @app.on_event("startup")
 async def startup_db_migration():
-    """서버 시작 시 필요한 DB 테이블/컬럼 추가"""
+    """서버 시작 시 필요한 DB 컬럼 추가"""
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
 
-            # ★ 핵심 테이블 생성 (새 DB에서 필수)
+            # meal_counts 테이블에 menu_order 컬럼 추가 (없으면)
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY,
-                    username VARCHAR(100) UNIQUE NOT NULL,
-                    password VARCHAR(255) NOT NULL,
-                    role VARCHAR(50) DEFAULT 'user',
-                    full_name VARCHAR(100),
-                    email VARCHAR(200),
-                    token TEXT,
-                    tenant_id INTEGER,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-                CREATE TABLE IF NOT EXISTS site_groups (
-                    id SERIAL PRIMARY KEY,
-                    group_name VARCHAR(200) NOT NULL,
-                    display_order INTEGER DEFAULT 0,
-                    address TEXT,
-                    region TEXT,
-                    abbreviation VARCHAR(50),
-                    is_active BOOLEAN DEFAULT TRUE
-                );
-                CREATE TABLE IF NOT EXISTS site_categories (
-                    id SERIAL PRIMARY KEY,
-                    group_id INTEGER REFERENCES site_groups(id),
-                    category_code VARCHAR(50),
-                    category_name VARCHAR(200) NOT NULL,
-                    meal_types JSONB DEFAULT '["조식", "중식", "석식"]',
-                    meal_items JSONB DEFAULT '["일반"]',
-                    display_order INTEGER DEFAULT 0,
-                    is_active BOOLEAN DEFAULT TRUE
-                );
-                CREATE TABLE IF NOT EXISTS recipe_categories (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(100) NOT NULL,
-                    abbreviation VARCHAR(10),
-                    display_order INTEGER DEFAULT 0
-                );
-                CREATE TABLE IF NOT EXISTS menu_recipes (
-                    id SERIAL PRIMARY KEY,
-                    recipe_code VARCHAR(50),
-                    recipe_name VARCHAR(200) NOT NULL,
-                    base_name VARCHAR(200),
-                    prefix VARCHAR(50) DEFAULT '',
-                    suffix VARCHAR(50) DEFAULT '',
-                    category VARCHAR(100),
-                    category_id INTEGER,
-                    site_id INTEGER,
-                    cooking_note TEXT,
-                    cooking_yield_rate FLOAT DEFAULT 100,
-                    total_cost FLOAT DEFAULT 0,
-                    serving_size INTEGER DEFAULT 1,
-                    photo_path TEXT,
-                    scope VARCHAR(20) DEFAULT 'global',
-                    owner_site_id INTEGER,
-                    owner_group_id INTEGER,
-                    is_active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-                CREATE TABLE IF NOT EXISTS menu_recipe_ingredients (
-                    id SERIAL PRIMARY KEY,
-                    recipe_id INTEGER REFERENCES menu_recipes(id) ON DELETE CASCADE,
-                    ingredient_code VARCHAR(50),
-                    ingredient_name VARCHAR(200),
-                    specification VARCHAR(200),
-                    unit VARCHAR(50),
-                    quantity FLOAT DEFAULT 0,
-                    amount FLOAT DEFAULT 0,
-                    selling_price FLOAT DEFAULT 0,
-                    supplier_name VARCHAR(200),
-                    delivery_days INTEGER DEFAULT 0,
-                    required_grams FLOAT DEFAULT 0
-                );
-                CREATE TABLE IF NOT EXISTS ingredients (
-                    id SERIAL PRIMARY KEY,
-                    ingredient_code VARCHAR(50) UNIQUE,
-                    name VARCHAR(200),
-                    specification VARCHAR(200),
-                    unit VARCHAR(50),
-                    price FLOAT DEFAULT 0,
-                    price_per_unit FLOAT DEFAULT 0,
-                    supplier_name VARCHAR(200),
-                    category VARCHAR(100),
-                    base_weight_grams FLOAT DEFAULT 1000,
-                    is_active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-                CREATE TABLE IF NOT EXISTS suppliers (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(200) NOT NULL,
-                    contact_name VARCHAR(100),
-                    phone VARCHAR(50),
-                    email VARCHAR(200),
-                    is_active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-                CREATE TABLE IF NOT EXISTS meal_plans (
-                    id SERIAL PRIMARY KEY,
-                    site_id INTEGER,
-                    plan_date DATE NOT NULL,
-                    slot_name VARCHAR(100),
-                    category VARCHAR(100),
-                    menus JSONB,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-                CREATE TABLE IF NOT EXISTS orders (
-                    id SERIAL PRIMARY KEY,
-                    order_number VARCHAR(50),
-                    site_id INTEGER,
-                    order_date DATE,
-                    usage_date DATE,
-                    status VARCHAR(20) DEFAULT 'pending',
-                    order_type VARCHAR(20) DEFAULT 'regular',
-                    total_amount FLOAT DEFAULT 0,
-                    notes TEXT,
-                    template_id INTEGER,
-                    template_name VARCHAR(200),
-                    attendees INTEGER,
-                    merged_into VARCHAR(50),
-                    merged_at TIMESTAMP,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-                CREATE TABLE IF NOT EXISTS order_items (
-                    id SERIAL PRIMARY KEY,
-                    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
-                    ingredient_code VARCHAR(50),
-                    ingredient_name VARCHAR(200),
-                    specification VARCHAR(200),
-                    unit VARCHAR(50),
-                    unit_price FLOAT DEFAULT 0,
-                    required_qty FLOAT DEFAULT 0,
-                    order_qty FLOAT DEFAULT 0,
-                    total_price FLOAT DEFAULT 0,
-                    supplier_name VARCHAR(200),
-                    menu_name VARCHAR(200),
-                    recipe_id INTEGER
-                );
-                CREATE TABLE IF NOT EXISTS meal_counts (
-                    id SERIAL PRIMARY KEY,
-                    site_id INTEGER,
-                    count_date DATE,
-                    slot_name VARCHAR(200),
-                    category VARCHAR(100),
-                    client_name VARCHAR(200),
-                    meal_type VARCHAR(50),
-                    count INTEGER DEFAULT 0,
-                    menu_order INTEGER DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-            """)
-            # business_locations
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS business_locations (
-                    id SERIAL PRIMARY KEY,
-                    group_id INTEGER,
-                    site_code VARCHAR(50),
-                    site_name VARCHAR(200),
-                    site_type VARCHAR(50),
-                    business_category VARCHAR(100),
-                    address TEXT,
-                    region TEXT,
-                    manager_name VARCHAR(100),
-                    manager_phone VARCHAR(50),
-                    is_active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-            """)
-            # user_site_access
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS user_site_access (
-                    id SERIAL PRIMARY KEY,
-                    user_id INTEGER REFERENCES users(id),
-                    site_id INTEGER,
-                    is_active BOOLEAN DEFAULT TRUE
-                );
-            """)
-            # preprocessing_yields + cooking_yields
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS preprocessing_yields (
-                    id SERIAL PRIMARY KEY,
-                    ingredient_id INTEGER,
-                    yield_rate FLOAT DEFAULT 100,
-                    cut_type VARCHAR(100) DEFAULT '',
-                    notes TEXT,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-                CREATE TABLE IF NOT EXISTS cooking_yields (
-                    id SERIAL PRIMARY KEY,
-                    menu_name VARCHAR(200),
-                    ingredient_id INTEGER,
-                    site_id INTEGER,
-                    yield_rate FLOAT DEFAULT 100,
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-                CREATE TABLE IF NOT EXISTS ingredient_prices (
-                    id SERIAL PRIMARY KEY,
-                    ingredient_code VARCHAR(50),
-                    price FLOAT DEFAULT 0,
-                    effective_date DATE,
-                    supplier_name VARCHAR(200),
-                    created_at TIMESTAMP DEFAULT NOW()
-                );
-            """)
-            # category_slots + slot_clients
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS category_slots (
-                    id SERIAL PRIMARY KEY,
-                    category_id INTEGER NOT NULL REFERENCES site_categories(id) ON DELETE CASCADE,
-                    slot_code VARCHAR(50),
-                    slot_name VARCHAR(200) NOT NULL,
-                    description TEXT,
-                    target_cost INTEGER DEFAULT 0,
-                    selling_price INTEGER DEFAULT 0,
-                    display_order INTEGER DEFAULT 0,
-                    meal_type VARCHAR(50),
-                    is_active BOOLEAN DEFAULT TRUE,
-                    modified_by VARCHAR(100),
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-                CREATE TABLE IF NOT EXISTS slot_clients (
-                    id SERIAL PRIMARY KEY,
-                    slot_id INTEGER NOT NULL REFERENCES category_slots(id) ON DELETE CASCADE,
-                    business_location_id INTEGER,
-                    client_code VARCHAR(50),
-                    client_name VARCHAR(200) NOT NULL,
-                    display_order INTEGER DEFAULT 0,
-                    is_active BOOLEAN DEFAULT TRUE,
-                    start_date DATE,
-                    end_date DATE,
-                    operating_days TEXT DEFAULT '{"mon":true,"tue":true,"wed":true,"thu":true,"fri":true,"sat":true,"sun":true}',
-                    modified_by VARCHAR(100),
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-            """)
-            # ★ 체험판 관리: tenants 테이블 (핵심 테이블과 함께 생성)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS tenants (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(200) NOT NULL,
-                    contact_name VARCHAR(100),
-                    contact_email VARCHAR(200),
-                    contact_phone VARCHAR(50),
-                    plan VARCHAR(20) DEFAULT 'trial',
-                    status VARCHAR(20) DEFAULT 'active',
-                    trial_start TIMESTAMP DEFAULT NOW(),
-                    trial_end TIMESTAMP DEFAULT (NOW() + INTERVAL '14 days'),
-                    max_users INTEGER DEFAULT 3,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                )
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'meal_counts' AND column_name = 'menu_order'
+                    ) THEN
+                        ALTER TABLE meal_counts ADD COLUMN menu_order INTEGER DEFAULT 0;
+                    END IF;
+                END $$;
             """)
 
-            conn.commit()
-            print("[DB] 핵심 테이블 + tenants 생성/확인 완료")
-
-            # users 테이블 누락 컬럼 추가
-            for col_def in [
-                ("tenant_id", "INTEGER REFERENCES tenants(id)"),
-                ("password_hash", "VARCHAR(255)"),
-                ("is_active", "BOOLEAN DEFAULT TRUE"),
-                ("managed_site", "VARCHAR(200)"),
-            ]:
-                try:
-                    cursor.execute(f"""
-                        DO $$
-                        BEGIN
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = '{col_def[0]}')
-                            THEN ALTER TABLE users ADD COLUMN {col_def[0]} {col_def[1]};
-                            END IF;
-                        END $$;
-                    """)
-                    conn.commit()
-                except Exception:
-                    conn.rollback()
-
-            # password → password_hash 동기화
-            try:
-                cursor.execute("UPDATE users SET password_hash = password WHERE password_hash IS NULL AND password IS NOT NULL")
-                conn.commit()
-            except Exception:
-                conn.rollback()
-
-            # 추가 누락 컬럼 일괄 추가 (개별 try-except)
-            extra_columns = [
-                ("meal_counts", "menu_order", "INTEGER DEFAULT 0"),
-                ("meal_counts", "work_date", "DATE"),
-                ("meal_counts", "business_type", "VARCHAR(50)"),
-                ("meal_counts", "menu_name", "VARCHAR(100)"),
-                ("meal_counts", "matching_name", "VARCHAR(100)"),
-                ("meal_counts", "site_name", "VARCHAR(100)"),
-                ("meal_counts", "meal_count", "INTEGER DEFAULT 0"),
-                ("users", "full_name", "VARCHAR(100)"),
-                ("site_categories", "meal_types", "TEXT"),
-                ("site_categories", "meal_items", "TEXT"),
-                ("site_categories", "address", "TEXT"),
-                ("site_categories", "region", "TEXT"),
-                ("site_categories", "abbreviation", "VARCHAR(50)"),
-                ("business_locations", "abbreviation", "VARCHAR(50)"),
-                ("business_locations", "contract_end_date", "DATE"),
-                ("business_locations", "contract_start_date", "DATE"),
-                ("business_locations", "health_cert_expiry", "DATE"),
-                ("business_locations", "category_id", "INTEGER"),
-                ("business_locations", "display_order", "INTEGER DEFAULT 0"),
-                ("menu_recipes", "created_by", "VARCHAR(100)"),
-                ("site_groups", "group_code", "VARCHAR(50)"),
-                ("suppliers", "portal_enabled", "BOOLEAN DEFAULT TRUE"),
-                ("suppliers", "login_id", "VARCHAR(100)"),
-                ("suppliers", "password_hash", "VARCHAR(255)"),
-                ("suppliers", "supplier_name", "VARCHAR(200)"),
-                ("suppliers", "updated_at", "TIMESTAMP DEFAULT NOW()"),
-            ]
-            for tbl, col, typ in extra_columns:
-                try:
-                    cursor.execute(f"""
-                        DO $$ BEGIN
-                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = '{tbl}' AND column_name = '{col}')
-                            THEN ALTER TABLE {tbl} ADD COLUMN {col} {typ};
-                            END IF;
-                        END $$;
-                    """)
-                    conn.commit()
-                except Exception:
-                    conn.rollback()
-
-            # ★ 기본 그룹 시딩 (site_groups가 비어있으면)
-            try:
-                cursor.execute("SELECT COUNT(*) FROM site_groups")
-                if cursor.fetchone()[0] == 0:
-                    cursor.execute("""
-                        INSERT INTO site_groups (group_name, group_code, display_order, is_active)
-                        VALUES ('본사', 'HQ', 0, TRUE)
-                    """)
-                    conn.commit()
-                    print("[DB] 기본 그룹 '본사' 시딩 완료")
-
-                    # 기본 카테고리도 함께 생성
-                    cursor.execute("SELECT id FROM site_groups WHERE group_code = 'HQ' LIMIT 1")
-                    hq_id = cursor.fetchone()[0]
-                    cursor.execute("""
-                        INSERT INTO site_categories (group_id, category_code, category_name, display_order, is_active)
-                        VALUES (%s, 'DEFAULT', '기본', 0, TRUE)
-                    """, (hq_id,))
-                    conn.commit()
-                    print("[DB] 기본 카테고리 '기본' 시딩 완료")
-            except Exception as seed_err:
-                print(f"[DB] 기본 그룹 시딩 스킵: {seed_err}")
-                conn.rollback()
+            # users 테이블에 full_name 컬럼 추가 (없으면)
+            cursor.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'users' AND column_name = 'full_name'
+                    ) THEN
+                        ALTER TABLE users ADD COLUMN full_name VARCHAR(100);
+                    END IF;
+                END $$;
+            """)
 
             # preprocessing_instructions 테이블 생성 (없으면)
             cursor.execute("""
@@ -507,10 +177,7 @@ async def startup_db_migration():
             cursor.execute("""
                 DO $$
                 BEGIN
-                    IF EXISTS (
-                        SELECT 1 FROM information_schema.tables
-                        WHERE table_name = 'preprocessing_yields'
-                    ) AND NOT EXISTS (
+                    IF NOT EXISTS (
                         SELECT 1 FROM information_schema.columns
                         WHERE table_name = 'preprocessing_yields' AND column_name = 'cut_type'
                     ) THEN
@@ -722,232 +389,64 @@ async def startup_db_migration():
                 except Exception as idx_err:
                     print(f"[DB] 인덱스 {idx_name} 생성 스킵: {idx_err}")
 
-            # ★ 체험판 관리: tenants 테이블
+            # ★ 위탁사업장(Meal 그룹)만 meal_types를 조/중/석/야/행사 5개로 확정
+            # 본사/영남지사는 기존 설정 유지
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS tenants (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(200) NOT NULL,
-                    contact_name VARCHAR(100),
-                    contact_email VARCHAR(200),
-                    contact_phone VARCHAR(50),
-                    plan VARCHAR(20) DEFAULT 'trial',
-                    status VARCHAR(20) DEFAULT 'active',
-                    trial_start TIMESTAMP DEFAULT NOW(),
-                    trial_end TIMESTAMP DEFAULT (NOW() + INTERVAL '14 days'),
-                    max_users INTEGER DEFAULT 3,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                )
+                UPDATE site_categories sc
+                SET meal_types = '["조식", "중식", "석식", "야식", "행사"]'::jsonb,
+                    updated_at = NOW()
+                FROM site_groups sg
+                WHERE sc.group_id = sg.id
+                  AND sg.group_code = 'Meal'
+                  AND (sc.meal_types IS NULL
+                       OR sc.meal_types::text != '["조식", "중식", "석식", "야식", "행사"]')
             """)
-            print("[DB] tenants 테이블 확인/생성 완료")
+            updated_cats = cursor.rowcount
+            if updated_cats > 0:
+                print(f"[DB] 위탁사업장 {updated_cats}개 카테고리의 meal_types를 조/중/석/야/행사 5개로 통일")
 
-            # users 테이블에 tenant_id 컬럼 추가
+            # ★ site_categories 테이블 DEFAULT 값도 변경
             cursor.execute("""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'users' AND column_name = 'tenant_id'
-                    ) THEN
-                        ALTER TABLE users ADD COLUMN tenant_id INTEGER REFERENCES tenants(id);
-                    END IF;
-                END $$;
+                ALTER TABLE site_categories
+                ALTER COLUMN meal_types SET DEFAULT '["조식", "중식", "석식", "야식", "행사"]'::jsonb
             """)
-
-            # ★ 식자재 단가 이력: ingredient_prices 테이블
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS ingredient_prices (
-                    id SERIAL PRIMARY KEY,
-                    ingredient_id INTEGER NOT NULL REFERENCES ingredients(id),
-                    price NUMERIC(12,2),
-                    unit_price NUMERIC(12,4),
-                    effective_from DATE NOT NULL,
-                    effective_to DATE,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW(),
-                    UNIQUE(ingredient_id, effective_from)
-                )
-            """)
-            print("[DB] ingredient_prices 테이블 확인/생성 완료")
-
-            # ★ 창고 관리: warehouses 테이블
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS warehouses (
-                    id SERIAL PRIMARY KEY,
-                    site_id INTEGER,
-                    name VARCHAR(200) NOT NULL,
-                    code VARCHAR(50),
-                    address TEXT,
-                    contact_name VARCHAR(100),
-                    contact_phone VARCHAR(50),
-                    is_default BOOLEAN DEFAULT FALSE,
-                    is_active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                )
-            """)
-            print("[DB] warehouses 테이블 확인/생성 완료")
-
-            # ★ 사업장 관리: business_locations 테이블
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS business_locations (
-                    id SERIAL PRIMARY KEY,
-                    site_code VARCHAR(50),
-                    site_name VARCHAR(200) NOT NULL,
-                    site_type VARCHAR(50) DEFAULT '급식업체',
-                    business_category VARCHAR(50) DEFAULT 'management',
-                    group_id INTEGER,
-                    category_id INTEGER,
-                    region VARCHAR(100),
-                    address TEXT,
-                    phone VARCHAR(50),
-                    manager_name VARCHAR(100),
-                    manager_phone VARCHAR(50),
-                    abbreviation VARCHAR(20),
-                    has_categories BOOLEAN DEFAULT FALSE,
-                    display_order INTEGER DEFAULT 0,
-                    contract_end_date DATE,
-                    is_active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                )
-            """)
-            print("[DB] business_locations 테이블 확인/생성 완료")
-
-            # orders 테이블에 누락 컬럼 추가
-            for col_name, col_def in [
-                ('warehouse_id', 'INTEGER'),
-                ('total_items', 'INTEGER DEFAULT 0'),
-                ('created_by', 'INTEGER'),
-                ('confirmed_by', 'INTEGER'),
-                ('confirmed_at', 'TIMESTAMP'),
-                ('locked_at', 'TIMESTAMP'),
-                ('updated_at', 'TIMESTAMP DEFAULT NOW()'),
-                ('expected_delivery_date', 'DATE'),
-                ('parent_order_id', 'INTEGER'),
-                ('meal_counts_snapshot', 'JSONB'),
-                ('snapshot_created_at', 'TIMESTAMP'),
-            ]:
-                cursor.execute(f"""
-                    DO $$
-                    BEGIN
-                        IF NOT EXISTS (
-                            SELECT 1 FROM information_schema.columns
-                            WHERE table_name = 'orders' AND column_name = '{col_name}'
-                        ) THEN
-                            ALTER TABLE orders ADD COLUMN {col_name} {col_def};
-                        END IF;
-                    END $$;
-                """)
-
-            # site_categories 테이블에 누락 컬럼 추가
-            cursor.execute("""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'site_categories' AND column_name = 'meal_types'
-                    ) THEN
-                        ALTER TABLE site_categories ADD COLUMN meal_types JSONB DEFAULT '["조식", "중식", "석식"]';
-                    END IF;
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'site_categories' AND column_name = 'meal_items'
-                    ) THEN
-                        ALTER TABLE site_categories ADD COLUMN meal_items JSONB DEFAULT '["일반"]';
-                    END IF;
-                END $$;
-            """)
-            print("[DB] site_categories 누락 컬럼 추가 완료")
-
-            # site_groups 테이블에 group_code 컬럼 추가
-            cursor.execute("ALTER TABLE site_groups ADD COLUMN IF NOT EXISTS group_code VARCHAR(50)")
-
-            # ingredients 테이블에 purchase_price 컬럼 추가
-            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS purchase_price FLOAT DEFAULT 0")
-            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS ingredient_name VARCHAR(200)")
-            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS selling_price FLOAT DEFAULT 0")
-            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS posting_status VARCHAR(10) DEFAULT '유'")
-            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS origin VARCHAR(100)")
-            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS sub_category VARCHAR(100)")
-            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS tax_type VARCHAR(20)")
-            cursor.execute("ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS delivery_days VARCHAR(50)")
-            # customer_supplier_mappings 테이블 생성
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS customer_supplier_mappings (
-                    id SERIAL PRIMARY KEY,
-                    customer_id INTEGER NOT NULL,
-                    supplier_id INTEGER NOT NULL,
-                    is_active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                )
-            """)
-            print("[DB] site_groups, ingredients, customer_supplier_mappings 누락 컬럼/테이블 추가 완료")
-
-            # events 테이블에 site_id 컬럼 추가
-            cursor.execute("""
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = 'events' AND column_name = 'site_id'
-                    ) THEN
-                        ALTER TABLE events ADD COLUMN site_id INTEGER;
-                    END IF;
-                END $$;
-            """)
-            print("[DB] events 누락 컬럼 추가 완료")
 
             conn.commit()
             cursor.close()
-            print("[DB] 마이그레이션 완료: 컬럼 추가 + 성능 인덱스")
-
-            # ★ 위탁사업장 기본 5개 슬롯 마이그레이션 (본사/영남 제외)
-            cursor2 = conn.cursor()
-            try:
-                # 위탁사업장 그룹의 카테고리 중 슬롯이 부족한 것 찾기
-                cursor2.execute("""
-                    SELECT sc.id as category_id, sc.category_name, sg.id as group_id, sg.group_name
-                    FROM site_categories sc
-                    JOIN site_groups sg ON sc.group_id = sg.id
-                    WHERE sg.group_name NOT IN ('본사', '영남지사')
-                      AND sc.is_active = TRUE
-                """)
-                categories = cursor2.fetchall()
-
-                default_slots = [
-                    ("조식", "BREAKFAST", "조식", 1),
-                    ("중식", "LUNCH", "중식", 2),
-                    ("석식", "DINNER", "석식", 3),
-                    ("야식", "NIGHT", "야식", 4),
-                    ("행사", "EVENT", "행사", 5),
-                ]
-
-                added_count = 0
-                for cat_id, cat_name, group_id_val, group_name in categories:
-                    for slot_name, slot_suffix, meal_type, sort_order in default_slots:
-                        slot_code = f"SLOT_{cat_id}_{slot_suffix}"
-                        cursor2.execute("""
-                            INSERT INTO category_slots (category_id, slot_code, slot_name, meal_type, display_order, is_active)
-                            VALUES (%s, %s, %s, %s, %s, TRUE)
-                            ON CONFLICT DO NOTHING
-                        """, (cat_id, slot_code, slot_name, meal_type, sort_order))
-                        if cursor2.rowcount > 0:
-                            added_count += 1
-
-                conn.commit()
-                if added_count > 0:
-                    print(f"[DB] 위탁사업장 기본 슬롯 추가: {added_count}개 슬롯 생성")
-            except Exception as e2:
-                print(f"[DB] 위탁사업장 슬롯 마이그레이션 오류 (무시): {e2}")
-                try: conn.rollback()
-                except: pass
-            finally:
-                cursor2.close()
-
+            print("[DB] 마이그레이션 완료: 컬럼 추가 + 성능 인덱스 확인/생성 + meal_types 통일")
     except Exception as e:
         print(f"[DB] 마이그레이션 오류 (무시): {e}")
+
+    # 위탁사업장(본사/영남지사 제외) 기본 슬롯 자동 생성
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            # 본사(1), 영남지사(2) 제외한 카테고리 중 5개 슬롯 미달인 것
+            cursor.execute("""
+                SELECT sc.id, sc.category_name, sc.group_id
+                FROM site_categories sc
+                WHERE sc.group_id NOT IN (1, 2)
+                AND (SELECT COUNT(*) FROM category_slots cs WHERE cs.category_id = sc.id) < 5
+            """)
+            missing = cursor.fetchall()
+            if missing:
+                default_slots = [
+                    ('조식', '조식', 1), ('중식', '중식', 2), ('석식', '석식', 3),
+                    ('야식', '야식', 4), ('행사', '중식', 5)
+                ]
+                for cat_id, cat_name, group_id in missing:
+                    for slot_name, meal_type, sort_order in default_slots:
+                        slot_code = f"SLOT_{cat_id}_{slot_name}"
+                        cursor.execute("""
+                            INSERT INTO category_slots (category_id, slot_code, slot_name, target_cost, selling_price, meal_type, display_order)
+                            VALUES (%s, %s, %s, 0, 0, %s, %s)
+                            ON CONFLICT DO NOTHING
+                        """, (cat_id, slot_code, slot_name, meal_type, sort_order))
+                conn.commit()
+                print(f"[DB] 위탁사업장 기본 슬롯 자동 생성: {len(missing)}개 카테고리에 5개씩")
+            cursor.close()
+    except Exception as e:
+        print(f"[DB] 위탁사업장 슬롯 자동 생성 오류 (무시): {e}")
 
 # 개발 모드: 캐시 비활성화 미들웨어
 @app.middleware("http")
@@ -973,7 +472,22 @@ try:
 except Exception as e:
     print(f"Static files mounting failed: {e}")
 
-# Blog app 제거됨 (판매용 버전에서는 불필요)
+# Blog app 정적 파일 직접 마운트 (WSGIMiddleware에서 정적 파일 서빙 안 됨)
+try:
+    app.mount("/blog-app/static", StaticFiles(directory="blog_app/static"), name="blog-static")
+    print("[BLOG] Blog static files mounted at /blog-app/static")
+except Exception as e:
+    print(f"[BLOG] Blog static files mounting failed: {e}")
+
+# Blog app (Flask) mount
+try:
+    from blog_app.app import app as flask_blog_app
+    app.mount("/blog-app", WSGIMiddleware(flask_blog_app))
+    print("[BLOG] Flask blog app mounted at /blog-app")
+except Exception as e:
+    import traceback
+    traceback.print_exc()
+    print(f"[BLOG] Blog app mount failed: {e}")
 
 # Railway 호환성: 템플릿 파일 직접 서빙
 @app.get("/static/templates/{template_name}")
@@ -993,7 +507,7 @@ async def serve_template(template_name: str):
 
 # ★★★ 통합 API (성능 최적화) - 라우터보다 먼저 등록 ★★★
 @app.get("/api/meal-management/init")
-async def get_meal_management_init(site_id: int, date: str):
+async def get_meal_management_init(site_id: int, date: str, category_id: Optional[int] = None):
     """
     식수 관리 페이지 초기화용 통합 API
     - 현재일 식수 데이터
@@ -1014,7 +528,25 @@ async def get_meal_management_init(site_id: int, date: str):
             current_date = datetime.strptime(date, "%Y-%m-%d")
             prev_date = (current_date - timedelta(days=1)).strftime("%Y-%m-%d")
 
-            print(f"[API] meal-management/init: date={date}, site_id={site_id}")
+            # ★ site_id가 site_groups에 없으면 business_locations에서 group_id 변환
+            actual_group_id = site_id
+            resolved_category_id = category_id
+            if site_id:
+                cursor.execute("SELECT id FROM site_groups WHERE id = %s", (site_id,))
+                if not cursor.fetchone():
+                    # business_locations에서 group_id, category_id 조회
+                    cursor.execute("""
+                        SELECT bl.group_id, bl.category_id
+                        FROM business_locations bl WHERE bl.id = %s
+                    """, (site_id,))
+                    bl_row = cursor.fetchone()
+                    if bl_row:
+                        actual_group_id = bl_row[0]
+                        if not resolved_category_id:
+                            resolved_category_id = bl_row[1]
+                        print(f"[API] site_id={site_id} → group_id={actual_group_id}, category_id={resolved_category_id}")
+
+            print(f"[API] meal-management/init: date={date}, site_id={site_id}, group_id={actual_group_id}, category_id={resolved_category_id}")
 
             # 1. 현재일 식수 데이터 (site_id로 필터링)
             site_filter = " AND site_id = %s" if site_id else ""
@@ -1022,9 +554,16 @@ async def get_meal_management_init(site_id: int, date: str):
 
             cursor.execute(f"""
                 SELECT mc.id, mc.work_date, COALESCE(mc.category, mc.business_type) AS business_type, mc.menu_name, mc.matching_name,
-                       COALESCE(cs.meal_type, mc.meal_type) AS meal_type, mc.site_name, mc.meal_count, mc.menu_order, mc.created_at, mc.updated_at
+                       COALESCE(best_cs.meal_type, mc.meal_type) AS meal_type, mc.site_name, mc.meal_count, mc.menu_order, mc.created_at, mc.updated_at
                 FROM meal_counts mc
-                LEFT JOIN category_slots cs ON cs.slot_name = mc.menu_name AND cs.is_active = true
+                LEFT JOIN LATERAL (
+                    SELECT cs.meal_type
+                    FROM category_slots cs
+                    WHERE cs.is_active = true
+                      AND (mc.menu_name = cs.slot_name OR mc.menu_name LIKE cs.slot_name || ' %%')
+                    ORDER BY LENGTH(cs.slot_name) DESC
+                    LIMIT 1
+                ) best_cs ON true
                 WHERE mc.work_date = %s{site_filter.replace('site_id', 'mc.site_id')}
                 ORDER BY COALESCE(mc.category, mc.business_type), COALESCE(mc.menu_order, 999), mc.menu_name, mc.site_name
             """, params_current)
@@ -1045,9 +584,16 @@ async def get_meal_management_init(site_id: int, date: str):
 
             cursor.execute(f"""
                 SELECT mc.id, mc.work_date, COALESCE(mc.category, mc.business_type) AS business_type, mc.menu_name, mc.matching_name,
-                       COALESCE(cs.meal_type, mc.meal_type) AS meal_type, mc.site_name, mc.meal_count, mc.menu_order, mc.created_at, mc.updated_at
+                       COALESCE(best_cs.meal_type, mc.meal_type) AS meal_type, mc.site_name, mc.meal_count, mc.menu_order, mc.created_at, mc.updated_at
                 FROM meal_counts mc
-                LEFT JOIN category_slots cs ON cs.slot_name = mc.menu_name AND cs.is_active = true
+                LEFT JOIN LATERAL (
+                    SELECT cs.meal_type
+                    FROM category_slots cs
+                    WHERE cs.is_active = true
+                      AND (mc.menu_name = cs.slot_name OR mc.menu_name LIKE cs.slot_name || ' %%')
+                    ORDER BY LENGTH(cs.slot_name) DESC
+                    LIMIT 1
+                ) best_cs ON true
                 WHERE mc.work_date = %s{site_filter.replace('site_id', 'mc.site_id')}
                 ORDER BY COALESCE(mc.category, mc.business_type), COALESCE(mc.menu_order, 999), mc.menu_name, mc.site_name
             """, params_prev)
@@ -1204,9 +750,13 @@ async def get_meal_management_init(site_id: int, date: str):
 
                 # 3. 기본: 이미 operating_days 필터를 통과했으므로 True
                 return True
-            if site_id:
+            if actual_group_id:
                 unified_query += " AND sg.id = %s"
-                unified_params.append(site_id)
+                unified_params.append(actual_group_id)
+            # ★ 위탁사업장: category_id가 지정되면 해당 카테고리만 필터링
+            if resolved_category_id:
+                unified_query += " AND scat.id = %s"
+                unified_params.append(resolved_category_id)
             # ★★★ 슬롯 정렬: category_slots.meal_type 기준 (조식 > 중식 > 석식 > 야식 > 행사 > 기타) ★★★
             unified_query += """
                 ORDER BY sg.id, scat.id,
@@ -1335,7 +885,6 @@ app.include_router(hierarchy.router, tags=["계층구조"])
 app.include_router(meal_counts.router, tags=["식수관리"])
 app.include_router(meal_templates.router, tags=["식단템플릿"])
 app.include_router(meal_slot_settings.router, tags=["슬롯설정"])
-app.include_router(tenants.router, tags=["체험판"])
 
 # 백업 시스템 초기화
 try:
@@ -1356,7 +905,7 @@ async def root():
 async def api_status():
     return {
         "status": "ok",
-        "message": f"{APP_TITLE} API 서버",
+        "message": "다함 식자재 관리 API 서버",
         "version": APP_VERSION,
         "architecture": "smart_monolith"
     }
@@ -1526,20 +1075,6 @@ async def serve_side_dish_position_guide():
 @app.get("/backup_management.html")
 async def serve_backup_management():
     return FileResponse("backup_management.html")
-
-@app.get("/api/app-config")
-async def get_app_config():
-    """앱 설정 (모드, 타이틀 등) - 프론트엔드에서 사용"""
-    from core.config import APP_MODE, APP_TITLE
-    return {
-        "mode": APP_MODE,
-        "title": APP_TITLE,
-        "features": {
-            "categories": APP_MODE == "advanced",
-            "suffix": APP_MODE == "advanced",
-            "sibling_sync": APP_MODE == "advanced"
-        }
-    }
 
 @app.get("/config.js")
 async def serve_config():
@@ -2021,7 +1556,6 @@ def ensure_events_table():
                     event_date DATE NOT NULL,
                     event_type VARCHAR(50) NOT NULL,
                     status VARCHAR(20) DEFAULT 'estimate',
-                    site_id INTEGER,
                     client_name VARCHAR(200),
                     contact_person VARCHAR(100),
                     phone VARCHAR(50),
@@ -3284,7 +2818,7 @@ async def get_base_weight_stats(site_id: Optional[int] = None):
                     SELECT DISTINCT s.name
                     FROM customer_supplier_mappings csm
                     JOIN suppliers s ON csm.supplier_id = s.id
-                    WHERE csm.customer_id = %s AND csm.is_active = TRUE
+                    WHERE csm.customer_id = %s AND csm.is_active = 1
                 """, (site_id,))
                 supplier_rows = cursor.fetchall()
                 if supplier_rows:
@@ -4125,7 +3659,7 @@ async def delete_meal_plan_background(bg_id: int):
 
 
 if __name__ == "__main__":
-    print(f"[{APP_TITLE}] 시스템 시작 (mode={APP_MODE})")
+    print(f"[다함] 식자재 관리 시스템 시작")
     print(f"[서버] 주소: http://{HOST}:{PORT}")
     print(f"[아키텍처] Smart Monolith")
     print(f"[환경] {'Railway' if 'RAILWAY_ENVIRONMENT' in os.environ else 'Local'}")

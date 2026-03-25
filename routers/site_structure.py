@@ -407,7 +407,7 @@ async def create_category(group_id: int, category: CategoryCreate):
 
                 cursor.execute("""
                     INSERT INTO business_locations (site_code, site_name, site_type, group_id, category_id, is_active)
-                    VALUES (%s, %s, %s, %s, %s, TRUE)
+                    VALUES (%s, %s, %s, %s, %s, 1)
                     RETURNING id
                 """, (
                     site_code,
@@ -418,30 +418,31 @@ async def create_category(group_id: int, category: CategoryCreate):
                 ))
                 site_id = cursor.fetchone()[0]
 
-            # 기본 끼니구분 자동 생성 (category_slots 테이블)
-            if is_consignment_group:
-                # 위탁사업장: 5개 슬롯 (조식/중식/석식/야식/행사)
-                default_slots = [
-                    ("조식", "BREAKFAST", "조식", 1),
-                    ("중식", "LUNCH", "중식", 2),
-                    ("석식", "DINNER", "석식", 3),
-                    ("야식", "NIGHT", "야식", 4),
-                    ("행사", "EVENT", "행사", 5),
-                ]
-            else:
-                # 본사/영남: 3개 슬롯
-                default_slots = [
-                    ("조식", "BREAKFAST", "조식", 1),
-                    ("중식", "LUNCH", "중식", 2),
-                    ("석식", "DINNER", "석식", 3),
-                ]
-            for slot_name, slot_suffix, meal_type, sort_order in default_slots:
-                slot_code = f"SLOT_{new_category_id}_{slot_suffix}"
+            # 기본 끼니구분 자동 생성 (모든 사업장)
+            default_slots = [
+                ("조식", 1, "조식"),
+                ("중식", 2, "중식"),
+                ("석식", 3, "석식"),
+                ("야식", 4, "야식"),
+                ("행사", 5, "중식"),
+            ]
+            for slot_name, sort_order, meal_type in default_slots:
+                # meal_slot_settings (레거시)
+                if not is_consignment_group:
+                    slot_key = f"cat{new_category_id}_slot{sort_order}"
+                    cursor.execute("""
+                        INSERT INTO meal_slot_settings (slot_key, display_name, sort_order, entity_type, entity_id, is_active)
+                        VALUES (%s, %s, %s, 'category', %s, TRUE)
+                        ON CONFLICT (slot_key, entity_type, entity_id) DO NOTHING
+                    """, (slot_key, slot_name, sort_order, new_category_id))
+                # category_slots (신규 — 모든 사업장)
+                slot_code = f"SLOT_{new_category_id}_{slot_name}"
                 cursor.execute("""
-                    INSERT INTO category_slots (category_id, slot_code, slot_name, meal_type, display_order, is_active)
-                    VALUES (%s, %s, %s, %s, %s, TRUE)
+                    INSERT INTO category_slots (category_id, slot_code, slot_name, target_cost, selling_price, meal_type, display_order)
+                    VALUES (%s, %s, %s, 0, 0, %s, %s)
                     ON CONFLICT DO NOTHING
                 """, (new_category_id, slot_code, slot_name, meal_type, sort_order))
+            print(f"[카테고리 생성] {category.category_name}(id={new_category_id})에 기본 5개 슬롯 자동 생성")
 
             conn.commit()
 
@@ -818,7 +819,7 @@ async def create_site(request: Request):
             address = (data.get('address') or '').strip()
             manager_name = (data.get('manager_name') or '').strip()
             manager_phone = (data.get('contact_info') or '').strip()
-            is_active = True if data.get('is_active', True) else False
+            is_active = 1 if data.get('is_active', True) else 0
             group_id = data.get('group_id')
             category_id = data.get('category_id')
 
@@ -1164,7 +1165,7 @@ async def get_structure_tree(refresh: Optional[int] = None):
             cursor.execute("""
                 SELECT id, site_code, site_name, category_id, group_id, display_order, is_active
                 FROM business_locations
-                WHERE is_active = TRUE
+                WHERE is_active = 1
                   AND (contract_end_date IS NULL OR contract_end_date > CURRENT_DATE)
                 ORDER BY display_order
             """)
@@ -1573,7 +1574,7 @@ async def get_available_sites_for_assignment():
                 FROM business_locations bl
                 LEFT JOIN site_groups sg ON bl.group_id = sg.id
                 LEFT JOIN site_categories sc ON bl.category_id = sc.id
-                WHERE bl.is_active = TRUE
+                WHERE bl.is_active = 1
                   AND (sg.group_code IS NULL OR sg.group_code != 'Meal')
                   AND (bl.contract_end_date IS NULL OR bl.contract_end_date > CURRENT_DATE)
                 ORDER BY sg.display_order, sc.display_order, bl.site_name
