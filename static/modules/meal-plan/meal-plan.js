@@ -338,6 +338,9 @@ document.addEventListener('DOMContentLoaded', async function () {
             generateCalendar();
             updateStatistics();
 
+            // ★ 초기 로드 시 이번 주로 스크롤
+            scrollToCurrentWeek();
+
             // 메뉴 라이브러리는 지연 로드
             requestAnimationFrame(() => {
                 renderMenuLibrary();
@@ -1475,6 +1478,44 @@ async function goToToday() {
     generateCalendar();
 }
 
+// ★ 오늘 날짜가 포함된 주 인덱스를 계산하여 스크롤
+function scrollToCurrentWeek() {
+    const currentDate = AppState.get('currentDate');
+    const view = AppState.get('currentView') || 'month';
+    if (view !== 'month') return;
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const today = new Date();
+
+    // 캘린더 시작일 계산 (generateMonthCalendar와 동일 로직)
+    const firstDay = new Date(year, month, 1);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+    // 오늘이 이 달의 캘린더에 표시되는지 확인
+    const todayStr = formatDate(today);
+    let targetWeek = -1;
+
+    let checkDate = new Date(startDate);
+    for (let week = 0; week < 6; week++) {
+        for (let day = 0; day < 7; day++) {
+            if (formatDate(checkDate) === todayStr) {
+                targetWeek = week;
+                break;
+            }
+            checkDate.setDate(checkDate.getDate() + 1);
+        }
+        if (targetWeek >= 0) break;
+    }
+
+    if (targetWeek >= 0) {
+        currentFocusedWeek = targetWeek;
+        // DOM 렌더링 완료 후 스크롤 실행
+        requestAnimationFrame(() => scrollToWeek(targetWeek));
+    }
+}
+
 // 📅 주 단위 스크롤 (direction: -1 이전주, 1 다음주)
 // 현재 포커스된 주 인덱스 (0-5)
 let currentFocusedWeek = 0;
@@ -1522,19 +1563,18 @@ async function jumpWeek(direction) {
     }
 }
 
-// 특정 주로 스크롤
+// 특정 주로 스크롤 (calendar-section 컨테이너 기준)
 function scrollToWeek(weekIndex) {
     const weekElement = document.getElementById(`week-${weekIndex}`);
-    if (weekElement) {
-        weekElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!weekElement) return;
 
-        // 현재 포커스된 주 하이라이트 (선택사항)
-        document.querySelectorAll('.calendar-day').forEach(el => {
-            el.classList.remove('week-focused');
-        });
-        document.querySelectorAll(`[data-week="${weekIndex}"]`).forEach(el => {
-            el.classList.add('week-focused');
-        });
+    const container = document.querySelector('.calendar-section');
+    if (container) {
+        // 컨테이너 내 상대 위치로 즉시 스크롤 (마지막 주도 상단 정렬 가능)
+        const offsetTop = weekElement.offsetTop - container.offsetTop;
+        container.scrollTop = offsetTop;
+    } else {
+        weekElement.scrollIntoView({ block: 'start' });
     }
 }
 

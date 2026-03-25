@@ -916,20 +916,15 @@ function generateFinalOrder() {
                 const baseWeight = newItem.base_weight_grams || 1000;
 
                 filteredRefs.forEach(ref => {
-                    let perPersonQtyG;
-                    if (isWeightUnit) {
-                        // 중량 단위: per_person_qty를 kg로 해석 → g 변환
-                        perPersonQtyG = ref.per_person_qty * 1000;
-                    } else {
-                        // 포장 단위(PK, EA 등): base_weight 곱함
-                        perPersonQtyG = ref.per_person_qty * baseWeight;
-                    }
+                    // ★ 서버에서 계산된 per_person_qty_g를 직접 사용 (역산 금지)
+                    const perPersonQtyG = ref.per_person_qty_g || ref.per_person_qty * baseWeight;
                     // kg 단위로 변환하여 합산
                     newRequiredQty += (perPersonQtyG / 1000) * ref.head_count;
                     newMealCount += ref.head_count;
                 });
 
                 newItem.required_qty = newRequiredQty;
+                newItem.required_qty_g = newRequiredQty * 1000;  // ★ g 단위도 동기화
                 // meal_count는 단순 합산이 애매하지만(중복인원 등), 여기서는 로직상 합산값으로 둠
                 newItem.meal_count = newMealCount;
 
