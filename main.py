@@ -74,6 +74,9 @@ PORT = int(os.environ.get("PORT", os.environ.get("API_PORT", 8080)))
 HOST = "0.0.0.0"
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
+# App Mode 설정 (simple/advanced)
+APP_MODE = os.environ.get("APP_MODE", "simple")
+
 # ★ M-3: 사업장명 정규화 함수 (공백/유니코드 차이 제거)
 def normalize_client_name(name: str) -> str:
     """사업장명 정규화: strip + 연속공백 제거 + NFC 정규화"""
@@ -96,6 +99,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# App Config API (프론트엔드 모드 감지용)
+@app.get("/api/app-config")
+async def get_app_config():
+    is_simple = APP_MODE == "simple"
+    return {
+        "mode": APP_MODE,
+        "title": APP_TITLE,
+        "features": {
+            "categories": not is_simple,
+            "suffix": not is_simple,
+            "sibling_sync": not is_simple
+        }
+    }
 
 # 서버 종료 시 커넥션 풀 정리
 @app.on_event("shutdown")
@@ -2803,7 +2820,7 @@ async def get_base_weight_stats(site_id: Optional[int] = None):
             # 🚫 비활성 협력업체 식자재 제외 (거래중단된 업체)
             inactive_filter = ""
             inactive_params = []
-            cursor.execute("SELECT name FROM suppliers WHERE is_active = 0")
+            cursor.execute("SELECT name FROM suppliers WHERE is_active = FALSE")
             inactive_suppliers = [row[0] for row in cursor.fetchall()]
             if inactive_suppliers:
                 placeholders = ','.join(['%s'] * len(inactive_suppliers))
@@ -2818,7 +2835,7 @@ async def get_base_weight_stats(site_id: Optional[int] = None):
                     SELECT DISTINCT s.name
                     FROM customer_supplier_mappings csm
                     JOIN suppliers s ON csm.supplier_id = s.id
-                    WHERE csm.customer_id = %s AND csm.is_active = 1
+                    WHERE csm.customer_id = %s AND csm.is_active = TRUE
                 """, (site_id,))
                 supplier_rows = cursor.fetchall()
                 if supplier_rows:
